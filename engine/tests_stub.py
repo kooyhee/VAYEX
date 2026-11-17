@@ -15,7 +15,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from .decision_planner import DAGNode, ExecutionDAGPlan, ExecutionRoute, IntelligencePlanner
-from .dsh_payload import PAYLOAD_SCHEMA, build_customization_payload, main as payload_main, render_payload
 from .dag_orchestrator import AttemptOutcome, BudgetExhaustedError, DeterministicDAGOrchestrator, FileIsolationWorkspace
 from .file_tools import HashMismatchError, InvalidEditError, PathContainmentError, apply_edits, hash_file, resolve_within, run_verification
 from .fts5_memory import HybridContextMemoryEngine
@@ -409,94 +408,3 @@ class TestModelExecution(EngineFixture):
         self.assertIsNone(result["spent_usd"])
         self.assertIsNone(result["node_costs"]["edit"])
         self.assertEqual(self.target.read_bytes(), b"value = 2\n")
-
-
-class TestDshPayload(EngineFixture):
-    def test_payload_reports_tier_model_route_and_track(self):
-        payload = build_customization_payload(
-            prompt="분산 브로커 동시성 결함 원인을 조사하고 재설계 방안 수립",
-            route="zdr_cloud", hardware_tier="standard_local", registry=self.registry)
-        self.assertEqual(payload["schema"], PAYLOAD_SCHEMA)
-        self.assertEqual(payload["route"], "zdr_cloud")
-        self.assertFalse(payload["privacy_consent"])
-        self.assertEqual(payload["tier"]["name"], "standard_local")
-        self.assertEqual(payload["tier"]["local_model_id"], "local/qwen2.5-coder-7b-gguf")
-        self.assertTrue(payload["tier"]["uses_local_llm"])
-        self.assertEqual(payload["selected_model"], "deepseek/deepseek-v4.1-flash-1017")
-        # Background work is Bonsai-only and the registry never substitutes, so this Tier 2
-        # machine reports no runnable background model instead of a Qwen fallback.
-        self.assertIsNone(payload["background_model_id"])
-        self.assertEqual(payload["track"], "survey_and_plan")
-        self.assertGreaterEqual(payload["complexity"], 1)
-        self.assertEqual(payload["endpoint_env"]["base_url"], "HARNESS_LLM_BASE_URL")
-
-    def test_payload_route_and_tier_change_the_selection(self):
-        default = build_customization_payload(hardware_tier="rule_based_only", registry=self.registry)
-        local1 = build_customization_payload(route="local_only", hardware_tier="lightweight_local",
-                                            registry=self.registry)
-        local0 = build_customization_payload(route="local_only", hardware_tier="rule_based_only",
-                                             registry=self.registry)
-        consent_only = build_customization_payload(privacy_consent=True, registry=self.registry,
-                                                   hardware_tier="rule_based_only")
-        any_cloud = build_customization_payload(route="any_cloud", privacy_consent=True,
-                                                registry=self.registry, hardware_tier="rule_based_only")
-        route_only = build_customization_payload(route="any_cloud", registry=self.registry,
-                                                 hardware_tier="rule_based_only")
-        # No consent and no explicit route: the payload never names a cloud route or model.
-        self.assertEqual(default["route"], "local_only")
-        self.assertFalse(default["privacy_consent"])
-        self.assertIsNone(default["selected_model"])
-        self.assertEqual(default["endpoint_env"]["base_url"], "HARNESS_LOCAL_BASE_URL")
-        self.assertEqual(local1["selected_model"], "local/qwen2.5-coder-1.5b-gguf")
-        self.assertEqual(local1["endpoint_env"]["base_url"], "HARNESS_LOCAL_BASE_URL")
-        # Background never follows the tier's SLM: Bonsai or nothing (no Qwen/cloud substitute).
-        self.assertIsNone(local1["background_model_id"])
-        # Tier 0 cannot serve local_only, so no model is named that the machine cannot run.
-        self.assertIsNone(local0["selected_model"])
-        self.assertFalse(local0["tier"]["uses_local_llm"])
-        self.assertIsNone(local0["background_model_id"])
-        # Consent alone selects the narrowest cloud route; only an explicit route widens it.
-        self.assertEqual(consent_only["route"], "zdr_cloud")
-        self.assertTrue(consent_only["privacy_consent"])
-        self.assertTrue(consent_only["selected_model"])
-        self.assertEqual(consent_only["endpoint_env"]["base_url"], "HARNESS_LLM_BASE_URL")
-        self.assertEqual(any_cloud["route"], "any_cloud")
-        self.assertTrue(any_cloud["privacy_consent"])
-        self.assertTrue(any_cloud["selected_model"])
-        # Consent is reported, never derived back from the route.
-        self.assertEqual(route_only["route"], "any_cloud")
-        self.assertFalse(route_only["privacy_consent"])
-
-    def test_payload_without_prompt_has_no_track(self):
-        payload = build_customization_payload(registry=self.registry, hardware_tier="standard_local")
-        self.assertIsNone(payload["track"])
-        self.assertIsNone(payload["complexity"])
-        self.assertEqual(payload["target_files"], [])
-        json.loads(render_payload(payload))
-
-    def test_payload_never_contains_secret_values(self):
-        with llm_env({"HARNESS_LLM_API_KEY": "sk-should-not-leak", "HARNESS_LOCAL_API_KEY": "also-secret"}):
-            text = render_payload(build_customization_payload(prompt="src/app.py 오타 수정",
-                                                              registry=self.registry))
-        self.assertNotIn("sk-should-not-leak", text)
-        self.assertNotIn("also-secret", text)
-
-    def test_cli_prints_one_json_object(self):
-        import io
-        from contextlib import redirect_stdout
-        buffer = io.StringIO()
-        with redirect_stdout(buffer):
-            code = payload_main(["--prompt", "src/app.py 오타 수정", "--route", "zdr_cloud",
-                                 "--tier", "standard_local"])
-        self.assertEqual(code, 0)
-        lines = buffer.getvalue().strip().splitlines()
-        self.assertEqual(len(lines), 1)
-        parsed = json.loads(lines[0])
-        self.assertEqual(parsed["track"], "direct_execute")
-        self.assertEqual(parsed["tier"]["name"], "standard_local")
-
-    def test_cli_rejects_conflicting_route_flags(self):
-        import io
-        from contextlib import redirect_stderr, redirect_stdout
-        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
-            payload_main(["--route", "zdr_cloud", "--consent"])

@@ -87,6 +87,17 @@ const escapeText = (value) => String(value ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+// A UUID's middle groups read as a phone number to a personal-data sweep: `4278-9549`
+// is a 2–4 digit group followed by a four-digit tail. The header chip therefore names
+// the session by its leading group — `session f08cfc6b` — so the exported document
+// carries no digit run that a reader (or an OCR pass) mistakes for a number.
+const PHONE_SHAPED = /[^\d]\d{2,4}[-.\s]\d{4}(?:[^\d]|$)/;
+function sessionChipText(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '미보고';
+  return PHONE_SHAPED.test(text) ? text.split(/[-.\s]/)[0].slice(0, 8) : text;
+}
+
 function numberOrNull(value) {
   if (value === null || value === undefined || value === '') return null;
   const parsed = Number(value);
@@ -696,7 +707,7 @@ section.panel{container-type:inline-size}
       <div><span class="brand">${escapeText(model.brand.name)}</span><span class="tagline">${escapeText(model.brand.tagline)}</span></div>
       <div class="chips">
         <span class="chip accent">${escapeText(meta.label)}</span>
-        <span class="chip">session ${escapeText(String(model.context.sessionId ?? '미보고'))}</span>
+        <span class="chip">session ${escapeText(sessionChipText(model.context.sessionId))}</span>
         <span class="chip">${escapeText(model.context.model ?? '모델 미보고')}</span>
         <span class="chip">${escapeText(model.context.route ?? 'local_only')}${model.context.consent ? ' · 동의함' : ' · 동의 안 함'}</span>
         <span class="chip">생성 ${escapeText(stamp(model.context.generatedAt))}</span>

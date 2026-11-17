@@ -1,9 +1,8 @@
-"""Read-only status surface for the DeepSeek Harness customization layer.
+"""Read-only status surface for the local harness engine.
 
-**This is not the product UI.** The application's interface is DeepSeek Harness
-itself (the ``dsh`` web client started by ``scripts/launch.ps1``). What lives here is
-a small, optional viewer that renders exactly the status
-:func:`prototype.main.collect` measured:
+**This is not the product UI.** The application's interface is the ``omp`` web
+workbench started by ``app/launch.ps1``. What lives here is a small, optional
+viewer that renders exactly the status :func:`prototype.main.collect` measured:
 
 * no agent run, no model call, no file edit, no listening socket;
 * no fabricated diff, token count, cost, "PASSED" word or savings comparison;
@@ -71,8 +70,8 @@ def render_text(status: Dict[str, Any]) -> str:
         else f"{gpu} — CPU only"
     )
     lines: List[str] = [
-        "DeepSeek Harness — customization layer pre-flight",
-        "  (the application UI is dsh; this command only reports measured status)",
+        "Local Harness — engine pre-flight",
+        "  (this command only reports measured status)",
         "",
         f"hardware : {_unknown(hardware.get('cpu_cores'))} cores / "
         f"{_unknown(hardware.get('ram_gb'))} GB RAM / {graphics}",
@@ -112,8 +111,8 @@ def render_text(status: Dict[str, Any]) -> str:
             "",
             f"launcher : {launcher.get('path', 'unknown')} "
             f"({'present' if launcher.get('present') else 'MISSING'})",
-            "next     : python -m prototype.main --launch -- -ModelPatch   "
-            "# starts dsh with the customization patch",
+            "next     : python -m prototype.main --launch   "
+            "# starts the local omp launcher",
             "",
             "Reported values are measured or explicitly unknown: no run, token count, cost",
             "or verification result is invented here.",
@@ -122,7 +121,7 @@ def render_text(status: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def launch(status: Dict[str, Any], title: str = "DeepSeek Harness — status") -> int:
+def launch(status: Dict[str, Any], title: str = "Local Harness — status") -> int:
     """Open the optional read-only status window. Makes no request, binds no socket."""
     try:
         import tkinter as tk
@@ -145,7 +144,7 @@ def launch(status: Dict[str, Any], title: str = "DeepSeek Harness — status") -
     )
     ttk.Label(
         header,
-        text="The application UI is dsh. This window only displays what the engine measured; "
+        text="This window only displays what the engine measured; "
              "it starts no run and makes no network call.",
         font=("Segoe UI", 9),
         wraplength=940,

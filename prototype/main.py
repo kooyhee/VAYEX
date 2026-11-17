@@ -1,21 +1,19 @@
-"""Python pre-flight / status helper for the DeepSeek Harness customization layer.
+"""Python pre-flight / status helper for the local harness engine.
 
-The application's UI is DeepSeek Harness (``dsh``) itself; this module is not a UI.
-It opens no window, runs no agent loop and binds no socket. It exists so a person or
-a script can ask, in one command and with the runtime not yet installed:
+This module is not a UI. It opens no window, runs no agent loop and binds no socket.
+It exists so a person or a script can ask, in one command:
 
 * which hardware is detected and which execution tier that maps to
   (:func:`engine.hardware_profiler.detect_hardware` /
   :func:`engine.hardware_profiler.determine_local_tier`),
 * which curated preset a fresh session would start with
-  (:meth:`engine.registry.ModelIntelligenceRegistry.app_bundle_info` plus the
-  tier-aware choice in :mod:`engine.dsh_profile`),
+  (:meth:`engine.registry.ModelIntelligenceRegistry.app_bundle_info`),
 * which execution route and endpoint host are active, resolved exactly as
   :meth:`engine.lm_client.LmClient.from_env` resolves them — or an explicit
   "not configured" reason with no placeholder host or model,
 * which of the two tracks a prompt takes
   (:meth:`engine.decision_planner.IntelligencePlanner.classify_execution_track`),
-* and, with ``--launch``, to start the real runtime through ``scripts/launch.ps1``.
+* and, with ``--launch``, to start the real runtime through ``launch.ps1``.
 
 Honesty rules in force here: no fabricated diff, token count, cost, "PASSED" string
 or savings comparison; a missing value is reported as unknown or as an explicit
@@ -26,7 +24,7 @@ Usage::
     python -m prototype.main                 # human-readable pre-flight
     python -m prototype.main --json          # one JSON object on stdout
     python -m prototype.main --track --prompt "fix the typo in src/app.py"
-    python -m prototype.main --launch --dry-run     # passthrough to launch.ps1
+    python -m prototype.main --launch -- -DryRun    # passthrough to launch.ps1
 """
 from __future__ import annotations
 
@@ -52,7 +50,7 @@ from harness import ui  # noqa: E402
 SCHEMA = "harness-status/1"
 ROUTES = tuple(route.value for route in ExecutionRoute)
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
-LAUNCHER = _PROJECT_ROOT / "scripts" / "launch.ps1"
+LAUNCHER = _PROJECT_ROOT / "launch.ps1"
 
 
 def _netloc(url: str) -> str:
@@ -108,14 +106,9 @@ def preset_status(
     route: str,
     tier_info: Any,
 ) -> Dict[str, Any]:
-    """Curated app preset plus the model a fresh DSH session would start on.
-
-    The tier-aware model choice comes from :func:`engine.dsh_payload.build_customization_payload`,
-    which is owned by another worker. If it is unavailable, the fallback is the app's
-    primary model and the substitution is named in ``selection_source`` — never hidden.
-    """
+    """Curated app preset from ``registry.app_bundle_info``."""
     bundle = dict(registry.app_bundle_info())
-    status: Dict[str, Any] = {
+    return {
         "release_version": bundle.get("release_version", "unknown"),
         "gateway_mode": bundle.get("gateway_mode", "unknown"),
         "primary_model": bundle.get("primary_model", "unknown"),
@@ -125,25 +118,6 @@ def preset_status(
         "endpoint_env": {},
         "selection_source": "registry.app_bundle_info (primary model)",
     }
-    try:
-        from engine.dsh_payload import build_customization_payload
-
-        payload = build_customization_payload(
-            route=route, hardware_tier=tier_info, registry=registry
-        )
-        status.update(
-            {
-                "selected_model": payload.get("selected_model"),
-                "background_model_id": payload.get("background_model_id"),
-                "endpoint_env": dict(payload.get("endpoint_env") or {}),
-                "selection_source": "engine.dsh_payload.build_customization_payload",
-            }
-        )
-    except Exception as exc:  # missing module, unknown route, registry drift
-        status["selection_source"] = (
-            f"registry.app_bundle_info (engine.dsh_payload unavailable: {type(exc).__name__})"
-        )
-    return status
 
 
 def memory_status() -> Dict[str, str]:
@@ -213,14 +187,14 @@ def collect(prompt: Optional[str] = None) -> Dict[str, Any]:
     return status
 
 
-def launch_dsh(extra: Sequence[str]) -> int:
-    """Start the real runtime through ``scripts/launch.ps1``; report its exit code."""
+def launch_runtime(extra: Sequence[str]) -> int:
+    """Start the real runtime through ``launch.ps1``; report its exit code."""
     if not LAUNCHER.is_file():
         print(f"launcher missing: {LAUNCHER}", file=sys.stderr)
         return 2
     if os.name != "nt":
         print(
-            f"scripts/launch.ps1 needs PowerShell (Windows); run dsh directly: npx @deepseek-ai/dsh web",
+            "launch.ps1 needs PowerShell (Windows)",
             file=sys.stderr,
         )
         return 2
@@ -236,29 +210,29 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="python -m prototype.main",
         description=(
-            "DeepSeek Harness pre-flight/status helper. The application UI is dsh; "
-            "this prints measured status or starts the runtime for you."
+            "Local harness pre-flight/status helper; "
+            "prints measured status or starts the omp runtime."
         ),
         epilog=(
             "Examples:\n"
             "  python -m prototype.main --json\n"
             '  python -m prototype.main --track --prompt "add a test for divide"\n'
-            "  python -m prototype.main --launch --dry-run\n"
-            "  python -m prototype.main --launch -- -ModelPatch -Port 3123"
+            "  python -m prototype.main --launch -- -DryRun\n"
+            "  python -m prototype.main --launch -- -Port 4317"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--json", action="store_true", help="print one JSON object instead of text")
     parser.add_argument("--track", action="store_true",
-                        help="classify the two-track label for --prompt (or $DSH_PROMPT)")
+                        help="classify the two-track label for --prompt (or $HARNESS_PROMPT)")
     parser.add_argument("--prompt", default=None,
-                        help="prompt to classify; implies --track; defaults to $DSH_PROMPT")
+                        help="prompt to classify; implies --track; defaults to $HARNESS_PROMPT")
     parser.add_argument("--view", action="store_true",
                         help="open the optional read-only Tk status window (no calls, no sockets)")
     parser.add_argument("--launch", action="store_true",
-                        help="run scripts/launch.ps1 (everything after -- is passed to it)")
+                        help="run launch.ps1 (everything after -- is passed to it)")
     parser.add_argument("passthrough", nargs=argparse.REMAINDER,
-                        help="arguments forwarded to scripts/launch.ps1 (after --)")
+                        help="arguments forwarded to launch.ps1 (after --)")
     return parser.parse_args(argv)
 
 
@@ -269,11 +243,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         extra = list(args.passthrough)
         if extra and extra[0] == "--":
             extra = extra[1:]
-        return launch_dsh(extra)
+        return launch_runtime(extra)
 
     prompt: Optional[str] = None
     if args.track or args.prompt is not None:
-        prompt = args.prompt if args.prompt is not None else os.environ.get("DSH_PROMPT", "")
+        prompt = args.prompt if args.prompt is not None else os.environ.get("HARNESS_PROMPT", "")
 
     try:
         status = collect(prompt)

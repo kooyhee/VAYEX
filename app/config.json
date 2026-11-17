@@ -24,8 +24,8 @@
     "route": {"default": "any_cloud"},
     "quota": {
       "identity_header": "x-user-id",
-      "requests_per_day": 200,
-      "tokens_per_day": 200000,
+      "requests_per_day": null,
+      "tokens_per_day": null,
       "ledger_path": "./data/quota-ledger.json"
     },
     "logging": {"level": "info", "file": null, "log_request_bodies": false},

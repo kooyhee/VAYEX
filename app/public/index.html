@@ -163,10 +163,6 @@
           <span class="tl-verify" id="timeline-verify" data-state="unknown">검증 기록 없음</span>
           <span class="tl-prov" id="timeline-provenance" data-source="structural" hidden></span>
           <span class="tl-count" id="activity-count" title="이 작업에서 요약한 일지 수">일지 0줄</span>
-          <div class="seg small" id="timeline-modes" role="group" aria-label="일지 보기">
-            <button type="button" class="seg-btn" id="timeline-grouped" aria-pressed="true" aria-label="목적 중심 일지로 보기"><svg class="ic"><use href="#ic-list"/></svg><span>일지</span></button>
-            <button type="button" class="seg-btn" id="timeline-chrono" aria-pressed="false" aria-label="원본 사건 기록으로 보기"><svg class="ic"><use href="#ic-timer"/></svg><span>원본</span></button>
-          </div>
         </div>
         <div class="agents-body tl-body" id="timeline-body">
           <ul class="journal-list" id="journal-rows" role="list" aria-label="AI가 한 일을 목적과 결과로 요약한 일지"></ul>
@@ -425,28 +421,6 @@
 
       <div class="inspector-scroll viz-doc-pane" id="pane-visualize" role="tabpanel" aria-labelledby="tab-visualize" hidden>
         <section class="panel doc-panel" id="card-viz-doc">
-          <div class="panel-head">
-            <span class="panel-title"><svg class="ic"><use href="#ic-book"/></svg>세션 문서 생성</span>
-            <span class="panel-tag" id="viz-report-tag">HTML · PDF</span>
-          </div>
-          <p class="panel-sub">세션 기록으로 결과 문서를 만듭니다.</p>
-          <!-- Guides `forms` (2–5 mutually exclusive options are native radio buttons) and
-               `tabs` (this changes a generation parameter; it swaps no panel): one radio
-               group with four labels, each pill being the label of its own radio. -->
-          <fieldset class="doc-type-pills" id="viz-doc-types">
-            <legend class="sr-only">문서 유형</legend>
-            <label class="doc-type" data-doc-type="report"><input type="radio" name="doc-type" value="report" checked aria-describedby="hint-doc-report"><svg class="ic"><use href="#ic-file"/></svg><span>작업 결과 보고서</span></label>
-            <label class="doc-type" data-doc-type="study"><input type="radio" name="doc-type" value="study" aria-describedby="hint-doc-study"><svg class="ic"><use href="#ic-book"/></svg><span>선행 연구·기술 검토</span></label>
-            <label class="doc-type" data-doc-type="spec"><input type="radio" name="doc-type" value="spec" aria-describedby="hint-doc-spec"><svg class="ic"><use href="#ic-list"/></svg><span>시스템 아키텍처 명세서</span></label>
-            <label class="doc-type" data-doc-type="summary"><input type="radio" name="doc-type" value="summary" aria-describedby="hint-doc-summary"><svg class="ic"><use href="#ic-spark"/></svg><span>경영진·심사위원 1장 요약</span></label>
-          </fieldset>
-          <div class="doc-actions">
-            <button type="button" class="btn small primary" id="viz-doc-generate"><svg class="ic"><use href="#ic-spark"/></svg>문서 생성</button>
-            <button type="button" class="btn small" id="viz-doc-fullscreen" disabled><svg class="ic"><use href="#ic-maximize"/></svg>전체 화면 보기</button>
-            <button type="button" class="btn small" id="viz-doc-open" disabled><svg class="ic"><use href="#ic-eye"/></svg>새 탭에서 열기</button>
-            <button type="button" class="btn small" id="viz-doc-save" disabled><svg class="ic"><use href="#ic-download"/></svg>HTML 저장</button>
-            <button type="button" class="btn small" id="viz-doc-pdf" disabled><svg class="ic"><use href="#ic-download"/></svg>PDF 내보내기</button>
-          </div>
           <div class="viz-doc-stage" id="viz-doc-stage">
             <div class="viz-doc-empty" id="viz-doc-empty">
               <svg class="ic"><use href="#ic-book"/></svg>
@@ -455,7 +429,7 @@
             </div>
             <iframe id="viz-doc-frame" title="세션 결과 문서 미리보기" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
           </div>
-          <p class="viz-note" id="viz-doc-status" role="status">문서 유형을 고르고 ‘문서 생성’을 누르면 이 자리에 미리보기가 열립니다.</p>
+          <p class="viz-note" id="viz-doc-status" role="status">세션 작업이 기록되면 이 자리에 문서 미리보기가 자동으로 열립니다.</p>
         </section>
         <section class="panel doc-list-panel">
           <div class="panel-head">

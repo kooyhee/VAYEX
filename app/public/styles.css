@@ -723,13 +723,14 @@ body[data-inspector=closed] .inspector{display:none}
 
 /* Task summary card in agent panel */
 .task-summary{border:1px solid var(--line);border-radius:9px;background:var(--card);padding:7px 10px;margin-bottom:6px;display:flex;flex-direction:column;gap:3px}
-.ts-main{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ts-name{font-size:12.5px;font-weight:600;color:var(--md-sys-neutral-f0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ts-state{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--line-2);color:var(--md-sys-neutral-b0)}
-.ts-state[data-state=running]{color:var(--md-sys-tint-c3d8fb);border-color:rgb(var(--md-sys-rgb-blue) / .45)}
-.ts-state[data-state=done]{color:var(--md-sys-tint-b7dcc2);border-color:rgb(var(--md-sys-rgb-green) / .45)}
-.ts-state[data-state=failed]{color:var(--md-sys-tint-f0b5ad);border-color:rgb(var(--md-sys-rgb-red) / .45)}
-.ts-meta{font-size:11px;color:var(--md-sys-neutral-9a);line-height:1.45;margin:0}
+.ts-kicker{font-size:10.5px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.ts-main{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.ts-name{font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ts-state{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);flex:none}
+.ts-state[data-state=running]{color:var(--accent);border-color:color-mix(in oklab, var(--accent) 45%, transparent)}
+.ts-state[data-state=done]{color:var(--success);border-color:color-mix(in oklab, var(--success) 45%, transparent)}
+.ts-state[data-state=failed]{color:var(--danger);border-color:color-mix(in oklab, var(--danger) 45%, transparent)}
+.ts-meta{font-size:11.5px;color:var(--ink-2);line-height:1.45;margin:0;overflow-wrap:anywhere}
 .ts-verify{font-size:11px;color:var(--md-sys-neutral-a0);margin:0;line-height:1.4}
 .ts-verify[data-state=passed]{color:var(--green)}
 .ts-verify[data-state=failed]{color:var(--md-sys-tint-f0b5ad)}
@@ -773,7 +774,9 @@ body[data-inspector=closed] .inspector{display:none}
 .tl-files{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
 .tl-files-head{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--md-sys-neutral-a0);font-weight:600}
 
-.center-head h1{font-size:13.5px;font-weight:600;color:var(--md-sys-neutral-f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:120px;flex:1}
+/* The header owns the one title a reader reads whole: it wraps between its own words
+   instead of being clipped to a `…` stub. The recent list may clip its own row. */
+.center-head h1{font-size:13.5px;font-weight:600;color:var(--md-sys-neutral-f0);white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3;min-width:0;flex:1 1 auto}
 .status-pill{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;border-radius:999px;border:1px solid var(--line-2);font-size:11px;color:var(--md-sys-neutral-c8);white-space:nowrap}
 .status-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--md-sys-neutral-8a);flex:none}
 .status-pill[data-state=ready]{color:var(--md-sys-tint-b7dcc2);border-color:rgb(var(--md-sys-rgb-green) / .35)}
@@ -888,7 +891,9 @@ body[data-inspector=closed] .inspector{display:none}
 .agent-meta{flex-wrap:wrap}
 .agent-meta .dur{margin-left:auto;font-variant-numeric:tabular-nums;padding-left:8px}
 .agent-meta .sep::before{content:"·";margin-right:6px;color:var(--md-sys-neutral-5f)}
-.agent-note{margin-top:4px;font-size:11.5px;color:var(--md-sys-neutral-a0)}
+.agent-note,.agent-edge{margin-top:4px;font-size:11.5px;color:var(--ink-2);line-height:1.4;overflow-wrap:anywhere}
+/* A row read from the recorded call log says so, so it is never mistaken for a live registry entry. */
+.agent-source{flex:none;font-size:11px;line-height:1.5;padding:0 6px;border-radius:5px;border:1px dashed color-mix(in oklab, var(--ink) 32%, transparent);color:var(--ink-2);white-space:nowrap}
 .agent-detail{margin-top:6px;font-size:11.5px;color:var(--md-sys-neutral-9f);white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid var(--line);padding-top:6px}
 .agent-empty{font-size:11.5px;color:var(--md-sys-neutral-8f);padding:6px 2px 2px;line-height:1.5}
 .agent-graph{position:relative;height:180px;border:1px solid var(--line);border-radius:10px;background:var(--md-sys-neutral-22)}
@@ -1603,7 +1608,7 @@ main.center > .timeline-card #timeline-body{max-height:185px;overflow-y:auto;scr
 #pane-agents .agents-card{margin:10px 12px 0}
 .approvals{width:min(1080px,96%);padding:0 18px}
 .center-head{padding:6px 16px;min-height:48px;height:auto;row-gap:4px}
-.center-head h1{font-size:14px;min-width:140px}
+.center-head h1{font-size:14px}
 
 /* Minimal start screen */
 .thread-empty{align-items:flex-start;padding:12px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);position:relative;overflow:hidden;gap:4px}
@@ -1685,9 +1690,6 @@ body[data-inspector-mode=fullscreen] .insp-head-tools{margin-left:auto}
 .journal-detail li{display:flex;gap:7px;align-items:baseline;min-width:0;flex-wrap:wrap}
 .journal-detail .act-time{flex:none}
 .journal-detail .journal-path{font-family:var(--mono);font-size:10.5px;overflow-wrap:anywhere}
-.journal-verify{display:flex;align-items:center;gap:6px;font-size:11px;color:color-mix(in oklab, var(--ink) 62%, var(--surface-1));border-top:1px dashed var(--line);padding-top:5px;flex-wrap:wrap}
-.journal-verify[data-state=passed]{color:var(--success)}
-.journal-verify[data-state=failed]{color:var(--danger)}
 .journal-empty{font-size:12px;line-height:1.6;color:color-mix(in oklab, var(--ink) 62%, var(--surface-1));padding:10px 4px;margin:0}
 .tl-verify{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;border:1px solid var(--line-2);font-size:10.5px;color:color-mix(in oklab, var(--ink) 72%, var(--surface-1));white-space:nowrap;flex:none}
 .tl-verify[data-state=passed]{color:var(--success);border-color:color-mix(in oklab, var(--success) 45%, transparent)}
@@ -1699,38 +1701,20 @@ body[data-inspector-mode=fullscreen] .insp-head-tools{margin-left:auto}
 /* --- live work indicator ------------------------------------------------- */
 /* A turn can think for more than ten seconds; a card that holds perfectly still
    reads as a frozen frame on a screen recording. While `data-busy` is set the
-   journal body paints its own background layer — a soft accent band travelling
+   journal body paints its own background layer — an accent band travelling
    right-to-left — instead of an overlay, so it sits *behind* every row and the
-   text keeps full contrast. It stays inside the body box: clear of the header
-   (and its 일지/원본 mode buttons) and inside the card's rounded frame. The
-   animation is pure CSS, so it keeps repainting without a JavaScript frame loop. */
+   text keeps full contrast. The band has to survive a luma downsample of the
+   whole frame, so its contrast is deliberate rather than decorative (.06 -> .28
+   on the theme accent is still far below the ink it sits behind). It stays
+   inside the body box: clear of the header (and its 일지/원본 mode buttons) and
+   inside the card's rounded frame. The animation is pure CSS, so it keeps
+   repainting without a JavaScript frame loop. */
 .timeline-card{position:relative}
 .tl-elapsed{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;border:1px solid rgb(var(--md-sys-rgb-blue) / .34);background:rgb(var(--md-sys-rgb-blue) / .08);color:var(--md-sys-color-on-primary-container);font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
-.timeline-card[data-busy=true] #timeline-body{
-  background-image:linear-gradient(100deg,
-    transparent 24%,
-    rgb(var(--md-sys-rgb-blue) / .04) 38%,
-    rgb(var(--md-sys-rgb-blue) / .15) 50%,
-    rgb(var(--md-sys-rgb-blue) / .04) 62%,
-    transparent 76%);
-  background-size:220% 100%;
-  background-repeat:no-repeat;
-  background-attachment:scroll;
-  background-position:0% 0;
-  animation:tl-work-sweep 3s linear infinite;
-}
-@keyframes tl-work-sweep{
-  from{background-position:0% 0}
-  to{background-position:100% 0}
-}
-/* Reduced motion: the card still reads as working, but nothing moves. */
-@media (prefers-reduced-motion:reduce){
-  .timeline-card[data-busy=true] #timeline-body{animation:none;background-position:50% 0}
-}
 
 /* --- document visualization --------------------------------------------- */
 .viz-doc-pane{display:flex;flex-direction:column;gap:0}
-.doc-panel{display:flex;flex-direction:column;gap:8px}
+.doc-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
 /* Guides `forms` (2–5 exclusive options are native radio buttons) and
    `style-parent-with-has` (style the pill from the checked input, with the mirrored
    data-selected attribute as the documented fallback): the pill stays the label of its
@@ -1747,12 +1731,25 @@ body[data-inspector-mode=fullscreen] .insp-head-tools{margin-left:auto}
 .doc-type:has(input:focus-visible){outline:2px solid var(--blue);outline-offset:2px}
 .doc-actions{display:flex;flex-wrap:wrap;gap:5px}
 .doc-actions .btn small .ic{width:12px;height:12px}
-.viz-doc-stage{position:relative;display:flex;min-height:320px;aspect-ratio:10 / 13;border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
-.viz-doc-stage iframe{flex:1;width:100%;height:100%;border:0;background:var(--surface-2)}
-.viz-doc-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:20px;text-align:center;color:color-mix(in oklab, var(--ink) 62%, var(--surface-1));background:var(--surface-1);word-break:keep-all;font-size:12px;line-height:1.5}
+.viz-doc-stage{position:relative;isolation:isolate;display:flex;flex:1 1 auto;min-height:360px;border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
+/* The frame and the empty state live inside their own stacking context: neither can
+   paint over the pane's pills, action buttons or status line above the stage. */
+/* The frame and the empty state live inside their own stacking context: neither can
+   paint over the pane's pills, action buttons or status line above the stage. The two
+   frames overlap: the shown one is on top, the ready buffer loads behind it, so a new
+   document never appears as a blank navigation. */
+.viz-doc-stage iframe{position:absolute;inset:0;z-index:1;width:100%;height:100%;border:0;background:var(--surface-2);pointer-events:none}
+.viz-doc-stage #viz-doc-frame{z-index:2;pointer-events:auto}
+.viz-doc-empty{position:absolute;z-index:3;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:20px;text-align:center;color:color-mix(in oklab, var(--ink) 62%, var(--surface-1));background:var(--surface-1);word-break:keep-all;font-size:12px;line-height:1.5}
 .viz-doc-empty .ic{width:26px;height:26px;color:var(--accent)}
 .viz-doc-empty strong{font-size:13px;color:var(--ink)}
 .viz-doc-empty b{color:var(--accent)}
+/* The status line names what the pane is showing (auto version / manual / empty):
+   keep it readable on the light chair in daylight instead of a faint grey. */
+#viz-doc-status{min-height:1.5em;line-height:1.5;font-size:11.5px;color:var(--ink-2)}
+:root[data-theme=daylight] #viz-doc-status{color:var(--ink)}
+:root[data-theme=daylight] .viz-doc-empty{color:color-mix(in oklab, var(--ink) 82%, var(--surface-1))}
+:root[data-theme=daylight] .viz-doc-empty strong{color:var(--ink)}
 .doc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:12px}
 .doc-list li.agent-empty{display:block}
 .doc-list-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card);min-width:0}
@@ -1850,7 +1847,6 @@ body[data-inspector-mode=fullscreen] .viz-doc-pane{padding-bottom:0}
 .act-l2,.ts-meta,.ts-verify,.insp-hint,.preview-note,.viz-note,.review-hint{color:var(--ink-2)}
 .thread-empty-desc,.agent-empty,.journal-empty,.panel-sub,.act-empty,.tl-empty{color:var(--ink-2)}
 .panel-title{font-size:12.5px}
-.journal-verify{font-size:11.5px;color:var(--ink-2)}
 .status-pill .dot,.run-chip .dot{opacity:1}
 
 /* --- narrow shell: the side panels become drawers ------------------------ */

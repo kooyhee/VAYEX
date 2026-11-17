@@ -924,3 +924,71 @@ export function privacyLine(record) {
   ].filter(Boolean).join(' · ');
   return { text, title };
 }
+
+/** Merge consecutive/same-turn privacy records with matching turn, action and sent state. */
+export function mergePrivacyRecords(records) {
+  const groups = new Map();
+  for (const record of records) {
+    if (!record) continue;
+    const key = `${record.turn ?? ''}:${record.action}:${record.sent}`;
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, {
+        ...record,
+        rules: [...record.rules],
+        counts: { ...record.counts },
+        fields: [...record.fields],
+      });
+      continue;
+    }
+    for (const rule of record.rules) {
+      if (!existing.rules.includes(rule)) existing.rules.push(rule);
+      const added = Number(record.counts?.[rule]);
+      existing.counts[rule] = (existing.counts[rule] ?? 0) + (Number.isInteger(added) && added > 0 ? added : 1);
+    }
+    for (const field of record.fields) {
+      if (!existing.fields.includes(field)) existing.fields.push(field);
+    }
+    if (existing.fingerprint !== record.fingerprint) existing.fingerprint = null;
+    if (existing.code !== record.code) existing.code = existing.code ?? record.code;
+  }
+  return [...groups.values()];
+}
+
+/** An assistant message whose whole turn reported tool calls and no text at all. */
+export function textlessAssistant(entry) {
+  return entry?.message?.role === 'assistant' && !String(entry.message.text ?? '').trim();
+}
+
+/** One transcript unit: a single visible entry, or a whole run of tool calls (plus the
+    textless notices that rode along with them) that collapses into one line, with any
+    same-turn privacy notices merged cleanly after the tool batch. */
+export function transcriptSegments(entries) {
+  const segments = [];
+  let runTools = [];
+  let runPrivacy = [];
+  const flushRun = () => {
+    if (runTools.length) {
+      segments.push({ foldable:true, entries:runTools });
+      runTools = [];
+    }
+    if (runPrivacy.length) {
+      for (const privacy of mergePrivacyRecords(runPrivacy)) {
+        segments.push({ foldable:false, entry:{ order:privacy.order, privacy } });
+      }
+      runPrivacy = [];
+    }
+  };
+  for (const entry of entries) {
+    if (entry.tool || textlessAssistant(entry)) {
+      runTools.push(entry);
+    } else if (entry.privacy) {
+      runPrivacy.push(entry.privacy);
+    } else {
+      flushRun();
+      segments.push({ foldable:false, entry });
+    }
+  }
+  flushRun();
+  return segments;
+}

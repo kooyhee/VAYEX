@@ -63,6 +63,9 @@ function emptyCounters() {
 export class QuotaLedger {
   // `fileSystem` exists so a test can make the atomic replace fail without an
   // external handle holding the ledger open; production always gets node:fs.
+  // `requestsPerDay` / `tokensPerDay` are `null` when the operator asked for no
+  // cap. Counting, reservations and persistence do not depend on the cap, so an
+  // uncapped ledger is the same ledger minus the two refusal branches.
   constructor({ ledgerPath, requestsPerDay, tokensPerDay, clock = () => new Date(), fileSystem = fs }) {
     this.ledgerPath = ledgerPath;
     this.requestsPerDay = requestsPerDay;
@@ -170,8 +173,8 @@ export class QuotaLedger {
         video_completions: counters.video_completions,
       },
       remaining: {
-        requests: Math.max(0, this.requestsPerDay - counters.requests),
-        tokens: Math.max(0, this.tokensPerDay - counters.tokens),
+        requests: this.requestsPerDay === null ? null : Math.max(0, this.requestsPerDay - counters.requests),
+        tokens: this.tokensPerDay === null ? null : Math.max(0, this.tokensPerDay - counters.tokens),
       },
     };
   }
@@ -179,13 +182,18 @@ export class QuotaLedger {
   exceeded(identity, counters, message, limitHeader) {
     const error = new GatewayError(429, 'quota_exceeded', message,
       { type: 'rate_limit_error', detail: this.snapshot(identity) });
-    error.headers = {
+    // A refusal can only come from a capped dimension, so an uncapped dimension
+    // is reported by omitting its headers rather than by inventing a number.
+    const headers = {
       [limitHeader]: '0',
-      'x-ratelimit-limit-requests': String(this.requestsPerDay),
-      'x-ratelimit-limit-tokens': String(this.tokensPerDay),
-      'x-ratelimit-remaining-requests': String(Math.max(0, this.requestsPerDay - counters.requests)),
       'retry-after': String(this.secondsUntilReset()),
     };
+    if (this.requestsPerDay !== null) {
+      headers['x-ratelimit-limit-requests'] = String(this.requestsPerDay);
+      headers['x-ratelimit-remaining-requests'] = String(Math.max(0, this.requestsPerDay - counters.requests));
+    }
+    if (this.tokensPerDay !== null) headers['x-ratelimit-limit-tokens'] = String(this.tokensPerDay);
+    error.headers = headers;
     return error;
   }
 
@@ -197,14 +205,21 @@ export class QuotaLedger {
   // rather than clamping the reservation and forwarding an unbacked budget.
   reserve(identity, { tokens = 0 } = {}) {
     const counters = this.bucket(identity, { create: true });
-    if (this.requestsPerDay - counters.requests - counters.reserved_requests <= 0) {
+    // `null` is an uncapped dimension: no refusal branch is evaluated for it, but
+    // the reservation below is still taken and persisted exactly as before.
+    const requestRemaining = this.requestsPerDay === null
+      ? null
+      : this.requestsPerDay - counters.requests - counters.reserved_requests;
+    if (requestRemaining !== null && requestRemaining <= 0) {
       throw this.exceeded(identity, counters,
         `daily request cap reached for identity ${identity}: ${counters.requests} of ${this.requestsPerDay} requests used today; resets at 00:00 UTC`,
         'x-ratelimit-remaining-requests');
     }
-    const tokenRemaining = this.tokensPerDay - counters.tokens - counters.reserved_tokens;
+    const tokenRemaining = this.tokensPerDay === null
+      ? null
+      : this.tokensPerDay - counters.tokens - counters.reserved_tokens;
     const requestedTokens = tokens > 0 ? tokens : 0;
-    if (tokenRemaining <= 0 || tokenRemaining < requestedTokens) {
+    if (tokenRemaining !== null && (tokenRemaining <= 0 || tokenRemaining < requestedTokens)) {
       throw this.exceeded(identity, counters,
         `daily token cap reached for identity ${identity}: ${counters.tokens} of ${this.tokensPerDay} tokens used today (with ${counters.reserved_tokens} reserved, ${tokenRemaining} available, ${requestedTokens} requested); resets at 00:00 UTC`,
         'x-ratelimit-remaining-tokens');

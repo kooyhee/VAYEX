@@ -53,6 +53,16 @@ function integerAt(value, where, { min = 0, fallback = undefined } = {}) {
   return value;
 }
 
+// A daily cap is nullable. An absent key keeps the documented default so nothing
+// silently loosens, `null` is the operator's explicit "no cap", and an integer
+// keeps the bounded behaviour (min 1: a cap of 0 would refuse every request).
+function optionalCapAt(value, where, fallback) {
+  if (value === undefined) return fallback;
+  if (value === null) return null;
+  if (!Number.isInteger(value) || value < 1) fail(where, 'must be a positive integer or null');
+  return value;
+}
+
 function boolAt(value, where, fallback) {
   if (value === undefined && fallback !== undefined) return fallback;
   if (typeof value !== 'boolean') fail(where, 'must be a boolean');
@@ -152,8 +162,8 @@ export function parseConfig(raw, { configPath = '<memory>', baseDir = process.cw
   const quotaRaw = objectAt(raw.quota ?? {}, 'quota');
   const quota = {
     identityHeader: stringAt(quotaRaw.identity_header ?? 'x-user-id', 'quota.identity_header').toLowerCase(),
-    requestsPerDay: integerAt(quotaRaw.requests_per_day, 'quota.requests_per_day', { min: 1, fallback: 200 }),
-    tokensPerDay: integerAt(quotaRaw.tokens_per_day, 'quota.tokens_per_day', { min: 1, fallback: 200000 }),
+    requestsPerDay: optionalCapAt(quotaRaw.requests_per_day, 'quota.requests_per_day', 200),
+    tokensPerDay: optionalCapAt(quotaRaw.tokens_per_day, 'quota.tokens_per_day', 200000),
     ledgerPath: path.resolve(baseDir, stringAt(quotaRaw.ledger_path ?? './data/quota-ledger.json', 'quota.ledger_path')),
   };
 

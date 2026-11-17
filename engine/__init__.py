@@ -13,7 +13,6 @@ DeepSeek Harness는 OpenCodex 모델 게이트웨이를 앱 내부에 직접 내
 - ``fts5_memory``: SQLite FTS5 기반 하이브리드 컨텍스트 메모리
 - ``lm_client``: OpenAI 호환 스트리밍 클라이언트 (사용량 기반 비용)
 - ``runner`` / ``file_tools``: 모델 편집 실행 + 경로 격리/해시 검증/원자적 쓰기
-- ``dsh_payload``: DSH(dsh) 런처가 소비하는 단일 JSON 커스터마이징 페이로드
 """
 from .hardware_profiler import (
     HardwareSpec,

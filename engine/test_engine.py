@@ -107,7 +107,7 @@ except (ImportError, ValueError):
     )
 
 
-from engine.tests_stub import (TestEngineSafety, TestModelExecution, TestDshPayload,
+from engine.tests_stub import (TestEngineSafety, TestModelExecution,
                                temporary_workspace)
 
 #: 백그라운드 Bonsai 실행이 가능한(Tier 3) 가상 사양: RAM >= 32GB AND VRAM >= 12GB

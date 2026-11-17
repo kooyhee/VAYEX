@@ -286,7 +286,7 @@ table.compact-table th{padding:1.1mm 1.8mm}
 
     <div class="info-callout-grid">
       <div class="callout-card"><strong>기본 추론 경로와 실추론:</strong> 기본 업스트림은 번들 루프백 스텁(<code>demo-chat</code>)이며 응답은 <code>stub reply to: …</code> 형식의 스텁 문장이라 실제 코드를 생성하지 않는다. 실추론은 사용자가 설정한 OpenAI 호환 업스트림(<code>openrouter-zdr</code>, <code>a6api</code>)을 호스트가 직접 호출하며, 외부 공급자 호출은 <strong>미검증</strong>이다.</div>
-      <div class="callout-card"><strong>런타임 의존의 실제 범위:</strong> 이전 세대 데스크톱 에이전트 의존은 제거되었다. 로컬 실행은 <code>omp</code> 18.16.0에 의존하며, Bun과 <code>@oh-my-pi/pi-coding-agent</code> 코어는 저장소 <code>.omp-runtime\</code>에 이미 있어 실행 시 내려받지 않는다. DSH는 <code>launch.cmd -Runtime dsh</code>로만 도달하는 선택 경로(핀 <code>0.2.1-rc.5</code>)다.</div>
+      <div class="callout-card"><strong>런타임 의존의 실제 범위:</strong> 이전 세대 데스크톱 에이전트 의존은 제거되었다. 로컬 실행은 <code>omp</code> 18.16.0에 의존하며, Bun과 <code>@oh-my-pi/pi-coding-agent</code> 코어는 저장소 <code>.omp-runtime\</code>에 이미 있어 실행 시 내려받지 않는다.</div>
     </div>
 
     <div class="sub-title" style="margin-top:2.6mm">1.4 구현 범위와 차별점</div>

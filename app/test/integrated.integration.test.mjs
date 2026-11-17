@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { writeFileSync } from 'node:fs';
 import { startRealFixture, attach } from './real-fixture.mjs';
 import { promptCommand, command } from '../public/protocol.js';
 
@@ -115,6 +116,36 @@ test('integrated quota persists reported and unknown usage and refuses the next 
   const over = await post(f,{ messages:messages('must not reach the fixture') });
   assert.equal(over.status,429); assert.equal(over.json.error.code,'quota_exceeded');
   assert.equal(f.requests.filter(r => r.body).length,2);
+});
+
+test('integrated uncapped quota reports null and admits usage beyond the old 200k default', { timeout:45000 }, async t => {
+  let seededPath = null;
+  const f = await startRealFixture({ configureInference:raw => {
+    // Seed the ledger this fixture will read with usage past the old defaults, so
+    // a bounded ledger would refuse the request below and an uncapped one cannot.
+    const day = new Date().toISOString().slice(0,10);
+    seededPath = raw.quota.ledger_path;
+    writeFileSync(seededPath,JSON.stringify({ version:1,users:{ 'local-user':{ [day]:{
+      requests:200,tokens:200001,unknown_usage:0,reserved_requests:0,reserved_tokens:0,
+      images:0,video_submissions:0,video_completions:0
+    } } } }));
+    return { ...raw,quota:{ ...raw.quota,requests_per_day:null,tokens_per_day:null } };
+  } }); t.after(() => f.close());
+
+  const config = await (await fetch(f.url + '/api/config')).json();
+  assert.equal(config.quota.requests_per_day,null);
+  assert.equal(config.quota.tokens_per_day,null);
+  assert.equal(config.quota.identity_header,'x-user-id');
+
+  const res = await post(f,{ messages:messages('beyond the old daily total'),max_tokens:100000 });
+  assert.equal(res.status,200,'an uncapped app must not refuse at the old 200k boundary');
+  assert.equal(res.json.gateway !== undefined,true);
+
+  const quota = JSON.parse(await readFile(seededPath,'utf8'));
+  const day = Object.keys(quota.users['local-user']).sort().at(-1);
+  const counters = quota.users['local-user'][day];
+  assert.equal(counters.reserved_tokens,0,'the uncapped reservation was still released on settle');
+  assert.ok(counters.tokens >= 200013,`reported usage was still counted (got ${counters.tokens})`);
 });
 
 test('integrated JSON SSE and substituted log fields are redacted without logging prompts', { timeout:15000 }, async t => {

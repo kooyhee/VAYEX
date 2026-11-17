@@ -9,18 +9,15 @@
 
 부스 시연의 영상 각본과 화면 순서는 `시연_영상_시나리오.md`에 정리되어 있습니다. 이 각본을 파일로 만드는 파이프라인은 `output/demo/`에 있습니다: `render.py`가 `scenes.final.json`의 장면 spec을 렌더링하고, 샷 목록과 화면 허용 숫자는 `shotlist.md`에 있습니다. 완성 마스터는 `output/demo/demo.16x9.mp4`(1920x1080)와 `output/demo/demo.9x16.mp4`(1080x1920)이며, 둘 다 60.000초·30 fps·H.264 High·faststart·오디오 없음·끊김 없는 루프이고 포스터 4장(`output/demo/poster.16x9.png`, `poster.16x9.card.png`, `poster.9x16.png`, `poster.9x16.card.png`)이 함께 있습니다. 렌더링 후 자체 검증 **255개 통과 / 0개 실패**를 마쳤고, 초기 독립 리뷰가 지적한 결함 3건(9:16 전환 구간의 두 패널 동시 노출, S7 자막의 루프 페이드 침범, 9:16 S3 헤더와 env 태그 겹침)은 재렌더링으로 수정한 뒤 검사기 항목으로 고정했습니다. 재렌더링·spec·화면 문구 규칙은 `output/demo/README.md`에 있습니다.
 
-루트 실행 진입점(`launch.cmd` / `launch.ps1`)은 기본값으로 `omp` 런타임을 기동합니다.
+루트 실행 진입점(`launch.cmd` / `launch.ps1`)은 `omp` 런타임을 기동합니다. `-Runtime` 값은 `omp`만 받으며, 그 밖의 값은 명확한 오류와 함께 중단합니다.
 
 | 런타임 | 기동 방법 | 구성 및 동작 개요 |
 | --- | --- | --- |
-| `omp` — **기본 로컬 하네스** | 루트 `launch.cmd` / `launch.ps1` (기본값), 또는 `app\launch.cmd` | `.omp-runtime\`에 내장된 Bun 기반 oh-my-pi `18.16.0`을 자식 프로세스로 실행하고, Node.js 기반 로컬 실행 환경(HTTP/WebSocket 브리지)이 이를 감쌉니다. 브리지는 작업 실행, 대화, 코드 리뷰, 실시간 웹 미리보기, 세션 리포트 시각화를 단일 작업 공간(`app\public\`)으로 제공합니다. 게이트웨이 라이브러리를 인프로세스로 직접 임포트하여 OpenAI 호환 추론 엔드포인트(`/v1/chat/completions`, `/v1/models`, `/v1/selection`, `/healthz`), DX API(`/api/dx/*`), 메모리 API(`/api/memory/*`), 로컬 인사이트 API(`/api/insight/*`), 세션 시각화 문서 생성기(`/api/visualize/html?session=&type=`, `/api/visualize/pdf?session=&type=`, `/api/visualize/list`)를 동일한 루프백 포트에서 서빙합니다. 상세 동작: `app/README.md`. |
-| `dsh` — DeepSeek Harness | `launch.cmd -Runtime dsh` (또는 `launch.ps1 -Runtime dsh`), 또는 `scripts\launch.ps1` | DeepSeek AI의 오픈소스 에이전트 하네스(`@deepseek-ai/dsh` npm 패키지) 기반 선택 경로입니다. 본 저장소는 라우팅 메타데이터, Cordis 패치 오버레이 및 기동 스크립트를 제공합니다. |
+| `omp` — **로컬 하네스** | 루트 `launch.cmd` / `launch.ps1` (기본값), 또는 `app\launch.cmd` | `.omp-runtime\`에 내장된 Bun 기반 oh-my-pi `18.16.0`을 자식 프로세스로 실행하고, Node.js 기반 로컬 실행 환경(HTTP/WebSocket 브리지)이 이를 감쌉니다. 브리지는 작업 실행, 대화, 코드 리뷰, 실시간 웹 미리보기, 세션 리포트 시각화를 단일 작업 공간(`app\public\`)으로 제공합니다. 게이트웨이 라이브러리를 인프로세스로 직접 임포트하여 OpenAI 호환 추론 엔드포인트(`/v1/chat/completions`, `/v1/models`, `/v1/selection`, `/healthz`), DX API(`/api/dx/*`), 메모리 API(`/api/memory/*`), 로컬 인사이트 API(`/api/insight/*`), 세션 시각화 문서 생성기(`/api/visualize/html?session=&type=`, `/api/visualize/pdf?session=&type=`, `/api/visualize/list`)를 동일한 루프백 포트에서 서빙합니다. 상세 동작: `app/README.md`. |
 
-`dsh`는 본 저장소의 자체 애플리케이션 런타임이 아니며 npm 패키지를 감싸는 보조 경로입니다. 저장소의 주 개발 대상은 `app/` 및 `gateway/`에 구현된 통합 로컬 하네스 시스템입니다.
+저장소의 주 개발 대상은 `app/` 및 `gateway/`에 구현된 통합 로컬 하네스 시스템입니다.
 
-런타임 라이선스 및 저작권 고지: `packaging/customization/THIRD_PARTY_NOTICES.md`.
-
-**로컬 환경 현황:** Node.js `v26.13.0`, npm `12.0.2` 설치됨. `omp` 코어는 `.omp-runtime\` (`node_modules\bun\bin\bun.exe`, `node_modules\@oh-my-pi\pi-coding-agent\dist\cli.js`)에 설치되어 있어 별도 다운로드 없이 즉시 기동됩니다. `dsh`는 글로벌 미설치 상태이므로 `-Runtime dsh` 실행 시 `npx --yes @deepseek-ai/dsh@0.2.1-rc.5`를 통해 호출됩니다.
+**로컬 환경 현황:** Node.js `v26.13.0`, npm `12.0.2` 설치됨. `omp` 코어는 `.omp-runtime\` (`node_modules\bun\bin\bun.exe`, `node_modules\@oh-my-pi\pi-coding-agent\dist\cli.js`)에 설치되어 있어 별도 다운로드 없이 즉시 기동됩니다.
 
 ---
 
@@ -28,7 +25,7 @@
 
 | 경로 | 역할 및 상세 |
 | --- | --- |
-| `launch.cmd` / `launch.ps1` | 루트 기동 진입점. `-Runtime` 인수로 `omp`(기본값) 또는 `dsh`를 선택하여 하위 스크립트로 위임합니다. |
+| `launch.cmd` / `launch.ps1` | 루트 기동 진입점. `omp` 런타임을 기동하며, `-Runtime`에 다른 값을 주면 명확한 오류로 중단합니다. |
 | `app/` | 로컬 하네스 호스트: Node.js 브리지 서버(`server.mjs`), 인프로세스 추론 서피스(`lib/inference.mjs`), 웹 UI 리소스(`public/`), 통합 테스트 suite. |
 | `app/memory/` | **장기 메모리 계층**: 로컬 임베딩(`Xenova/multilingual-e5-small`), SQLite FTS5 + 벡터 하이브리드 검색(RRF 융합), 6대 메모리 유형 관리, 비밀값 마스킹/프롬프트 주입 격리, OMP 확장(`extension.mjs`). |
 | `app/dx/` | **개발자 경험(DX) 계층**: 프로젝트 스택 자동 감지, Git 독립형 스냅샷/Diff/되돌리기, 자동 검증(auto-verify), 한국어 오류 해설, 작업 재개(task resume), 비용 분석. `/api/dx/*`로 노출. |
@@ -38,10 +35,10 @@
 | `gateway/` | 인프로세스 게이트웨이 라이브러리: 허용 목록(`allowlist.mjs`), 경로 정책(`policy.mjs`), 세션 핀(`session-pin.mjs`), TurnPlan 검증기(`turn-plan.mjs`), 3단계 프롬프트 캐시 레이어링(`prompt-cache.mjs`), 단가표(`cost-rates.mjs`). |
 | `booth/` | **경진대회 부스 시연 키트**: 예제 프로젝트(`sample-project`), 약 1.1초 원클릭 바이트 단위 멱등 원상복구 스크립트(`reset.ps1`), 부스 운영자 카드(`README.md`), (A) 상시 영상 + (B) 현장 실작업 세션 운영 자료. |
 | `.omp-runtime/` | 기설치된 Bun 런타임 및 oh-my-pi 코어 패키지. |
-| `packaging/customization/` | `catalog.json`(모델 라우팅 메타데이터), `cordis.patch.template.yml`(Cordis 패치 오버레이). |
-| `scripts/` | `install.ps1`, `launch.ps1`, `verify_customization.ps1`(무결성 검증 스크립트). |
+| `packaging/customization/` | `catalog.json`(모델 라우팅 메타데이터) 및 생성기(`generate_catalog.py`). |
+| `scripts/` | 벤치마크 러너(`benchmark-4env.mjs`, `benchmark-comparison.mjs`, `benchmark-live-*.mjs`), 공용 라이브러리(`lib/`), 픽스처·시드 스크립트. |
 | `output/demo/` | **부스 시연 영상 파이프라인**: `render.py`(장면 spec → 16:9·9:16 마스터), `scenes.final.json`(10장면), `shotlist.md`(샷 목록·화면 허용 숫자), `shots/`(장면 캡처), 빌드 로그, 완성 마스터 2종과 포스터 4장. 운영 안내: `output/demo/README.md`. |
-| `engine/`, `harness/`, `prototype/` | 초기 Python 엔진 및 Tkinter 프로토타입. 기본 실행 런타임(`omp`/`dsh`)에는 연결되지 않음. |
+| `engine/`, `harness/`, `prototype/` | 초기 Python 엔진 및 Tkinter 프로토타입. `omp` 실행 경로에는 연결되지 않음. |
 
 ---
 
@@ -266,34 +263,7 @@ powershell -ExecutionPolicy Bypass -File launch.ps1 -DryRun
 
 기동 성공 시 브라우저가 작업 공간을 자동으로 열며, 기동 로그에 표시된 로컬 주소를 그대로 사용하면 단일 워크벤치 환경이 열립니다. 새 부스 세션은 실제로 응답하는 라우트에서 시작하므로 첫 요청이 실패하지 않습니다.
 
-### 2. 선택적 `dsh` 런타임 기동
-
-```powershell
-# (1) 런타임 설치: 전역 npm / npx(미설치 상태 유지) / 소스 빌드
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Method Npx
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Method Source
-
-# (2) 기동: Cordis 패치 오버레이를 기본 첨부하며, 베이스 URL과 API 키 환경변수가 없으면 기동을 거부한다
-$env:HARNESS_LLM_BASE_URL = "<OpenAI 호환 엔드포인트>"
-$env:HARNESS_LLM_API_KEY  = "<API_KEY>"
-powershell -ExecutionPolicy Bypass -File launch.ps1 -Runtime dsh
-
-# (3) 오버레이 없이 dsh 자체 내장 공급자로 기동 (경고 출력)
-powershell -ExecutionPolicy Bypass -File launch.ps1 -Runtime dsh -NoModelPatch
-```
-
-`scripts\launch.ps1`은 `PATH`의 `dsh`, `npx --yes @deepseek-ai/dsh@<pin>`, `-SourcePath`로 지정한 로컬 빌드 순으로 런타임을 찾고, `packaging\customization\runtime.json`의 핀과 다른 버전이면 기동을 거부합니다. 오버레이 렌더링에 쓰이는 환경변수는 다음뿐입니다 (`omp` 경로는 이 변수들을 읽지 않는다).
-
-| 변수 | 의미 |
-| --- | --- |
-| `HARNESS_LLM_BASE_URL` | 패치에 기록되는 OpenAI 호환 베이스 URL (`-BaseUrl`로도 지정 가능). 비루프백 호스트는 https만 허용. |
-| `HARNESS_LLM_API_KEY` | 패치는 이 변수 이름만 참조하며 값은 디스크에 기록하지 않는다. |
-| `HARNESS_LOCAL_BASE_URL` / `HARNESS_LLM_MODEL` / `HARNESS_LLM_ROUTE` | Python 엔진 클라이언트(`engine/lm_client.py`)용 설정 (`local_only` / `zdr_cloud` / `any_cloud`). |
-
-Cordis 패치는 대상 행의 `config`를 통째로 대체(병합 아님)하므로, 오버레이를 첨부하면 `dsh`가 기본 제공하는 공급자 설정이 사라집니다. 게이트웨이만 쓰는 머신에서만 쓰거나 `-NoModelPatch`를 사용해야 합니다.
-
-### 3. 부스 예제 복구 실행
+### 2. 부스 예제 복구 실행
 
 ```powershell
 # 시연 후 예제 프로젝트 원상복구 (Git 불필요)
@@ -416,7 +386,7 @@ VAYEX 비용 배분: 이번 실행은 DeepSeek 라우팅 10회($0.0332413)와 Ge
    - 저장소에는 실제 대규모 LLM 가중치가 포함되어 있지 않으며, 기본 설정은 루프백 데모 스텁을 가리킵니다. 실무 환경에서는 외부 공급자 엔드포인트와 API 키 등록이 필수적입니다.
    - 백그라운드 SLM 레지스트리(`app/insight/local-model.mjs`)의 후보 `Qwen2.5-0.5B-Instruct`(q4f16, 461 MB ONNX)와 `Qwen3.5-0.8B`(q4f16, 520 MB ONNX) 가중치도 기본 번들 대상이 아니며, 이 머신에 설치되어 있지 않아 **미측정 후보**입니다. 설치 전까지 백그라운드 요약·제목·작업 일지·다이제스트는 **규칙 기반 폴백(rule-fallback)** 으로 동작합니다.
 4. **초기 Python 계층과의 런타임 분리**:
-   - `engine/`, `prototype/`, `harness/`에 존재하는 Python 코드는 Node/Bun 기반의 현재 `omp` 및 `dsh` 하네스 실행 경로와 내부적으로 연결되어 있지 않습니다.
+   - `engine/`, `prototype/`, `harness/`에 존재하는 Python 코드는 Node/Bun 기반의 현재 `omp` 하네스 실행 경로와 내부적으로 연결되어 있지 않습니다.
 5. **2환경 비교의 한정**:
    - Claude 행은 게이트웨이를 경유한 단일 모델 호출이며 Claude Code CLI 실행이 아닙니다. VAYEX 행은 역할 라우팅을 거친 복합 에이전트 경로입니다.
    - VAYEX 비용은 실행별 라우팅 대상에 따라 달라집니다. 이번 실행은 DeepSeek 10회·Gemini 2회였고, Claude로 간 실행은 0회였습니다. 역할 라우팅은 실행마다 다른 모델로 분배되므로 한 번의 측정으로 일반화하지 않으며, 표기하는 비용은 실행별 라우팅 대상의 공시 단가 × 측정 토큰으로 계산한 집계값입니다.

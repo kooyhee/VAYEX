@@ -140,10 +140,14 @@ test('role-routing: selectModel reports remote_decision vs local_fallback', () =
 
 test('role-routing: all 6 roles select combo/* decision model against real app/config.json with ready plane', async () => {
   const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
   const { parseConfig } = await import('../lib/config.mjs');
-  const rawText = readFileSync('app/config.json', 'utf8');
+  // Resolve from this test file, not the process cwd: `cd gateway` is a supported
+  // way to run this suite (`node --test test/*.test.mjs`).
+  const appDir = fileURLToPath(new URL('../../app/', import.meta.url));
+  const rawText = readFileSync(fileURLToPath(new URL('../../app/config.json', import.meta.url)), 'utf8');
   const rawJson = JSON.parse(rawText);
-  const realConfig = parseConfig(rawJson.inference, { baseDir: 'app' });
+  const realConfig = parseConfig(rawJson.inference, { baseDir: appDir });
 
   const readyPlane = {
     snapshot: () => ({

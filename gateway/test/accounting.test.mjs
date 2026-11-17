@@ -6,6 +6,8 @@ import path from 'node:path';
 import { accountRequest, costOf, recordOptimization, usageBreakdown } from '../lib/accounting.mjs';
 import { events, resetEvents } from '../lib/events.mjs';
 import { QuotaLedger } from '../lib/quota.mjs';
+import { ConfigError, parseConfig } from '../lib/config.mjs';
+import { stubConfig, tempDir } from './helpers.mjs';
 
 // A ledger write can fail with a Windows replace error while another handle
 // holds the file open without FILE_SHARE_DELETE. That trigger needs a real
@@ -278,4 +280,121 @@ test('accounting: an optimization event is flat and names its strategy', () => {
 
 test('accounting: an optimization without a strategy is refused', () => {
   assert.throws(() => recordOptimization({ tokensSaved: 5 }), /strategy/);
+});
+
+test('config: a null daily cap means no cap, a missing key keeps the default, and an explicit integer stays bounded', (t) => {
+  const dir = tempDir('quota-config-');
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const raw = stubConfig({
+    stubPort: 1,
+    dir,
+    overrides: { quota: { requests_per_day: null, tokens_per_day: null } },
+  });
+
+  const unlimited = parseConfig(raw, { baseDir: dir });
+  assert.equal(unlimited.quota.requestsPerDay, null);
+  assert.equal(unlimited.quota.tokensPerDay, null);
+  assert.equal(unlimited.quota.identityHeader, 'x-user-id');
+  assert.equal(unlimited.quota.ledgerPath, path.join(dir, 'quota-ledger.json'));
+
+  delete raw.quota.requests_per_day;
+  delete raw.quota.tokens_per_day;
+  const defaults = parseConfig(raw, { baseDir: dir });
+  assert.equal(defaults.quota.requestsPerDay, 200, 'a missing requests key keeps the old default');
+  assert.equal(defaults.quota.tokensPerDay, 200000, 'a missing tokens key keeps the old default');
+
+  raw.quota.requests_per_day = 10;
+  raw.quota.tokens_per_day = 1000;
+  const bounded = parseConfig(raw, { baseDir: dir });
+  assert.equal(bounded.quota.requestsPerDay, 10);
+  assert.equal(bounded.quota.tokensPerDay, 1000);
+
+  for (const value of [0, -1, 1.5, '200']) {
+    raw.quota.tokens_per_day = value;
+    assert.throws(
+      () => parseConfig(raw, { baseDir: dir }),
+      (error) => error instanceof ConfigError && /quota\.tokens_per_day/.test(error.message),
+      `${JSON.stringify(value)} is not a valid cap`,
+    );
+  }
+});
+
+test('accounting: null caps never refuse, still count past the old defaults, and report limits and remaining as null', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'quota-ledger-unlimited-'));
+  const ledgerPath = path.join(dir, 'quota-ledger.json');
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const ledger = new QuotaLedger({
+    ledgerPath,
+    requestsPerDay: null,
+    tokensPerDay: null,
+    clock: () => new Date('2026-11-14T00:00:00Z'),
+  });
+
+  // 201 requests and 201,000 tokens cross both old defaults (200 / 200,000).
+  for (let i = 0; i < 201; i += 1) {
+    const reservation = ledger.reserve('user-a', { tokens: 1000 });
+    assert.equal(reservation.reservedTokens, 1000, 'reservation accounting is unchanged when uncapped');
+    const counters = ledger.settle(reservation, { outcome: 'reported', tokens: 1000 });
+    assert.equal(counters.requests, i + 1);
+    assert.equal(counters.tokens, (i + 1) * 1000);
+  }
+  const snapshot = ledger.snapshot('user-a');
+  assert.equal(snapshot.used.requests, 201);
+  assert.equal(snapshot.used.tokens, 201000);
+  assert.equal(snapshot.limits.requests_per_day, null);
+  assert.equal(snapshot.limits.tokens_per_day, null);
+  assert.equal(snapshot.remaining.requests, null);
+  assert.equal(snapshot.remaining.tokens, null);
+
+  const persisted = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  const day = persisted.users['user-a']['2026-11-14'];
+  assert.equal(day.requests, 201);
+  assert.equal(day.tokens, 201000);
+  assert.equal(day.reserved_requests, 0);
+  assert.equal(day.reserved_tokens, 0);
+
+  // Unknown usage is still counted, and never rendered as zero tokens.
+  const unknown = ledger.reserve('user-b', { tokens: 0 });
+  const unknownCounters = ledger.settle(unknown, { outcome: 'unknown' });
+  assert.equal(unknownCounters.requests, 1);
+  assert.equal(unknownCounters.tokens, 0);
+  assert.equal(unknownCounters.unknown_usage, 1);
+  assert.equal(ledger.snapshot('user-b').remaining.tokens, null);
+});
+
+test('accounting: a null cap disables only that dimension, the other cap still refuses at its boundary', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'quota-ledger-mixed-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const clock = () => new Date('2026-11-14T00:00:00Z');
+
+  const requestsCapped = new QuotaLedger({
+    ledgerPath: path.join(dir, 'requests-capped.json'),
+    requestsPerDay: 2,
+    tokensPerDay: null,
+    clock,
+  });
+  for (let i = 0; i < 2; i += 1) {
+    const reservation = requestsCapped.reserve('user-a', { tokens: 5000 });
+    requestsCapped.settle(reservation, { outcome: 'reported', tokens: 5000 });
+  }
+  assert.equal(requestsCapped.snapshot('user-a').used.tokens, 10000, 'an uncapped token dimension never refuses');
+  assert.equal(requestsCapped.snapshot('user-a').limits.tokens_per_day, null);
+  assert.equal(requestsCapped.snapshot('user-a').remaining.tokens, null);
+  assert.equal(requestsCapped.snapshot('user-a').remaining.requests, 0);
+  assert.throws(() => requestsCapped.reserve('user-a', { tokens: 5000 }),
+    (error) => error.code === 'quota_exceeded', 'the capped request dimension still refuses');
+
+  const tokensCapped = new QuotaLedger({
+    ledgerPath: path.join(dir, 'tokens-capped.json'),
+    requestsPerDay: null,
+    tokensPerDay: 1,
+    clock,
+  });
+  const reservation = tokensCapped.reserve('user-a', { tokens: 1 });
+  tokensCapped.settle(reservation, { outcome: 'reported', tokens: 1 });
+  assert.equal(tokensCapped.snapshot('user-a').limits.requests_per_day, null);
+  assert.equal(tokensCapped.snapshot('user-a').remaining.requests, null);
+  assert.equal(tokensCapped.snapshot('user-a').remaining.tokens, 0);
+  assert.throws(() => tokensCapped.reserve('user-a', { tokens: 1 }),
+    (error) => error.code === 'quota_exceeded', 'the capped token dimension still refuses');
 });

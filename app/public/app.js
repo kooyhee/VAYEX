@@ -1,4 +1,4 @@
-import { createViewModel, applyFrame, promptCommand, command, approvalCommand, approvalLabel, approvalChoices, defaultApprovalValue, approvalIsGlobal, approvalActionText, approvalReasonText, pendingApprovalTool, approvalPreview, resetRoute, setConsent, nextOrder, subagentsCommand, statsCommand, thinkingLabel, assistantNote, addPendingPrompt, transcriptEntries, sessionTokens, sessionCost, costLabel, decisionLabel, resolvedModel, sessionStatus, verifyStatement, privacyLine } from './protocol.js';
+import { createViewModel, applyFrame, promptCommand, command, approvalCommand, approvalLabel, approvalChoices, defaultApprovalValue, approvalIsGlobal, approvalActionText, approvalReasonText, pendingApprovalTool, approvalPreview, resetRoute, setConsent, nextOrder, subagentsCommand, statsCommand, thinkingLabel, assistantNote, addPendingPrompt, transcriptEntries, transcriptSegments, sessionTokens, sessionCost, costLabel, decisionLabel, resolvedModel, sessionStatus, verifyStatement, privacyLine } from './protocol.js';
 import { createActivity, ingestFrame, markPrompt, markApprovalAnswered, timelineRows as actTimelineRows, eventDetail as actEventDetail, taskSummary as actTaskSummary, lanes as actLanes, formatElapsed, clock as actClock } from './activity.js';
 import { summarizeView, fetchInsight } from './insight.js';
 import { renderTaskGraph, renderCostChart, renderMemoryChart, memoryChartData } from './visualize.js';
@@ -113,6 +113,30 @@ function diffTotals(file) {
   }
   return { added, removed };
 }
+/**
+ * The bridge's file ledger for this session, read from tool results. It is the journal's
+ * evidence when the activity stream carries no write row of its own: every path, category
+ * and line count here comes from what the tool reported, and an unreported count stays null.
+ */
+function reportedChanges(vm) {
+  const merged = new Map();
+  for (const file of realFiles(vm ?? createViewModel())) {
+    if (!file.path || file.isError === true || file.statusIssue === 'failed') continue;
+    const op = file.deleted === true ? '삭제' : file.created === true || file.existedBefore === false ? '추가' : '수정';
+    const key = `${file.path}|${op}`;
+    const totals = typeof file.diff === 'string' && file.diff ? diffTotals(file) : null;
+    const previous = merged.get(key);
+    const added = totals ? totals.added : previous?.added ?? null;
+    const removed = totals ? totals.removed : previous?.removed ?? null;
+    merged.set(key, { path:String(file.path), op, taskId:'main', added, removed, at:Number.isFinite(file.seenAt) ? file.seenAt : previous?.at ?? null });
+  }
+  return [...merged.values()];
+}
+/** One request key per reported work: a new file row or a new activity revision re-asks the model. */
+function insightKeyOf(activity, reported) {
+  const rows = reported.map(item => `${item.path}|${item.op}|${item.added}|${item.removed}`).join('\n');
+  return `${activity.seq}\n${rows}`;
+}
 
 /* ------------------------------------------------------------------ sockets */
 function routeQuery(current) { return new URLSearchParams({ route:current.route, consent:current.consent ? '1' : '0' }).toString(); }
@@ -126,10 +150,19 @@ function activateSession(current) {
   if (previous) previous.composerDraft = $('prompt').value;
   activeKey = current.key;
   approvalOwner = null;
+  resetDocLive();
+  docGenerated = false;
+  docHtml = '';
+  docHash = null;
+  docSessionKey = null;
+  docServerKey = null;
+  docServerEntries = [];
+  docServerRequest = null;
   $('prompt').value = current.composerDraft;
+  if (!($('pane-visualize')?.hidden)) renderDocTab();
 }
 function newSession() {
-  const current = { key:crypto.randomUUID(), bridgeId:null, title:'새 작업', createdAt:Date.now(), vm:createViewModel(), activity:createActivity(), expandedEvents:new Set(), selectedEventKey:null, config:null, connection:null, refusal:null, socket:null, ready:false, route:defaultRoute ?? 'any_cloud', consent:operatorConsent, promptStarted:null, durationMs:null, timelineOpen:true, timelineMode:'journal', composerDraft:'', changeRows:new Map(), insightModel:null, insightFetching:false, insightRev:0, titleReqSeq:0, titleFetching:false, titlePromptRequested:false, titleSettledRequested:false, titlePendingRefresh:false, titleResolved:false, gateIndex:0, gateShownId:null, gateField:null };
+  const current = { key:crypto.randomUUID(), bridgeId:null, title:'새 작업', createdAt:Date.now(), vm:createViewModel(), activity:createActivity(), expandedEvents:new Set(), selectedEventKey:null, config:null, connection:null, refusal:null, socket:null, ready:false, route:defaultRoute ?? 'any_cloud', consent:operatorConsent, promptStarted:null, durationMs:null, timelineOpen:true, timelineMode:'journal', composerDraft:'', changeRows:new Map(), insightModel:null, insightFetching:false, insightRev:0, pageWork:0, pageWorkStartedAt:null, titleReqSeq:0, titleFetching:false, titlePromptRequested:false, titleSettledRequested:false, titlePendingRefresh:false, titleResolved:false, titleSettled:false, titleRevision:'', titleTier:null, gateIndex:0, gateShownId:null, gateField:null };
   sessions.set(current.key,current);
   const open = [...sessions.values()].filter(x => x.socket);
   if (open.length > 6) open[0].socket?.close();
@@ -199,6 +232,7 @@ async function connect(current) {
     applyFrame(current.vm,frame);
     if (!current.activity) current.activity = createActivity(current.createdAt);
     ingestFrame(current.activity,frame,{ title:current.title, coreModel:current.vm.coreModel, remote:remoteTurn(current) });
+    scheduleDocLive(current);
     pruneDrafts(current);
     if (frame.type === 'bridge_connected' && typeof frame.sessionId === 'string' && frame.sessionId) current.bridgeId = frame.sessionId;
     if (frame.type === 'bridge_ready') {
@@ -212,7 +246,8 @@ async function connect(current) {
     // The stats reply fetched at ready predates every turn; ask again once a turn ends.
     if (frame.type === 'agent_end' || frame.type === 'prompt_result') send(current,statsCommand());
     const user = current.vm.messages.find(x => x.role === 'user');
-    if (user && current.title === '새 작업') current.title = user.text.split('\n')[0].slice(0,48) || '새 작업';
+    // The header keeps its neutral placeholder until a real title answers: a slice
+    // of the prompt is not a title, so it is never shown as one.
     if (user && !current.titlePromptRequested) scheduleAutoTitle(current, { settled:false });
     if (frame.type === 'agent_end' || frame.type === 'prompt_result' || frame.type === 'session_settled') {
       if (user && !current.titleSettledRequested) scheduleAutoTitle(current, { settled:true });
@@ -445,23 +480,6 @@ function renderHeader() {
   }
 }
 
-/** An assistant message whose whole turn reported tool calls and no text at all. */
-function textlessAssistant(entry) {
-  return entry?.message?.role === 'assistant' && !String(entry.message.text ?? '').trim();
-}
-/** One transcript unit: a single visible entry, or a whole run of tool calls (plus the
-    textless notices that rode along with them) that collapses into one line. */
-function transcriptSegments(entries) {
-  const segments = [];
-  for (const entry of entries) {
-    const foldable = !!entry.tool || textlessAssistant(entry);
-    if (!foldable) { segments.push({ foldable:false, entry }); continue; }
-    const last = segments.at(-1);
-    if (last?.foldable) last.entries.push(entry);
-    else segments.push({ foldable:true, entries:[entry] });
-  }
-  return segments;
-}
 const TOOL_RUNNING = new Set(['실행 중', '호출 준비 중']);
 /** The one-line bar: count, outcome, and the tool names that ran. */
 function toolBatchSummary(tools) {
@@ -610,44 +628,160 @@ function agentSource(vm) {
 function agentRows(vm, activity) {
   if (agentSource(vm) !== 'reported') return [];
   const now = Date.now();
+  // The edge is reported twice over: the bridge lists the agent as a subagent of this
+  // session, and the lifecycle frame may name the parent task it was delegated from.
+  const mainName = activity?.main?.name || null;
   return vm.subagentList.map(entry => {
     const state = ({ running:'running', completed:'completed', failed:'parked', error:'parked', aborted:'parked' })[entry.status] ?? 'idle';
     const task = activity?.tasks.find(record => record.id === entry.id) ?? null;
-    const elapsed = task?.startedAt != null ? formatElapsed(Math.max(0,(task.endedAt ?? now) - task.startedAt)) : '';
-    const tokens = task?.tokens != null ? `${task.tokens} 토큰` : '토큰 보고 없음';
-    const cost = costLabel(task?.cost, { remote:remoteTurn(session()) });
-    const lane = task?.lane != null ? `레인 ${task.lane + 1}` : '';
-    const note = [lane, task?.dependsOn?.label ? `← ${task.dependsOn.label} 위임` : ''].filter(Boolean).join(' · ');
-    return { id:entry.id, state, status:entry.status, title:entry.detail ? `${entry.name} · ${entry.detail}` : entry.name, role:entry.name, index:null, model:entry.model ?? task?.model ?? null, tokens, cost, duration:elapsed, note, detail:'브리지가 보고한 하위 에이전트 정보입니다' };
+    const elapsed = task?.startedAt != null ? formatElapsed(Math.max(0,(task.endedAt ?? now) - task.startedAt)) : null;
+    const tokens = task?.tokens != null ? `${task.tokens} 토큰` : '';
+    const cost = Number.isFinite(task?.cost) ? costLabel(task.cost, { remote:remoteTurn(session()) }) : '';
+    const lane = Number.isFinite(task?.lane) ? `레인 ${task.lane + 1}` : '';
+    const from = task?.dependsOn?.label || mainName || null;
+    const edge = [lane, from ? `← ${from}에서 위임` : ''].filter(Boolean).join(' · ');
+    return { id:entry.id, state, status:entry.status, label:statusLabel(entry.status), title:entry.detail ? `${entry.name} · ${entry.detail}` : entry.name, role:entry.name, model:entry.model ?? task?.model ?? null, tokens, cost, elapsed, lane, from, edge, detail:'브리지가 보고한 하위 에이전트 정보입니다' };
   });
+}
+
+/** A `task`-style call, or any call whose own output names the agent registry. */
+function delegationTool(tool) {
+  const name = String(tool?.name ?? '').trim().toLowerCase();
+  return name === 'task' || name === 'delegate' || /agent:\/\//.test(String(tool?.result ?? ''));
+}
+function toolArguments(tool) {
+  try {
+    const parsed = JSON.parse(tool?.arguments || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch { return {}; }
+}
+/** The agent name the call's own output reports: the core writes it as `agent://<name>`. */
+function reportedAgentName(text) {
+  const match = String(text ?? '').match(/agent:\/\/([A-Za-z0-9_.:-]+)/);
+  return match ? match[1] : null;
+}
+/** Only the statuses the record reported; anything else stays unreported. */
+function recordOutcome(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (['완료','completed','done','idle'].includes(text)) return { state:'completed', label:'완료' };
+  if (['실패','failed','error','중단','aborted'].includes(text)) return { state:'parked', label:'실패' };
+  if (['실행 중','running','started','working'].includes(text)) return { state:'running', label:'실행 중' };
+  return null;
+}
+/** The agent's own state as the call's output words it ("… is now idle"), if it says so. */
+function recordOutcomeOfText(text) {
+  const body = String(text ?? '');
+  if (/is now idle|is idle|now idle|완료|→ idle/i.test(body)) return recordOutcome('완료');
+  if (/is now running|now running|실행 중/i.test(body)) return recordOutcome('실행 중');
+  if (/failed|failure|실패/i.test(body)) return recordOutcome('실패');
+  return null;
+}
+/**
+ * Delegation the session record reported even though the live registry has no entries:
+ * the core drops settled agents before the page's next `get_subagents` poll, but the
+ * `delegate`/`agent.end` events and the `task` tool call it emitted stay in the record.
+ * Every field is read from that record; nothing is filled in by guesswork.
+ */
+function recordedAgentRows(vm, activity) {
+  const mainName = activity?.main?.name || null;
+  const agents = new Map();
+  const slot = name => {
+    if (!agents.has(name)) agents.set(name, { name, role:null, lane:null, from:null, startedAt:null, endedAt:null, state:null, elapsed:null, stage:null });
+    return agents.get(name);
+  };
+  for (const event of activity?.events ?? []) {
+    if (event.kind !== 'delegate' && event.kind !== 'agent.end') continue;
+    const facts = event.facts ?? {};
+    const name = typeof facts.agent === 'string' && facts.agent ? facts.agent : null;
+    if (!name) continue;
+    const record = slot(name);
+    if (event.kind === 'delegate') {
+      record.startedAt = record.startedAt ?? event.at;
+      if (Number.isFinite(facts.lane)) record.lane = facts.lane;
+      if (typeof facts.parent === 'string' && facts.parent) record.from = facts.parent;
+      if (typeof facts.task === 'string' && facts.task && !record.stage) record.stage = facts.task;
+    } else {
+      record.endedAt = record.endedAt ?? event.at;
+      if (typeof facts.state === 'string' && facts.state) record.state = facts.state;
+      if (typeof facts.elapsed === 'string' && facts.elapsed && facts.elapsed !== '—') record.elapsed = facts.elapsed;
+    }
+  }
+  for (const tool of vm?.tools ?? []) {
+    if (!delegationTool(tool)) continue;
+    const args = toolArguments(tool);
+    const name = [args.name, args.agent, args.subagent_type, args.role, reportedAgentName(tool.result)]
+      .find(value => typeof value === 'string' && value) ?? null;
+    if (name && agents.has(name)) continue; // a delegate event already described this agent
+    // A call that reports no agent name is still a recorded delegation: it keeps the
+    // row and says 미보고 instead of dropping out of the pane.
+    const key = name ?? `tool:${tool.id}`;
+    const record = slot(key);
+    const role = [args.subagent_type, args.role].find(value => typeof value === 'string' && value) ?? null;
+    if (role) record.role = role;
+    // The call's own output describes the agent's state; the tool's status is the fallback.
+    record.state = recordOutcomeOfText(tool.result)?.label ?? tool.status ?? null;
+    record.stage = typeof args.description === 'string' && args.description ? args.description : record.stage;
+    record.from = mainName;
+  }
+  const rows = [];
+  for (const record of agents.values()) {
+    const outcome = recordOutcome(record.state);
+    const elapsed = record.elapsed
+      ?? (record.startedAt != null && record.endedAt != null ? formatElapsed(record.endedAt - record.startedAt) : null);
+    const lane = Number.isFinite(record.lane) ? `레인 ${record.lane + 1}` : '';
+    const from = record.from || mainName;
+    const edge = [lane, from ? `← ${from}에서 위임` : ''].filter(Boolean).join(' · ');
+    const name = record.name.startsWith('tool:') ? '미보고' : record.name;
+    rows.push({
+      id:`record:${record.name}`, recorded:true, name,
+      role:record.role || name, model:null, tokens:'', cost:'',
+      state:outcome?.state ?? 'idle', label:outcome?.label ?? '미보고', status:null,
+      title:record.stage ? `${name} · ${record.stage}` : name,
+      elapsed:elapsed ?? '미보고', lane, from, edge,
+      detail:record.stage ? `보고된 호출 기록: ${record.stage}` : '브리지가 보고한 호출 기록에서 읽은 하위 에이전트입니다.'
+    });
+  }
+  return rows;
 }
 
 function renderAgents() {
   const current = session(), vm = current?.vm;
   const source = agentSource(vm);
-  const rows = agentRows(vm, current?.activity);
+  // The live registry first, then any delegation only the session record still reports:
+  // the core drops settled agents before the next poll, the delegate events do not vanish.
+  const registry = agentRows(vm, current?.activity);
+  const rows = [...registry, ...recordedAgentRows(vm, current?.activity).filter(row => !registry.some(item => item.role === row.name))];
   const act = current?.activity ? actTaskSummary(current.activity) : null;
   // A card that only says "nothing here" is chrome, not information: flatten it.
   if ($('agents')) $('agents').dataset.empty = String(!rows.length && !act?.main);
   const laneData = current?.activity ? actLanes(current.activity) : null;
 
-  // Task summary in agents card
+  // Main-context block: the task this pane is about, from the activity summary only.
   const taskName = $('task-name'), taskState = $('task-state'), taskMeta = $('task-meta'), taskVerify = $('task-verify');
   if (taskName) {
     const main = act?.main;
+    const block = $('task-summary');
+    if (block && !block.querySelector('.ts-kicker')) {
+      const kicker = el('span','ts-kicker','메인 컨텍스트');
+      block.prepend(kicker);
+    }
     taskName.textContent = main?.name || current?.title || '작업 없음';
     taskName.title = taskName.textContent;
     taskState.textContent = main?.state || statusLabel(vm?.phase ? 'running' : 'idle');
     taskState.dataset.state = main?.status || 'waiting';
 
+    // Every figure below is one the bridge or the gateway actually reported; a value
+    // nobody reported is left out instead of being replaced by a placeholder.
     const metaParts = [];
-    metaParts.push(main?.elapsed != null ? `경과 ${formatElapsed(main.elapsed)}` : '경과 미보고');
-    metaParts.push(resolvedModel(vm)?.id || main?.model || '모델 미보고');
+    if (main?.elapsed != null) metaParts.push(`경과 ${formatElapsed(main.elapsed)}`);
+    const model = resolvedModel(vm)?.id || main?.model || null;
+    if (model) metaParts.push(model);
     const totalTok = sessionTokens(vm);
+    if (totalTok != null) metaParts.push(`${fmtK(totalTok)} 토큰`);
     const costFigure = sessionCost(vm);
-    metaParts.push(totalTok != null ? `${fmtK(totalTok)} 토큰` : '토큰 미보고');
-    metaParts.push(costLabel(costFigure, { remote:remoteTurn(current) }));
-    taskMeta.textContent = metaParts.join(' · ');
+    if (Number.isFinite(costFigure) || remoteTurn(current)) metaParts.push(costLabel(costFigure, { remote:remoteTurn(current) }));
+    taskMeta.textContent = metaParts.length ? metaParts.join(' · ') : '아직 보고된 측정값이 없습니다.';
 
     // Verification is stated once, in the AI 작업 일지.
     taskVerify.hidden = true;
@@ -684,11 +818,11 @@ function renderAgents() {
   }
 
   const running = rows.filter(row => row.state === 'running').length;
-  $('agents-count').textContent = source === 'reported' ? `${running}/${rows.length}` : '보고 없음';
+  $('agents-count').textContent = rows.length ? `${running}/${rows.length}` : source === 'reported' ? '0/0' : '보고 없음';
   $('agents-count').hidden = false;
-  $('agents-count').title = source === 'reported'
+  $('agents-count').title = rows.length
     ? `하위 에이전트 ${rows.length}개 중 ${running}개 실행 중`
-    : '하위 에이전트 없음';
+    : source === 'reported' ? '이번 세션에는 하위 에이전트가 없습니다.' : '하위 에이전트 없음';
   const list = $('agent-list'), graph = $('agent-graph');
   list.hidden = view.agents !== 'list';
   graph.hidden = view.agents !== 'graph';
@@ -715,18 +849,23 @@ function renderAgents() {
     disc.setAttribute('aria-label',`${row.title} 상세 펼치기/접기`);
     disc.append(icon('ic-chev-r'));
     const status = el('span','agent-status');
-    status.append(el('i','dot'),el('span','',statusLabel(row.status ?? row.state)));
+    status.append(el('i','dot'),el('span','',row.label ?? statusLabel(row.status ?? row.state)));
     top.append(disc,el('span','agent-name',row.title),status);
     const meta = el('div','agent-meta');
     meta.append(icon('ic-robot'),el('span','who',`${row.role}${row.model ? ` · ${row.model}` : ''}`));
-    for (const [cls,value] of [['sep',row.tokens],['sep',row.cost],['dur',row.duration]]) {
+    if (row.recorded) {
+      const marker = el('span','agent-source','실행 기록 기반');
+      marker.title = '브리지가 보고한 호출 기록에서 읽은 행입니다. 실시간 레지스트리 값이 아닙니다.';
+      meta.append(marker);
+    }
+    for (const [cls,value] of [['sep',row.tokens],['sep',row.cost],['dur',row.elapsed]]) {
       if (!value) continue;
       meta.append(el('span',cls,value));
     }
     const detail = el('div','agent-detail',row.detail ?? '');
     detail.hidden = view.collapsed.has(row.id);
     card.append(top,meta);
-    if (row.note) card.append(el('div','agent-note',row.note));
+    if (row.edge) card.append(el('div','agent-edge',row.edge));
     if (row.detail) card.append(detail);
     disc.addEventListener('click',() => {
       const open = view.collapsed.has(row.id);
@@ -917,10 +1056,9 @@ function tlRow(entry,description) {
 }
 function tlChrome() {
   const current = session();
-  const mode = current?.timelineMode === 'raw' ? 'raw' : 'journal';
+  const mode = 'journal';
   const open = current ? current.timelineOpen !== false : true;
-  $('timeline-grouped').setAttribute('aria-pressed',String(mode === 'journal'));
-  $('timeline-chrono').setAttribute('aria-pressed',String(mode === 'raw'));
+  $('timeline-grouped')?.setAttribute('aria-pressed','true');
   $('timeline-collapse').setAttribute('aria-expanded',String(open));
   $('timeline-body').hidden = !open;
   return mode;
@@ -949,9 +1087,10 @@ function renderTimeline() {
     verifyBadge.dataset.state = tOutcome.state;
     verifyBadge.title = '도구 출력이 보고한 검증 결과만 셉니다.';
   } else {
-    verifyBadge.textContent = '검증 명령 미실행';
-    verifyBadge.dataset.state = 'unknown';
-    verifyBadge.title = '이번 세션에는 검증 명령이 실행되지 않았습니다.';
+    // No verification ran, so nothing is stated here: the badge is hidden and carries no line.
+    verifyBadge.textContent = '';
+    delete verifyBadge.dataset.state;
+    verifyBadge.removeAttribute('title');
   }
   const count = () => `파일 작업 ${view.entries.length}건 · 추가 ${view.counts[TL_ADD]}건, 수정 ${view.counts[TL_MODIFY]}건, 삭제 ${view.counts[TL_DELETE]}건, 분류 불가 ${view.counts[TL_UNCLASSIFIED]}건`;
   $('timeline-count').textContent = `${view.entries.length}건`;
@@ -1050,9 +1189,10 @@ function renderJournal(current, summary, act, host) {
       const side = el('div','journal-side');
       const events = row.events ?? [];
       const first = events[0], last = events.at(-1);
+      const stamp = at => Number.isFinite(at) ? actClock(at) : '—';
       const timeText = events.length > 1 && first && last
-        ? `${actClock(first.at)}–${actClock(last.at)}`
-        : first ? actClock(first.at) : '—';
+        ? `${stamp(first.at)}–${stamp(last.at)}`
+        : first ? stamp(first.at) : '—';
       side.append(el('span','journal-time',timeText));
       if (events.length > 1) side.append(el('span','journal-count',`${events.length}건 묶음`));
       button.append(pill,text,side);
@@ -1074,7 +1214,7 @@ function renderJournal(current, summary, act, host) {
 
       const detail = el('div','journal-detail');
       detail.hidden = true;
-      const info = actEventDetail({ events });
+      const info = actEventDetail({ events:events.some(event => event.facts?.reported) ? events.filter(event => !event.facts?.reported) : events });
       const log = el('ul');
       for (const entry of info.log) {
         const line = el('li','');
@@ -1101,14 +1241,8 @@ function renderJournal(current, summary, act, host) {
       rows.append(li);
     }
     card.append(rows);
-
-    // The 검증 row already carries the one verification statement; the strip only speaks when no verification ran.
-    if (!vOutcome) {
-      const strip = el('div','journal-verify');
-      strip.dataset.state = 'unknown';
-      strip.append(el('span','', '검증 명령 미실행'));
-      card.append(strip);
-    }
+    // The 검증 row carries the one verification statement; when no verification ran
+    // the card states nothing about it — no placeholder line, no "검증 없음".
     host.append(card);
   }
 }
@@ -1122,7 +1256,7 @@ function renderActivity(current, mode) {
   const journalHost = $('journal-rows');
   const rawHost = $('activity-rows');
   const empty = $('activity-empty');
-  const summary = summarizeView(act ?? createActivity(), current?.insightModel ?? null);
+  const summary = summarizeView(act ?? createActivity(), current?.insightModel ?? null, reportedChanges(current?.vm));
   if ($('timeline')) $('timeline').dataset.empty = String(summary.total === 0);
 
   if (mode === 'raw') {
@@ -1205,9 +1339,11 @@ function renderRawActivity(current, act, host) {
   }
 }
 
-/** Ask the local SLM for a concise Korean session title; keyed by current.key so switching sessions never races. */
+/** Ask the local SLM for a readable Korean session title: one request per revision, keyed by session. */
 function scheduleAutoTitle(current, { settled = false } = {}) {
   if (!current) return;
+  // A settled session keeps its title: no later frame may run the model again.
+  if (current.titleSettled) return;
   const userMsg = current.vm?.messages?.find(x => x.role === 'user');
   const prompt = (userMsg?.text ?? '').trim();
   if (!prompt) return;
@@ -1217,20 +1353,28 @@ function scheduleAutoTitle(current, { settled = false } = {}) {
     ...realFiles(current.vm).map(f => f.path),
     ...(current.activity?.events ?? []).filter(e => e.kind === 'write').map(e => e.facts?.path)
   ].filter(path => typeof path === 'string' && path && path !== '경로 미상'))];
-  if (settled) current.titleSettledRequested = true;
-  else current.titlePromptRequested = true;
-  if (settled && current.titleResolved && !reply && !files.length) return;
+  const revision = `${prompt.length}:${reply.length}:${files.length}`;
+  if (settled) {
+    if (current.titleSettledRequested) return;
+    current.titleSettledRequested = true;
+  } else {
+    if (current.titlePromptRequested) return;
+    current.titlePromptRequested = true;
+  }
+  if (current.titleResolved && current.titleRevision === revision) return;
   if (current.titleFetching) {
     if (settled) current.titlePendingRefresh = true;
     return;
   }
+  current.titleRevision = revision;
   const targetKey = current.key;
   const reqSeq = ++current.titleReqSeq;
   current.titleFetching = true;
+  pageWorkStart(current);
   fetch('/api/insight/title', {
     method:'POST',
     headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ prompt, reply, files })
+    body:JSON.stringify({ prompt, reply, files, session:String(targetKey), settled })
   }).then(async res => {
     if (!res?.ok) return null;
     return res.json();
@@ -1238,8 +1382,18 @@ function scheduleAutoTitle(current, { settled = false } = {}) {
     if (!sessions.has(targetKey) || current.titleReqSeq !== reqSeq) return;
     const nextTitle = typeof data?.title === 'string' ? data.title.trim() : '';
     if (!nextTitle) return;
+    // A refinement may replace a rule title with a model title, never the reverse:
+    // the header must not oscillate between the two tiers.
+    if (current.titleResolved && current.titleTier === 'local-model' && data?.tier !== 'local-model') {
+      if (settled) current.titleSettled = true;
+      return;
+    }
+    const changed = current.title !== nextTitle;
     current.title = nextTitle;
     current.titleResolved = true;
+    current.titleTier = data?.tier === 'local-model' ? 'local-model' : 'rules';
+    if (settled) current.titleSettled = true;
+    if (!changed) return;
     if (current.activity?.main) current.activity.main.name = nextTitle;
     if (activeKey === targetKey) {
       $('head-title').textContent = nextTitle;
@@ -1249,6 +1403,7 @@ function scheduleAutoTitle(current, { settled = false } = {}) {
     renderSessions();
   }).catch(() => {}).finally(() => {
     current.titleFetching = false;
+    pageWorkEnd(current);
     if (!sessions.has(targetKey)) return;
     if (current.titlePendingRefresh) {
       current.titlePendingRefresh = false;
@@ -1257,27 +1412,34 @@ function scheduleAutoTitle(current, { settled = false } = {}) {
   });
 }
 
-/** Ask the local summarizer once per activity revision; the rule rows stay until it answers. */
+/** Ask the local summarizer once per reported work revision; the rule rows stay until it answers. */
 function scheduleInsight(current) {
   if (!current?.activity) return;
-  const key = String(current.activity.seq);
+  const reported = reportedChanges(current.vm);
+  const key = insightKeyOf(current.activity, reported);
   if (current.insightKey === key || current.insightFetching) return;
-  if (!current.activity.events.some(event => event.kind === 'write' || event.kind === 'verify')) { current.insightKey = key; return; }
   current.insightKey = key;
+  // Work is reported either as activity write/verify events or as tool-result file changes;
+  // a session with neither of them never asks the model for a summary.
+  const hasWork = current.activity.events.some(event => event.kind === 'write' || event.kind === 'verify') || reported.length > 0;
+  if (!hasWork) return;
   current.insightFetching = true;
+  pageWorkStart(current);
   const targetKey = current.key;
-  fetchInsight(current.activity).then(model => {
+  fetchInsight(current.activity, { reported }).then(model => {
     current.insightFetching = false;
+    pageWorkEnd(current);
     if (!sessions.has(targetKey)) return;
     if (model) {
       current.insightModel = model;
       current.insightRev = (current.insightRev ?? 0) + 1;
       if (activeKey === targetKey) renderTimeline();
     }
-    if (String(current.activity.seq) !== key) scheduleInsight(current);
+    if (insightKeyOf(current.activity, reportedChanges(current.vm)) !== key) scheduleInsight(current);
   }).catch(() => {
     current.insightFetching = false;
-    if (sessions.has(targetKey) && String(current.activity.seq) !== key) scheduleInsight(current);
+    pageWorkEnd(current);
+    if (sessions.has(targetKey) && insightKeyOf(current.activity, reportedChanges(current.vm)) !== key) scheduleInsight(current);
   });
 }
 
@@ -1760,29 +1922,58 @@ function renderFooterMetrics(current) {
     modelBox.title = modelReported ? `게이트웨이가 고른 모델: ${modelText}${sourceNote}${res.endpoint ? ` · 엔드포인트 ${res.endpoint}` : ''}` : '모델 미보고 · 게이트웨이가 자동 선택';
   }
 
-  // 6. Spinner: rotates only while the core is actually working.
-  const busy = current?.ready && !['입력 대기','턴 완료','에이전트 작업 완료','연결 준비'].includes(vm?.phase ?? '');
+  // 6. Spinner and the journal card: they rotate/sweep while anything this page
+  //    waits on (a core turn or a request it started) is still unanswered.
+  const busy = pageWorkBusy(current);
   if (spinner) spinner.dataset.spin = String(busy);
   if ($('status-bar')) $('status-bar').dataset.state = busy ? 'busy' : current?.ready ? 'ready' : 'waiting';
   renderTimelineBusy(busy);
 }
 
 /* ------------------------------------------------- live work indicator */
-/* A turn can think for over ten seconds. The pinned journal card therefore carries
-   `data-busy` for exactly as long as a turn is in flight; the sweep itself is CSS
-   (styles.css), so pixels keep changing without a JavaScript frame loop. This timer
-   only repaints the honest elapsed-seconds text, once per second, from the session's
-   own start timestamp — no percentage, no token estimate is ever invented. */
+/* Work this page waits on lasts far longer than a core turn: the local summarizer
+   and the title model each take 8-13 s, and a document render is a second request.
+   The pinned journal card therefore carries `data-busy` while *either* the core turn
+   is in flight *or* a request this page itself started is still unanswered. The
+   sweep is CSS (styles.css), so pixels keep changing without a JavaScript frame
+   loop; this timer only repaints the honest elapsed-seconds text, once per second,
+   from the moment the page started waiting — no percentage, no invented figure. */
 let busyTicker = null;
-function busyStartedAt(current) {
-  return [current?.promptStarted, current?.activity?.main?.startedAt, current?.createdAt]
-    .find(value => Number.isFinite(value)) ?? null;
+/** Requests (insight/title/document) this page started and has not heard back from. */
+function pageWorkStart(current) {
+  if (!current) return;
+  current.pageWork = (current.pageWork ?? 0) + 1;
+  if (current.pageWorkStartedAt == null) current.pageWorkStartedAt = Date.now();
+  syncWorkIndicator(current);
+}
+function pageWorkEnd(current) {
+  if (!current) return;
+  current.pageWork = Math.max(0, (current.pageWork ?? 0) - 1);
+  if (current.pageWork === 0) current.pageWorkStartedAt = null;
+  syncWorkIndicator(current);
+}
+function coreWorkBusy(current) {
+  const vm = current?.vm;
+  return !!current?.ready && !['입력 대기','턴 완료','에이전트 작업 완료','연결 준비'].includes(vm?.phase ?? '');
+}
+/** True while this page is genuinely waiting on something it can name. */
+function pageWorkBusy(current) {
+  return coreWorkBusy(current) || (current?.pageWork ?? 0) > 0;
+}
+/** The earliest real start among the waits currently in force; never a guess. */
+function workStartedAt(current) {
+  const core = coreWorkBusy(current), parts = [];
+  if (core && Number.isFinite(current?.promptStarted)) parts.push(current.promptStarted);
+  if (core && Number.isFinite(current?.activity?.main?.startedAt)) parts.push(current.activity.main.startedAt);
+  if (Number.isFinite(current?.pageWorkStartedAt)) parts.push(current.pageWorkStartedAt);
+  if (parts.length) return Math.min(...parts);
+  return core ? current?.createdAt ?? null : null;
 }
 function paintBusyElapsed() {
   const card = $('timeline'), label = $('timeline-elapsed');
   if (!card || !label) return;
   if (card.dataset.busy !== 'true') { label.hidden = true; label.textContent = ''; return; }
-  const started = busyStartedAt(session());
+  const started = workStartedAt(session());
   label.hidden = false;
   label.textContent = started === null ? '작업 중' : `작업 중 · ${formatElapsed(Math.max(0, Date.now() - started))}`;
 }
@@ -1794,6 +1985,11 @@ function renderTimelineBusy(busy) {
   paintBusyElapsed();
   if (busy && busyTicker === null) busyTicker = setInterval(paintBusyElapsed, 1000);
   else if (!busy && busyTicker !== null) { clearInterval(busyTicker); busyTicker = null; }
+}
+/** A page-started request begins or settles between renders; the card follows immediately. */
+function syncWorkIndicator(current) {
+  if (!current || activeKey !== current.key) return;
+  renderTimelineBusy(pageWorkBusy(current));
 }
 
 /* --------------------------------------------------------------- interaction */
@@ -2081,7 +2277,7 @@ $('agents-graph').addEventListener('click',() => setAgentsView('graph'));
 function setTimelineMode(mode) {
   const current = session();
   if (!current) return;
-  current.timelineMode = mode === 'raw' ? 'raw' : 'journal';
+  current.timelineMode = 'journal';
   renderTimeline();
   paintTimelineSwap();
 }
@@ -2093,16 +2289,7 @@ $('timeline-collapse').addEventListener('click',event => {
   event.currentTarget.setAttribute('aria-expanded',String(!open));
   $('timeline-body').hidden = open;
 });
-$('timeline-grouped').addEventListener('click',() => setTimelineMode('journal'));
-$('timeline-chrono').addEventListener('click',() => setTimelineMode('raw'));
-// Arrow keys move between the two views like a radio group; Enter/Space on a button selects it natively.
-$('timeline-modes').addEventListener('keydown',event => {
-  if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
-  event.preventDefault();
-  const raw = event.key === 'ArrowRight' || event.key === 'End';
-  setTimelineMode(raw ? 'raw' : 'journal');
-  $(raw ? 'timeline-chrono' : 'timeline-grouped').focus();
-});
+$('timeline-grouped')?.addEventListener('click',() => setTimelineMode('journal'));
 $('toggle-inspector').addEventListener('click',() => {
   if (narrowShell.matches) { setDrawer(currentDrawer() === 'inspector' ? '' : 'inspector', { restoreFocus:true }); return; }
   const closed = document.body.dataset.inspector === 'closed';
@@ -3080,6 +3267,185 @@ let docSessionKey = null;
 let docServerEntries = [];
 let docServerKey = null;
 let docServerRequest = null;
+/* Live document mode: one quiet-period refresh after each revision that added
+   write/verify work, keyed to the session the pane is showing. */
+const DOC_LIVE_QUIET_MS = 1200;
+const docLive = { key:null, seen:0, version:0, hashes:new Set(), timer:null, inFlight:false, dirty:false };
+/** Bumped per swap and by every blank, so a superseded reveal can never paint late. */
+let docShowSeq = 0;
+
+/** Load the document into the hidden buffer, then hand it the shown frame's identity.
+ *  The pane therefore goes from the old document straight to the new one: the shown
+ *  frame keeps its previous (full) content for the whole request, and the swap happens
+ *  on one already-painted buffer instead of a fresh, momentarily empty navigation. */
+function showDocHtml(html) {
+  const shown = $('viz-doc-frame'), buffer = docBuffer();
+  if (!shown || !buffer) return Promise.resolve(false);
+  const token = ++docShowSeq;
+  return new Promise(resolve => {
+    let settled = false;
+    const settle = value => { if (settled) return; settled = true; buffer.removeEventListener('load', onLoad); resolve(value); };
+    const onLoad = () => {
+      // Two frames after load: the buffer has been rendered at least once while it
+      // sat behind the visible document, so revealing it shows the finished page.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (token !== docShowSeq) return settle(false);
+        shown.id = 'viz-doc-staging';
+        shown.className = 'viz-doc-buffer';
+        shown.setAttribute('aria-hidden', 'true');
+        buffer.id = 'viz-doc-frame';
+        buffer.className = '';
+        buffer.removeAttribute('aria-hidden');
+        settle(true);
+      }));
+    };
+    buffer.addEventListener('load', onLoad);
+    buffer.srcdoc = html;
+  });
+}
+
+function docStatus(text) {
+  const status = $('viz-doc-status');
+  if (status) status.textContent = text;
+  return text;
+}
+/** The stage keeps one shown frame and one ready buffer, so a new document never has
+ *  to be loaded into the frame the operator is looking at: the buffer loads behind it
+ *  and the two exchange identity only after it is painted. Returns the hidden buffer,
+ *  creating it on first use. */
+function docBuffer() {
+  const existing = $('viz-doc-staging');
+  if (existing) return existing;
+  const stage = $('viz-doc-stage');
+  if (!stage) return null;
+  const buffer = document.createElement('iframe');
+  buffer.id = 'viz-doc-staging';
+  buffer.className = 'viz-doc-buffer';
+  buffer.title = '세션 결과 문서 준비 화면';
+  buffer.setAttribute('sandbox', 'allow-scripts allow-popups');
+  buffer.setAttribute('referrerpolicy', 'no-referrer');
+  buffer.setAttribute('aria-hidden', 'true');
+  stage.append(buffer);
+  return buffer;
+}
+/** The pane's own empty state: no document is on screen, so both frames are cleared. */
+function blankDocStage() {
+  docShowSeq += 1;
+  for (const frame of document.querySelectorAll('#viz-doc-stage iframe')) {
+    if (frame.getAttribute('srcdoc')) frame.srcdoc = '';
+  }
+}
+/** An empty or failed request clears the preview instead of leaving the last document looking current. */
+function clearDocFrame(note, statusText) {
+  docGenerated = false;
+  docHtml = '';
+  docHash = null;
+  blankDocStage();
+  setDocButtons(false);
+  const empty = $('viz-doc-empty');
+  if (empty) empty.hidden = false;
+  const emptyNote = $('viz-doc-empty-note');
+  if (emptyNote) emptyNote.textContent = note;
+  if (statusText !== undefined) docStatus(statusText);
+}
+function resetDocLive(key = null) {
+  if (docLive.timer) clearTimeout(docLive.timer);
+  docLive.key = key;
+  docLive.seen = 0;
+  docLive.version = 0;
+  docLive.hashes = new Set();
+  docLive.timer = null;
+  docLive.inFlight = false;
+  docLive.dirty = false;
+}
+/** Another session's frames never touch this pane: only the active session is followed. */
+function watchDocLive(current) {
+  if (!current || current.key !== activeKey) return false;
+  if (docLive.key !== current.key) resetDocLive(current.key);
+  return true;
+}
+function docWorkCount(activity) {
+  return activity ? activity.events.reduce((count, event) => count + (event.kind === 'write' || event.kind === 'verify' ? 1 : 0), 0) : 0;
+}
+/** An activity revision that added a write/verify event queues one refresh after a quiet period. */
+function scheduleDocLive(current) {
+  if ($('pane-visualize')?.hidden) return;
+  if (!watchDocLive(current)) return;
+  const count = docWorkCount(current.activity);
+  if (!count || count <= docLive.seen) return;
+  docLive.seen = count;
+  const generate = $('viz-doc-generate');
+  if (generate) generate.disabled = false;
+  docStatus('자동 갱신 · 갱신 중…');
+  if (docLive.timer) clearTimeout(docLive.timer);
+  docLive.timer = setTimeout(() => { docLive.timer = null; refreshVizDocLive(current.key); }, DOC_LIVE_QUIET_MS);
+}
+/** Opening the pane or changing the type asks for the current document once, immediately. */
+function kickDocLive() {
+  const current = session();
+  if (!current || !sessionHasActivity()) return;
+  watchDocLive(current);
+  docLive.seen = Math.max(docLive.seen, docWorkCount(current.activity));
+  if (docLive.timer) { clearTimeout(docLive.timer); docLive.timer = null; }
+  refreshVizDocLive(current.key);
+}
+async function refreshVizDocLive(key) {
+  if (docLive.inFlight) { docLive.dirty = true; return; }
+  if (!key || key !== activeKey || !sessionHasActivity()) return;
+  // Capture session + type once: a response may only land in the pane it was asked for.
+  const sessionId = docSessionId(), type = docType;
+  docLive.inFlight = true;
+  docLive.dirty = false;
+  docStatus('자동 갱신 · 갱신 중…');
+  try {
+    const response = await fetch(`${docUrl('html')}&t=${Date.now()}`, { cache:'no-store' });
+    if (key !== activeKey || sessionId !== docSessionId() || type !== docType) { docLive.dirty = true; return; }
+    if (response.status === 400) {
+      // The server recorded no work. With no document on screen that is the pane's
+      // empty state; with one on screen the earlier document stays put and is never
+      // replaced by a blank, and the status line says what the server answered.
+      docLive.version = 0;
+      docLive.hashes = new Set();
+      if (docGenerated && docHtml) docStatus(`기록된 작업 없음 · 서버가 문서를 만들지 않았습니다`);
+      else clearDocFrame(DOC_EMPTY_NOTE, '기록된 작업 없음');
+      return;
+    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const hash = response.headers.get('X-Document-Hash') || null;
+    const html = await response.text();
+    if (key !== activeKey || sessionId !== docSessionId() || type !== docType) { docLive.dirty = true; return; }
+    // Identical content is already on screen: no reload, no version, no flicker.
+    if (html && html === docHtml && hash === docHash) {
+      docStatus(`자동 갱신 · ${docLive.version || 1}번째 버전 · ${docTypeLabel()}`);
+      return;
+    }
+    docHash = hash;
+    docHtml = html;
+    docSessionKey = key;
+    await showDocHtml(html);
+    if (key !== activeKey || sessionId !== docSessionId() || type !== docType) { docLive.dirty = true; return; }
+    docGenerated = true;
+    const empty = $('viz-doc-empty');
+    if (empty) empty.hidden = true;
+    setDocButtons(true);
+    if (hash && !docLive.hashes.has(hash)) { docLive.hashes.add(hash); docLive.version = docLive.hashes.size; }
+    docStatus(`자동 갱신 · ${docLive.version || 1}번째 버전 · ${docTypeLabel()}`);
+    recordDoc(hash);
+  } catch (error) {
+    if (key !== activeKey || sessionId !== docSessionId()) return;
+    // A failure is stated as one. The earlier document may stay visible, but never as
+    // if it were the current version: no blank is flashed over it either.
+    if (docGenerated && docHtml) docStatus(`자동 갱신 실패: ${error.message} · 이전 버전 표시 중`);
+    else clearDocFrame('문서를 만들지 못했습니다.', `자동 갱신 실패: ${error.message}`);
+  } finally {
+    docLive.inFlight = false;
+    if (docLive.dirty && key === activeKey) {
+      docLive.dirty = false;
+      if (docLive.timer) clearTimeout(docLive.timer);
+      docLive.timer = setTimeout(() => { docLive.timer = null; refreshVizDocLive(activeKey); }, DOC_LIVE_QUIET_MS);
+    }
+  }
+}
 
 function docSessionId() {
   const current = session();
@@ -3145,6 +3511,8 @@ function loadDocServerEntries() {
   }
   if (docServerRequest) return docServerRequest;
   const params = new URLSearchParams({ session:key });
+  const workOwner = session();
+  pageWorkStart(workOwner);
   docServerRequest = (async () => {
     try {
       const response = await fetch(`/api/visualize/list?${params.toString()}`, { cache:'no-store' });
@@ -3169,6 +3537,8 @@ function loadDocServerEntries() {
     } catch {
       // A list that cannot be read leaves the local rows in place; nothing is removed.
       docServerRequest = null;
+    } finally {
+      pageWorkEnd(workOwner);
     }
   })();
   return docServerRequest;
@@ -3199,70 +3569,64 @@ function setDocType(type) {
   if (!DOC_TYPES.some(item => item.id === type)) return;
   docType = type;
   reflectDocType();
-  const status = $('viz-doc-status');
-  if (status) {
-    status.textContent = sessionHasActivity()
-      ? (docGenerated ? `${docTypeLabel()} 유형으로 다시 생성합니다…` : `${docTypeLabel()} 유형이 선택되었습니다. ‘문서 생성’을 누르세요.`)
-      : '세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.';
+  if (!sessionHasActivity()) {
+    docStatus('기록된 작업 없음');
+    return;
   }
-  if (docGenerated) refreshVizDoc();
+  docStatus(docGenerated
+    ? `${docTypeLabel()} 유형으로 다시 생성합니다…`
+    : `${docTypeLabel()} 유형이 선택되었습니다. ‘문서 생성’을 누르거나 기록이 이어지면 자동으로 열립니다.`);
+  // The live pane follows the current type; an in-flight request for the old type is discarded.
+  if (docGenerated) kickDocLive();
 }
 async function refreshVizDoc(options = {}) {
   const frame = $('viz-doc-frame');
-  const status = $('viz-doc-status');
   if (!frame) return;
   // A pinned hash opens that exact version; no hash asks the server for the
   // current content of this session + type.
   const pinned = options.hash ?? null;
-  const empty = $('viz-doc-empty');
-  const emptyNote = $('viz-doc-empty-note');
-  const showEmpty = (text) => {
-    docGenerated = false;
-    docHtml = '';
-    frame.srcdoc = '';
-    setDocButtons(false);
-    if (empty) empty.hidden = false;
-    if (emptyNote) emptyNote.textContent = text;
-    if (status) status.textContent = text;
-  };
-
   if (!sessionHasActivity()) {
-    showEmpty('세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.');
+    clearDocFrame('세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.', '기록된 작업 없음');
     return;
   }
 
-  docSessionKey = docSessionId();
-  if (status) status.textContent = `${docTypeLabel()}${pinned ? ` · 버전 ${pinned.slice(0, 6)}` : ''} · 문서를 여는 중…`;
+  // Capture session + type once: a late response must never paint another session or type.
+  const requestSession = docSessionId(), requestType = docType;
+  docSessionKey = requestSession;
+  docStatus(`${docTypeLabel()}${pinned ? ` · 버전 ${pinned.slice(0, 6)}` : ''} · 문서를 여는 중…`);
+  const workOwner = session();
+  pageWorkStart(workOwner);
   try {
     const response = await fetch(`${docUrl('html', pinned)}&t=${Date.now()}`, { cache:'no-store' });
+    if (requestSession !== docSessionId() || requestType !== docType) return;
     if (response.status === 400) {
       // The server refused because no work was recorded. That is an empty state,
       // not a failure, and it wrote nothing.
-      showEmpty(DOC_EMPTY_NOTE);
+      clearDocFrame(DOC_EMPTY_NOTE, '기록된 작업 없음');
       return;
     }
     if (response.status === 404) {
-      // The pinned version is no longer on disk. Keep its row and say so instead
-      // of silently showing a different document.
-      if (status) status.textContent = `요청한 버전(${pinned ?? ''})이 서버에 남아 있지 않습니다. 다른 버전을 선택하세요.`;
+      // The pinned version is no longer on disk. Its document must not stay on screen
+      // looking current, but the row is kept so the operator can pick another version.
+      clearDocFrame('요청한 버전이 서버에 남아 있지 않습니다. 다른 버전을 선택하세요.', `요청한 버전(${pinned ?? ''})이 서버에 남아 있지 않습니다. 다른 버전을 선택하세요.`);
       return;
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const html = await response.text();
+    if (requestSession !== docSessionId() || requestType !== docType) return;
     docHash = response.headers.get('X-Document-Hash') || pinned;
-    docHtml = await response.text();
-    frame.srcdoc = docHtml;
+    docHtml = html;
+    await showDocHtml(docHtml);
     docGenerated = true;
+    const empty = $('viz-doc-empty');
     if (empty) empty.hidden = true;
     setDocButtons(true);
-    if (status) status.textContent = `${docTypeLabel()} 버전 ${String(docHash ?? '').slice(0, 6)} 열람 · ${docSessionTitle()}`;
+    docStatus(`수동 생성 · ${docTypeLabel()} 버전 ${String(docHash ?? '').slice(0, 6)} · ${docSessionTitle()}`);
     recordDoc(docHash);
   } catch (error) {
-    docGenerated = false;
-    docHtml = '';
-    setDocButtons(false);
-    if (empty) empty.hidden = false;
-    if (emptyNote) emptyNote.textContent = '문서를 만들지 못했습니다.';
-    if (status) status.textContent = `문서를 만들지 못했습니다: ${error.message}. 서버의 문서 생성 API를 확인해 주세요.`;
+    clearDocFrame('문서를 만들지 못했습니다.', `문서를 만들지 못했습니다: ${error.message}. 서버의 문서 생성 API를 확인해 주세요.`);
+  } finally {
+    pageWorkEnd(workOwner);
   }
 }
 function openDocTab() {
@@ -3301,6 +3665,8 @@ async function exportDocPdf() {
     if (status) status.textContent = '세션 작업 기록이 없습니다. 작업이 수행된 후 PDF를 내보낼 수 있습니다.';
     return;
   }
+  const workOwner = session();
+  pageWorkStart(workOwner);
   try {
     const response = await fetch(`${docUrl('pdf', docHash)}&t=${Date.now()}`, { cache:'no-store' });
     if (response.status === 404) {
@@ -3329,6 +3695,8 @@ async function exportDocPdf() {
     if (status) status.textContent = `PDF 내보내기 완료 · ${fileName}`;
   } catch (error) {
     if (status) status.textContent = `PDF 내보내기 오류: ${error.message}`;
+  } finally {
+    pageWorkEnd(workOwner);
   }
 }
 /** Local rows first (their order is the order they were generated in), server-only rows after. */
@@ -3381,8 +3749,12 @@ function renderDocTab() {
     docSessionKey = key;
     docGenerated = false;
     docHtml = '';
-    const frame = $('viz-doc-frame');
-    if (frame) frame.srcdoc = '';
+    docHash = null;
+    docServerKey = null;
+    docServerEntries = [];
+    docServerRequest = null;
+    resetDocLive(activeKey);
+    blankDocStage();
     const empty = $('viz-doc-empty');
     if (empty) empty.hidden = false;
     setDocButtons(false);
@@ -3394,19 +3766,16 @@ function renderDocTab() {
   const empty = $('viz-doc-empty');
   const emptyNote = $('viz-doc-empty-note');
   const generate = $('viz-doc-generate');
-  const status = $('viz-doc-status');
   if (!sessionHasActivity()) {
-    if (empty) empty.hidden = false;
-    if (emptyNote) emptyNote.textContent = '세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.';
+    clearDocFrame('세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.', '기록된 작업 없음');
     if (generate) generate.disabled = true;
-    if (status) status.textContent = '세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.';
     return;
   }
   if (generate) generate.disabled = false;
-  if (emptyNote && empty && !empty.hidden) emptyNote.textContent = '문서 유형을 고르고 ‘문서 생성’을 누르세요.';
-  if (status && !docGenerated) {
-    status.textContent = `${docTypeLabel()} 유형이 선택되었습니다. ‘문서 생성’을 누르면 이 자리에 미리보기가 열립니다.`;
-  }
+  if (emptyNote && empty && !empty.hidden) emptyNote.textContent = '세션 작업이 기록되면 문서 미리보기가 자동으로 열립니다.';
+  // The pane is live: opening it with recorded work shows the current document
+  // without a click, then every later write/verify revision refreshes it.
+  if (!docGenerated || docLive.key !== activeKey) kickDocLive();
 }
 function initDocPanel() {
   // Guides `forms` + `tabs`: the pills are a native radio group, so `change` fires for a

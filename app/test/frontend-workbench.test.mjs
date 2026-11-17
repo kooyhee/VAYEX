@@ -7,19 +7,24 @@ import { createBridge } from '../server.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 
-test('design tokens: three themes, elevation roles, diff roles, and the rail/dock/strip dimensions', async () => {
-  const css = await readFile(resolve(root, '../public/styles.css'), 'utf8');
-  for (const theme of ['obsidian', 'daylight', 'contrast']) {
-    assert(css.includes(`:root[data-theme=${theme}]`), `the ${theme} theme is not defined`);
+test('design tokens: seven studio themes, the elevation steps and the three column widths', async () => {
+  // Comments are stripped so a rule's prelude is its selector alone when the sheet is split.
+  const css = (await readFile(resolve(root, '../public/styles.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+  // The theme studio offers seven presets; each one re-tones the whole surface ramp.
+  const schemes = { obsidian:'dark', daylight:'light', aurora:'dark', lavender:'light', coral:'light', maritime:'dark', contrast:'dark' };
+  for (const [theme, scheme] of Object.entries(schemes)) {
+    const declared = cssDeclared(css, `:root[data-theme=${theme}]`);
+    assert.equal(declared.get('color-scheme'), scheme, `the ${theme} theme must declare ${scheme}`);
+    for (const token of ['--surface-0', '--surface-5', '--ink', '--accent']) assert.ok(declared.has(token), `the ${theme} theme must re-tone ${token}`);
   }
-  for (const token of ['--md-sys-elevation-surface-0', '--md-sys-elevation-surface-5', '--md-sys-color-diff-add-bg', '--md-sys-color-diff-del-bg', '--md-sys-color-primary',
-    '--rail-w:56px', '--dock-w:0px', '--header-h:48px', '--strip-h:36px', '--thread-max:760px']) {
-    assert(css.includes(token), `${token} is missing`);
-  }
-  // Status colours and diff colours are disjoint token sets: diff colour never leaks out of a diff.
-  const statusRole = /--status-(?:ready|busy|warn|danger):var\(--(?:success|accent|warning|danger)\)/g;
-  assert((css.match(statusRole) ?? []).length === 4, 'the four status roles must resolve to the state colours');
-  for (const role of ['--diff-add-bg', '--diff-del-bg', '--diff-hunk-bg']) assert(css.includes(role), `${role} must be its own role`);
+  // One shared tonal ladder: 0 (lowest surface) to 5 (raised controls).
+  const rootTokens = cssDeclared(css, ':root');
+  for (let step = 0; step <= 5; step++) assert.ok(rootTokens.has(`--md-sys-elevation-surface-${step}`), `elevation step ${step} is missing`);
+  for (const role of ['--md-sys-color-primary', '--md-sys-color-success', '--md-sys-color-warning', '--md-sys-color-error']) assert.ok(rootTokens.has(role), `${role} is missing`);
+  // Three measured columns, and the width at which they stop reflowing.
+  assert.equal(rootTokens.get('--sidebar-w'), '260px', 'the sidebar column is 260px');
+  assert.equal(rootTokens.get('--inspector-w'), '364px', 'the inspector column is 364px');
+  assert(css.includes('@media (min-width:1180px)'), 'the three-column layout must hold from 1180px (260 + 364 + 556)');
 });
 
 // A bracket-matching rule splitter, so the type-scale contract is read from declarations
@@ -68,44 +73,33 @@ function cssBelow(css, breakpoint) {
   return bodies.join('\n');
 }
 
-test('type scale has a floor: no font-size below the 12px label size, and the mono/body sizes are the fixed ones', async () => {
-  const css = (await readFile(resolve(root, '../public/styles.css'), 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
-  // Every literal font-size declaration in the sheet (everything else resolves a token).
-  const sizes = [...css.matchAll(/font-size\s*:\s*([0-9.]+)px/g)].map(match => Number(match[1]));
-  const below = sizes.filter(size => size < 12);
-  assert.deepEqual(below, [], `a font-size below 12px is still declared: ${below.join(', ')}`);
-  // Every font-size declaration is either a token or >= the label size.
-  for (const match of css.matchAll(/font-size\s*:\s*([^;}]+)/g)) {
-    const value = match[1].trim();
-    if (/^var\(--fs-(?:body|aux|mono|label|badge)\)$/.test(value)) continue;
-    assert.match(value, /^\d+(?:\.\d+)?px$/, `an unlisted font-size form is declared: ${value}`);
-  }
-  const tokens = cssDeclared(css, ':root');
-  assert.equal(tokens.get('--fs-body'), '15px');
-  assert.equal(tokens.get('--lh-body'), '1.65');
-  assert.equal(tokens.get('--fs-aux'), '13px');
-  assert.equal(tokens.get('--fs-mono'), '12.5px');
-  assert.equal(tokens.get('--fs-label'), '12px');
-  // The one documented exception: an 11.5px badge on a solid fill.
-  assert.equal(tokens.get('--fs-badge'), '11.5px');
-});
+// The 12px type-scale floor and its --fs-* tokens belonged to the discarded rail/dock redesign;
+// the restored shell declares no size scale (`--fs-` appears nowhere), so there is no product
+// behaviour left to measure. Removed rather than re-pointed at unrelated literals.
 
-test('shell markup: an icon rail, one centre column, a result dock and dialog sheets', async () => {
+test('shell markup: one sidebar, one conversation column, one inspector column', async () => {
   const html = await readFile(resolve(root, '../public/index.html'), 'utf8');
-  for (const id of ['rail-new', 'rail-tasks', 'rail-results', 'rail-safety', 'rail-settings']) assert(html.includes(`id="${id}"`), `${id} is missing from the rail`);
-  assert(html.includes('id="top-head"') && html.includes('id="head-status"') && html.includes('id="safety-entry"'), 'the header must carry the title, one status word and one safety entry');
-  assert(html.includes('id="status-bar"') && html.includes('id="model-chip"') && html.includes('id="strip-cost"') && html.includes('id="strip-path"'), 'the strip must carry route, model chip and cost');
-  assert(html.includes('id="dock"') && html.includes('id="diff-rollback"') && html.includes('id="review-form"'), 'the result dock must exist with rollback and the follow-up request');
-  for (const id of ['sheet-safety', 'sheet-tasks', 'sheet-stats', 'sheet-preview', 'sheet-docs', 'sheet-settings', 'sheet-model']) {
-    assert(html.includes(`<dialog`) && html.includes(`id="${id}"`), `${id} must be a native dialog`);
+  // The three panes of the restored shell, each side pane reachable from its header toggle.
+  for (const id of ['sidebar', 'center', 'inspector']) assert(html.includes(`id="${id}"`), `${id} pane is missing`);
+  assert(html.includes('id="toggle-sidebar"') && html.includes('id="toggle-inspector"'), 'the header must carry the two panel toggles');
+  // Sidebar entries that open the product's surfaces.
+  for (const id of ['new-session', 'menu-search', 'menu-agents', 'menu-memory', 'menu-more', 'recent-list']) assert(html.includes(`id="${id}"`), `${id} is missing from the sidebar`);
+  // The inspector's tabs and the pane each one shows.
+  for (const [tab, pane] of [['tab-overview', 'pane-overview'], ['tab-agents', 'pane-agents'], ['tab-visualize', 'pane-visualize'], ['tab-stats', 'pane-stats'], ['tab-preview', 'pane-preview'], ['tab-diff', 'pane-diff'], ['tab-memory', 'pane-memory']]) {
+    assert(html.includes(`id="${tab}"`) && html.includes(`id="${pane}"`), `${tab}/${pane} is missing`);
   }
+  // One conversation log, one status bar, one consent control, one composer.
+  assert(html.includes('id="transcript"') && html.includes('role="log"'), 'the conversation must be the log surface');
+  assert(html.includes('id="status-bar"') && html.includes('id="stat-model"'), 'the status bar must carry the gateway-chosen model');
+  assert(html.includes('id="consent-toggle"') && html.includes('id="consent-label"'), 'the header must carry the consent state');
+  assert(html.includes('id="prompt"') && html.includes('id="send"'), 'the composer must exist');
+  // The change-review surface and the approval gate still exist.
+  assert(html.includes('id="diff-rollback"') && html.includes('id="review-form"'), 'change review must keep rollback and the follow-up request');
   assert(html.includes('id="gate"') && html.includes('id="approval-approve"') && html.includes('id="approval-deny"'), 'the approval gate must carry exactly the two answer buttons');
-  assert(html.includes('id="gate-radios"') && html.includes('id="gate-scope"'), 'the approval scopes must be the collapsed radio group');
-  // Deleted surfaces must not creep back.
-  for (const gone of ['insp-tabs', 'tab-overview', 'split-sidebar', 'split-inspector', 'card-quick', 'card-bridge']) assert(!html.includes(gone), `${gone} came back`);
-  assert(!html.includes('diff-task-id'), 'the 작업 ID input must not exist: the dock always shows the current session');
-  assert(!html.includes('theme-studio'), 'the theme studio must be gone; the settings sheet owns the theme');
-  assert(!/<input[^>]+type="range"/.test(html), 'no range slider belongs in this app');
+  // The theme studio is a native dialog.
+  assert(html.includes('<dialog') && html.includes('id="theme-studio"'), 'the theme studio must be a native dialog');
+  // The discarded rail/dock/strip redesign must not creep back.
+  for (const gone of ['rail-new', 'rail-tasks', 'rail-safety', 'sheet-settings', 'sheet-safety', 'strip-path', 'model-chip', 'dock']) assert(!html.includes(`id="${gone}"`), `${gone} belongs to the retired shell`);
 });
 
 test('Live preview inspector script is self-contained and communicates via postMessage', async () => {

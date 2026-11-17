@@ -1,10 +1,10 @@
-<#
+﻿<#
 .SYNOPSIS
-    Project-root runtime chooser: starts the selected harness of this repository.
+    Project-root runtime chooser: starts the local harness of this repository.
 
 .DESCRIPTION
-    Two runtimes live in this folder, and this is the only place that picks
-    between them by name:
+    One runtime lives in this folder, and this is the only place that picks it
+    by name:
 
       omp   (default)  app\launch.ps1     oh-my-pi 18.16.0, started by the
                                           project-local Bun core under .omp-runtime.
@@ -13,24 +13,16 @@
                                           OpenAI-compatible /v1 endpoint the core
                                           talks to; there is no separate gateway
                                           service to start.
-      dsh              scripts\launch.ps1 DeepSeek Harness, pinned in
-                                          packaging\customization\runtime.json and
-                                          started with this project's Cordis patch
-                                          overlay.
 
-    omp is the selected local harness, so a bare launch.cmd / launch.ps1 starts it.
-    The dsh route is not dropped: the overlay under scripts\ and packaging\ is built
-    for it and -Runtime dsh still reaches it.
+    A bare launch.cmd / launch.ps1 starts omp. `-Runtime omp` is accepted and
+    behaves identically; every other value is refused with an explicit error
+    instead of running a different runtime.
 
-    Both children run as child processes with every remaining argument forwarded
+    The child runs as a child process with every remaining argument forwarded
     unchanged (-DryRun included), and this script exits with the child's exit code.
-    Nothing is installed, downloaded or elevated here:
-      - app\launch.ps1 refuses Node older than 26 and refuses a missing Bun/omp core,
-        naming the exact path, and never falls back to another runtime.
-      - scripts\launch.ps1 refuses a dsh that does not match the pin. With no dsh on
-        PATH a real dsh launch resolves to `npx --yes @deepseek-ai/dsh`, which does
-        fetch the package: inspect it with -DryRun, or install the pin deliberately
-        with scripts\install.ps1.
+    Nothing is installed, downloaded or elevated here: app\launch.ps1 refuses Node
+    older than 26 and refuses a missing Bun/omp core, naming the exact path, and
+    never falls back to another runtime.
 
     Privacy boundary, unchanged by the runtime choice: a loopback endpoint is not
     "on-device" when that port is an SSH forward, because inference then runs on the
@@ -39,16 +31,13 @@
     transfer; nothing here defaults to cloud.
 
 .PARAMETER Runtime
-    omp (default) or dsh. Given as `-Runtime dsh`; consumed here, never forwarded.
+    omp (default). Any other value is rejected. Consumed here, never forwarded.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File launch.ps1 -DryRun
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File launch.ps1 -Port 4317 -ConfigFile .\app\student-omp.json
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File launch.ps1 -Runtime dsh -DryRun -NoModelPatch
 #>
 
 # No param block on purpose: $args receives every token verbatim, so a switch this
@@ -61,7 +50,7 @@ for ($i = 0; $i -lt $args.Count; $i++) {
     if ($token -ieq "-Runtime" -or $token -ieq "--runtime" -or $token -ieq "/Runtime") {
         if (($i + 1) -ge $args.Count) {
             Write-Host "LAUNCH STOPPED: -Runtime needs a value." -ForegroundColor Red
-            Write-Host "  accepted: omp (default) | dsh" -ForegroundColor Red
+            Write-Host "  accepted: omp (default)" -ForegroundColor Red
             exit 2
         }
         $Runtime = [string]$args[$i + 1]
@@ -76,19 +65,14 @@ for ($i = 0; $i -lt $args.Count; $i++) {
 }
 $Runtime = $Runtime.ToLowerInvariant()
 
-$targets = @{
-    omp = "app\launch.ps1"
-    dsh = "scripts\launch.ps1"
-}
-if (-not $targets.ContainsKey($Runtime)) {
-    Write-Host "LAUNCH STOPPED: unknown runtime '$Runtime'" -ForegroundColor Red
-    Write-Host "  accepted: omp (default) | dsh" -ForegroundColor Red
-    Write-Host "  omp  : app\launch.ps1     (Node bridge + project-local Bun/omp core)" -ForegroundColor Red
-    Write-Host "  dsh  : scripts\launch.ps1 (pinned @deepseek-ai/dsh + customization patch)" -ForegroundColor Red
+if ($Runtime -ne "omp") {
+    Write-Host "LAUNCH STOPPED: 지원하지 않는 런타임 '$Runtime'" -ForegroundColor Red
+    Write-Host "  accepted: omp (default)" -ForegroundColor Red
+    Write-Host "  omp : app\launch.ps1     (Node bridge + project-local Bun/omp core)" -ForegroundColor Red
     exit 2
 }
 
-$targetRelative = $targets[$Runtime]
+$targetRelative = "app\launch.ps1"
 $target = Join-Path $PSScriptRoot $targetRelative
 if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
     Write-Host "LAUNCH STOPPED: the $Runtime launcher is missing" -ForegroundColor Red
@@ -98,12 +82,7 @@ if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
 
 Write-Host "Runtime: $Runtime" -ForegroundColor Green
 Write-Host "  launcher: $target"
-if ($Runtime -eq "omp") {
-    Write-Host "  (omp is the selected local harness; the dsh route stays reachable with -Runtime dsh)"
-}
-else {
-    Write-Host "  (dsh route: this project's customization overlay; a bare launch starts omp instead)"
-}
+Write-Host "  (omp is the local harness of this repository)"
 
 $command = @("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $target) + $Forward.ToArray()
 & $command[0] @($command[1..($command.Count - 1)])

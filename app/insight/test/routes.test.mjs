@@ -240,3 +240,112 @@ test('routes: an absent event log is named, not invented', async () => {
     rmSync(emptyRoot, { recursive: true, force: true });
   }
 });
+
+test('routes: POST /api/insight/title keeps one title per session and never oscillates tiers', async () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'insight-routes-title-stable-'));
+  const modelRoot = join(scratch, 'with-model');
+  const runtime = join(modelRoot, 'node_modules', '@huggingface', 'transformers');
+  const modelDir = join(modelRoot, 'models', 'Qwen2.5-0.5B-Instruct');
+  mkdirSync(runtime, { recursive: true });
+  mkdirSync(modelDir, { recursive: true });
+  writeFileSync(join(modelDir, 'config.json'), '{}');
+  writeFileSync(join(runtime, 'package.json'), JSON.stringify({ name: '@huggingface/transformers', main: 'index.cjs' }));
+  writeFileSync(join(runtime, 'index.cjs'), 'exports.env = {}; exports.pipeline = async () => async () => [];');
+
+  let calls = 0;
+  const answers = ['"세션 제목 생성 수정"', '"세션 제목 생성 정리"', '"제목을 정리했습니다"'];
+  const { server, port } = await start(createInsightRouter({
+    modelRoot,
+    modelEnv: {},
+    titleGenerator: async () => {
+      const answer = answers[Math.min(calls, answers.length - 1)];
+      calls += 1;
+      return [{ generated_text: answer }];
+    },
+  }));
+  try {
+    const body = { prompt: '세션 제목 자동 생성이 이상해요. 프롬프트랑 fallback을 고쳐 줘.', session: 's-1' };
+
+    const first = await call(port, '/api/insight/title', { method: 'POST', body });
+    assert.equal(first.status, 200);
+    assert.equal(first.json.tier, 'local-model');
+    assert.equal(first.json.title, '세션 제목 생성 수정');
+    assert.equal(first.json.session, 's-1');
+    assert.equal(first.json.cached, false);
+    assert.equal(calls, 1);
+
+    // The same revision answers from the record: the model is not asked twice.
+    const again = await call(port, '/api/insight/title', { method: 'POST', body });
+    assert.equal(again.json.title, '세션 제목 생성 수정');
+    assert.equal(again.json.cached, true);
+    assert.equal(calls, 1);
+
+    // A settled revision may refine the title once...
+    const settled = await call(port, '/api/insight/title', {
+      method: 'POST',
+      body: { ...body, reply: '프롬프트를 고쳤습니다.', settled: true },
+    });
+    assert.equal(settled.json.title, '세션 제목 생성 정리');
+    assert.equal(settled.json.settled, true);
+    assert.equal(calls, 2);
+
+    // ...and a settled session never runs the model again.
+    const after = await call(port, '/api/insight/title', {
+      method: 'POST',
+      body: { ...body, reply: '다시 고쳤습니다.', settled: true },
+    });
+    assert.equal(after.json.title, '세션 제목 생성 정리');
+    assert.equal(after.json.cached, true);
+    assert.equal(calls, 2);
+
+    // A different session is a different title, keyed separately.
+    const other = await call(port, '/api/insight/title', { method: 'POST', body: { ...body, session: 's-2' } });
+    assert.equal(other.json.session, 's-2');
+    assert.equal(calls, 3);
+  } finally {
+    server.close();
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('routes: a refinement that turns unusable never downgrades a model title to a rule one', async () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'insight-routes-title-downgrade-'));
+  const modelRoot = join(scratch, 'with-model');
+  const runtime = join(modelRoot, 'node_modules', '@huggingface', 'transformers');
+  const modelDir = join(modelRoot, 'models', 'Qwen2.5-0.5B-Instruct');
+  mkdirSync(runtime, { recursive: true });
+  mkdirSync(modelDir, { recursive: true });
+  writeFileSync(join(modelDir, 'config.json'), '{}');
+  writeFileSync(join(runtime, 'package.json'), JSON.stringify({ name: '@huggingface/transformers', main: 'index.cjs' }));
+  writeFileSync(join(runtime, 'index.cjs'), 'exports.env = {}; exports.pipeline = async () => async () => [];');
+
+  let calls = 0;
+  const { server, port } = await start(createInsightRouter({
+    modelRoot,
+    modelEnv: {},
+    titleGenerator: async () => {
+      const answer = calls === 0 ? '"세션 제목 생성 수정"' : '제목을 정리했습니다';
+      calls += 1;
+      return [{ generated_text: answer }];
+    },
+  }));
+  try {
+    const body = { prompt: '세션 제목 자동 생성을 고쳐 줘.', session: 's-9' };
+    const first = await call(port, '/api/insight/title', { method: 'POST', body });
+    assert.equal(first.json.tier, 'local-model');
+    assert.equal(first.json.title, '세션 제목 생성 수정');
+
+    const refined = await call(port, '/api/insight/title', {
+      method: 'POST',
+      body: { ...body, prompt: '세션 제목 자동 생성을 다시 고쳐 줘.', reply: '고쳤습니다.' },
+    });
+    assert.equal(refined.json.title, '세션 제목 생성 수정', 'the model title is kept');
+    assert.equal(refined.json.tier, 'local-model');
+    assert.equal(refined.json.fallbackReason, 'unusable_output', 'the failed refinement is still reported');
+    assert.equal(calls, 2);
+  } finally {
+    server.close();
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+

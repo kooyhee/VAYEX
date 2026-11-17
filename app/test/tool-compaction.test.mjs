@@ -169,3 +169,58 @@ test('tool_output_recover: without a runtime registration API the notice names o
     await rm(spillRoot, { recursive: true, force: true });
   }
 });
+
+test('transcriptSegments: merges alternating tool -> privacy -> tool -> privacy into one tool group and one privacy group', async () => {
+  const { createViewModel, applyFrame, transcriptEntries, transcriptSegments, privacyLine } = await import('../public/protocol.js');
+  const vm = createViewModel();
+  applyFrame(vm, { type: 'message_start', message: { role: 'user', content: '확인해 주세요' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'user', content: '확인해 주세요' } });
+
+  for (const [id, name] of [['t1', 'todo'], ['t2', 'read'], ['t3', 'read'], ['t4', 'read']]) {
+    applyFrame(vm, { type: 'tool_execution_start', toolCallId: id, toolName: name, args: {} });
+    applyFrame(vm, { type: 'tool_execution_end', toolCallId: id, toolName: name, result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  }
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['korean_name'], counts: { korean_name: 1 }, fields: ['messages[0].content'] } });
+
+  for (const [id, name] of [['t5', 'read'], ['t6', 'read']]) {
+    applyFrame(vm, { type: 'tool_execution_start', toolCallId: id, toolName: name, args: {} });
+    applyFrame(vm, { type: 'tool_execution_end', toolCallId: id, toolName: name, result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  }
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['korean_name'], counts: { korean_name: 1 }, fields: ['messages[2].content'] } });
+
+  applyFrame(vm, { type: 'message_start', message: { role: 'assistant', content: '완료했습니다.' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'assistant', content: '완료했습니다.' } });
+
+  const segments = transcriptSegments(transcriptEntries(vm));
+  assert.equal(segments.length, 4, 'user + 1 merged tool batch + 1 merged privacy line + assistant');
+  assert.equal(segments[0].entry.message.role, 'user');
+  assert.equal(segments[1].foldable, true);
+  assert.equal(segments[1].entries.filter((e) => e.tool).length, 6);
+  assert.equal(segments[2].foldable, false);
+  assert.equal(privacyLine(segments[2].entry.privacy).text, '개인정보 보호 · 이름 2건 · 가명화 · 요청 전송됨');
+  assert.equal(segments[3].entry.message.role, 'assistant');
+});
+
+test('transcriptSegments: does not merge tool or privacy groups across separate turns', async () => {
+  const { createViewModel, applyFrame, transcriptEntries, transcriptSegments } = await import('../public/protocol.js');
+  const vm = createViewModel();
+  applyFrame(vm, { type: 'message_start', message: { role: 'user', content: '첫 번째' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'user', content: '첫 번째' } });
+  applyFrame(vm, { type: 'tool_execution_start', toolCallId: 't1', toolName: 'read', args: {} });
+  applyFrame(vm, { type: 'tool_execution_end', toolCallId: 't1', toolName: 'read', result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['korean_name'], counts: { korean_name: 1 }, fields: ['messages[0].content'] } });
+  applyFrame(vm, { type: 'message_start', message: { role: 'assistant', content: '첫 번째 응답' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'assistant', content: '첫 번째 응답' } });
+
+  applyFrame(vm, { type: 'message_start', message: { role: 'user', content: '두 번째' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'user', content: '두 번째' } });
+  applyFrame(vm, { type: 'tool_execution_start', toolCallId: 't2', toolName: 'read', args: {} });
+  applyFrame(vm, { type: 'tool_execution_end', toolCallId: 't2', toolName: 'read', result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['phone_number'], counts: { phone_number: 1 }, fields: ['messages[0].content'] } });
+
+  const segments = transcriptSegments(transcriptEntries(vm));
+  const toolBatches = segments.filter((s) => s.foldable);
+  const privacySegments = segments.filter((s) => !s.foldable && s.entry.privacy);
+  assert.equal(toolBatches.length, 2);
+  assert.equal(privacySegments.length, 2);
+});

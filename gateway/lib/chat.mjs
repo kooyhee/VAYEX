@@ -93,9 +93,13 @@ export async function handleChat({ req, res, body, identity, helmet, config, mod
   // The grade is chosen from the request as the caller wrote it, before any
   // gateway-chosen reasoning field is merged in, so "the gateway picked this" and
   // "the caller picked this" can never be confused.
-  const availableTokens = helmet.ledger.tokensPerDay
-    - helmet.ledger.bucket(identity).tokens
-    - helmet.ledger.bucket(identity).reserved_tokens;
+  // An uncapped token dimension is not zero headroom: grade selection may use the
+  // full budget, and MAX_SAFE_INTEGER keeps its finite-arithmetic path honest.
+  const availableTokens = helmet.ledger.tokensPerDay === null
+    ? Number.MAX_SAFE_INTEGER
+    : helmet.ledger.tokensPerDay
+      - helmet.ledger.bucket(identity).tokens
+      - helmet.ledger.bucket(identity).reserved_tokens;
   const optimization = config.optimization ?? {};
   // A reasoning grade pinned for this work segment protects the provider's cache
   // of the request envelope: the grade decides which thinking budget is sent, and

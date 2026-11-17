@@ -893,6 +893,13 @@ export async function createBridge(options = {}) {
         usable: Boolean(k.usable),
       })) : [];
       const missingGatewayKeys = gatewayKeys.filter(k => !k.configured || !k.usable);
+      // The parsed quota is the same one the gateway enforces; `null` is reported
+      // as `null` so the page never renders an uncapped dimension as a number.
+      const quota = inference ? {
+        identity_header: inference.config.quota.identityHeader,
+        requests_per_day: inference.config.quota.requestsPerDay,
+        tokens_per_day: inference.config.quota.tokensPerDay,
+      } : null;
       const planeSnap = inference?.decisionPlane ? inference.decisionPlane.snapshot() : null;
       // A default nobody can serve is a 502 on the visitor's first request: pick a served one instead.
       const servedDefault = routeValues.includes(configuredDefault) && routes[configuredDefault].served
@@ -911,6 +918,7 @@ export async function createBridge(options = {}) {
         routes,
         gatewayKeys,
         missingGatewayKeys,
+        quota,
         decisionPlane: planeSnap,
         activeRoute:conversation.route,
         consent:conversation.consent,

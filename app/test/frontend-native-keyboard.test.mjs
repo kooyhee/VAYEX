@@ -171,90 +171,97 @@ const sheetState = id => `(() => {
 
 async function openApp(browser, baseUrl) {
   await browser.navigate(`${baseUrl}/`);
-  await browser.until(`!!document.getElementById('prompt') && !!document.getElementById('rail-safety')`, 'the app shell');
+  await browser.until(`!!document.getElementById('prompt') && !!document.getElementById('sidebar') && !!document.getElementById('inspector')`, 'the app shell');
 }
 
-test('Settings sheet: exactly three theme modes, no sliders, and a real key press re-tones the shell', { skip }, async () => {
+test('Theme studio: seven presets, and a real Space re-tones the shell without losing focus', { skip }, async () => {
   const bridge = await createBridge({ mock: true });
   const baseUrl = await bridge.start(0);
   const browser = await launch();
   try {
     await openApp(browser, baseUrl);
-    await browser.evaluate(`document.getElementById('rail-settings').focus()`);
+    await browser.evaluate(`document.getElementById('theme-toggle').focus()`);
     await browser.press('Enter');
-    await browser.until(`document.getElementById('sheet-settings').open`, 'the settings sheet to open');
-    assert.equal(await browser.evaluate(`document.querySelectorAll('#theme-modes input[type=radio]').length`), 3, 'the theme control is exactly three modes');
-    assert.equal(await browser.evaluate(`document.querySelectorAll('#settings-body input[type=range]').length`), 0, 'no slider belongs in this app');
+    await browser.until(`document.getElementById('theme-studio').open`, 'the theme studio to open');
+    assert.equal(await browser.evaluate(`document.querySelectorAll('#studio-presets .preset-card').length`), 7, 'the theme studio offers its seven presets');
+    assert.equal(await browser.evaluate(`document.getElementById('theme-toggle').getAttribute('aria-expanded')`), 'true', 'the trigger reports the open dialog');
 
-    await browser.evaluate(`document.querySelector('#theme-modes input[value=daylight]').focus()`);
+    await browser.evaluate(`document.querySelector('#studio-presets .preset-card[data-preset=maritime]').focus()`);
     await browser.press('Space');
     assert.deepEqual(await browser.evaluate(`(() => {
-      const input = document.querySelector('#theme-modes input[value=daylight]');
-      return { checked: input.checked, theme: document.documentElement.dataset.theme, focused: document.activeElement === input };
-    })()`), { checked: true, theme: 'daylight', focused: true }, 'Space on a theme radio selects it, re-tones the shell and leaves focus on it');
-    assert.equal(await browser.evaluate(`getComputedStyle(document.documentElement).colorScheme`), 'light', 'the light theme must declare a light colour scheme');
+      const card = document.querySelector('#studio-presets .preset-card[data-preset=maritime]');
+      return { checked: card.getAttribute('aria-checked'), theme: document.documentElement.dataset.theme, focused: document.activeElement.dataset.preset };
+    })()`), { checked:'true', theme:'maritime', focused:'maritime' }, 'Space on a preset selects it, re-tones the shell and leaves focus on the preset');
+    assert.equal(await browser.evaluate(`getComputedStyle(document.documentElement).colorScheme`), 'dark', 'the maritime preset must declare a dark colour scheme');
   } finally {
     await browser.close();
     await bridge.close();
   }
 });
 
-test('Sheets are native modals: Escape closes and returns focus to the rail trigger', { skip }, async () => {
+test('The theme studio is a native modal: Escape closes it and returns focus to the header trigger', { skip }, async () => {
   const bridge = await createBridge({ mock: true });
   const baseUrl = await bridge.start(0);
   const browser = await launch();
   try {
     await openApp(browser, baseUrl);
-    for (const [trigger, sheet] of [['rail-safety', 'sheet-safety'], ['rail-tasks', 'sheet-tasks'], ['rail-settings', 'sheet-settings']]) {
-      await browser.evaluate(`document.getElementById(${JSON.stringify(trigger)}).focus()`);
-      await browser.press('Enter');
-      await browser.until(`document.getElementById(${JSON.stringify(sheet)}).open`, `the ${sheet} to open`);
-      assert.deepEqual(await browser.evaluate(sheetState(sheet)), { open: true, modal: true }, `the ${sheet} must be a modal dialog`);
-      await browser.press('Escape');
-      await browser.until(`!document.getElementById(${JSON.stringify(sheet)}).open`, `Escape to close the ${sheet}`);
-      assert.equal(await browser.evaluate(`document.activeElement.id`), trigger, `closing the ${sheet} must return focus to ${trigger}`);
-      await browser.press('Tab');
-      assert.notEqual(await browser.evaluate(`document.activeElement.tagName`), 'BODY', `Tab after closing the ${sheet} landed on <body>`);
-    }
+    await browser.evaluate(`document.getElementById('theme-toggle').focus()`);
+    await browser.press('Enter');
+    await browser.until(`document.getElementById('theme-studio').open`, 'the theme studio to open');
+    assert.deepEqual(await browser.evaluate(sheetState('theme-studio')), { open: true, modal: true }, 'the theme studio must be a modal dialog');
+    await browser.press('Escape');
+    await browser.until(`!document.getElementById('theme-studio').open`, 'Escape to close the theme studio');
+    // The dialog's close event and the browser's focus return both land after `open` flips false.
+    await browser.until(`document.activeElement.id === 'theme-toggle' && document.getElementById('theme-toggle').getAttribute('aria-expanded') === 'false'`,
+      'focus and the closed state to return to the theme toggle');
   } finally {
     await browser.close();
     await bridge.close();
   }
 });
 
-test('1280 layout keeps the conversation column and never opens the dock by itself', { skip }, async () => {
+test('1280 layout keeps the three columns: 260 sidebar, 364 inspector, conversation between them', { skip }, async () => {
   const bridge = await createBridge({ mock: true });
   const baseUrl = await bridge.start(0);
   const browser = await launch();
   try {
     await browser.viewport(1280, 720);
     await openApp(browser, baseUrl);
-    const closed = await browser.evaluate(`(() => {
-      const dock = document.getElementById('dock').getBoundingClientRect();
-      const thread = document.getElementById('thread').getBoundingClientRect();
+    const layout = await browser.evaluate(`(() => {
+      const width = id => Math.round(document.getElementById(id).getBoundingClientRect().width);
       return {
-        dockWidth: Math.round(dock.width),
-        threadWidth: Math.round(thread.width),
-        dockOpen: document.body.dataset.dock === 'open',
-        rail: Math.round(document.querySelector('.rail').getBoundingClientRect().width),
-        header: Math.round(document.getElementById('top-head').getBoundingClientRect().height),
-        strip: Math.round(document.getElementById('status-bar').getBoundingClientRect().height),
+        sidebar: width('sidebar'),
+        inspector: width('inspector'),
+        thread: width('thread'),
+        sidebarPressed: document.getElementById('toggle-sidebar').getAttribute('aria-pressed'),
+        inspectorPressed: document.getElementById('toggle-inspector').getAttribute('aria-pressed'),
         overflow: document.scrollingElement.scrollWidth > document.scrollingElement.clientWidth
       };
     })()`);
-    assert.equal(closed.dockOpen, false, 'a result must not open the dock by itself at 1280 (P-5)');
-    assert.equal(closed.dockWidth, 0, 'a closed dock takes no width');
-    assert.equal(closed.rail, 56, 'the rail is 56px');
-    assert.ok(closed.header === 48 && closed.strip === 36, `header 48 and strip 36 are the contract: ${closed.header}/${closed.strip}`);
-    assert.ok(closed.threadWidth >= 738, `the conversation column must keep >= 738px at 1280: ${closed.threadWidth}`);
-    assert.equal(closed.overflow, false, 'the 1280 shell must not scroll horizontally');
+    assert.equal(layout.sidebar, 260, 'the sidebar keeps its 260px column');
+    assert.equal(layout.inspector, 364, 'the inspector keeps its 364px column');
+    assert.ok(layout.thread >= 556, `the conversation column must keep >= 556px at 1280: ${layout.thread}`);
+    assert.equal(layout.sidebarPressed, 'true', 'both side panels start open');
+    assert.equal(layout.inspectorPressed, 'true', 'both side panels start open');
+    assert.equal(layout.overflow, false, 'the 1280 shell must not scroll horizontally');
+
+    await browser.evaluate(`document.getElementById('toggle-inspector').click()`);
+    assert.deepEqual(await browser.evaluate(`(() => ({
+      pressed: document.getElementById('toggle-inspector').getAttribute('aria-pressed'),
+      width: Math.round(document.getElementById('inspector').getBoundingClientRect().width)
+    }))()`), { pressed:'false', width:0 }, 'the header toggle closes the inspector column');
+    await browser.evaluate(`document.getElementById('toggle-sidebar').click()`);
+    assert.deepEqual(await browser.evaluate(`(() => ({
+      pressed: document.getElementById('toggle-sidebar').getAttribute('aria-pressed'),
+      width: Math.round(document.getElementById('sidebar').getBoundingClientRect().width)
+    }))()`), { pressed:'false', width:0 }, 'the header toggle closes the sidebar column');
   } finally {
     await browser.close();
     await bridge.close();
   }
 });
 
-test('Approval gate: role=alert, the title takes focus, and it replaces the composer until answered', { skip }, async () => {
+test('Approval gate: role=alert, the title takes focus, and answering returns focus to the composer', { skip }, async () => {
   // The page only sends when a local upstream answers, so the gate test needs a
   // served local slot: a loopback model-list stub is enough for /api/config.
   const upstream = http.createServer((req, res) => {
@@ -268,24 +275,22 @@ test('Approval gate: role=alert, the title takes focus, and it replaces the comp
   const browser = await launch();
   try {
     await openApp(browser, baseUrl);
-    await browser.until(`!document.getElementById('send').disabled`, 'a served local slot');
+    // The restored shell sends only on a consented route: the header toggle is the one consent control.
+    await browser.evaluate(`document.getElementById('consent-toggle').click()`);
+    await browser.until(`!document.getElementById('send').disabled`, 'a consented route with a served local slot');
     await browser.evaluate(`document.getElementById('prompt').value = '/approval'; document.getElementById('composer').requestSubmit();`);
     await browser.until(`!document.getElementById('approvals').hidden && document.activeElement.id === 'gate-title'`, 'the gate to take focus');
+    // The restored gate sits in the conversation column and leaves the composer in place.
     assert.deepEqual(await browser.evaluate(`(() => ({
       role: document.getElementById('gate').getAttribute('role'),
-      composerHidden: document.getElementById('composer').hidden,
-      title: document.title.startsWith('\u25CF '),
-      status: document.getElementById('head-status-label').textContent,
       label: document.getElementById('approval-approve').textContent,
-      bar: document.getElementById('composer-blocked').hidden ? null : document.getElementById('composer-blocked').textContent
-    }))()`), { role:'alert', composerHidden:true, title:true, status:'답변 기다리는 중', label:'승인', bar:'승인을 마치면 다시 요청할 수 있습니다.' },
-      'the gate is an alert, replaces the composer, marks the title and states one status');
+      deny: document.getElementById('approval-deny').textContent
+    }))()`), { role:'alert', label:'승인', deny:'거절' },
+      'the gate is an alert answered with exactly 승인 and 거절');
     await browser.evaluate(`document.getElementById('approval-approve').focus()`);
     await browser.press('Enter');
     await browser.until(`document.getElementById('approvals').hidden`, 'the answered gate to clear');
-    assert.equal(await browser.evaluate(`document.getElementById('composer').hidden`), false, 'answering returns the composer to its place');
     assert.equal(await browser.evaluate(`document.activeElement.id`), 'prompt', 'focus returns to the composer after the answer');
-    assert.equal(await browser.evaluate(`document.title.startsWith('\u25CF ')`), false, 'the pending mark leaves the title');
   } finally {
     await browser.close();
     await bridge.close();
@@ -293,59 +298,47 @@ test('Approval gate: role=alert, the title takes focus, and it replaces the comp
   }
 });
 
-test('Example chips fill the composer on a keyboard activation and leave focus in the input', { skip }, async () => {
+// The example chips were part of the discarded rail/dock redesign; the restored shell has no
+// suggested-prompt surface, so this test had no product behaviour left to measure.
+
+test('Session list: keyboard activation of a recent task switches the active session', { skip }, async () => {
   const bridge = await createBridge({ mock: true });
   const baseUrl = await bridge.start(0);
   const browser = await launch();
   try {
     await openApp(browser, baseUrl);
-    const expected = await browser.evaluate(`document.querySelector('.example').dataset.example`);
-    await browser.evaluate(`document.querySelector('.example').focus()`);
+    await browser.evaluate(`document.getElementById('new-session').click()`);
+    await browser.until(`document.querySelectorAll('#recent-list .recent-sub[data-session-key]').length >= 2`, 'two sessions in the recent list');
+    const key = await browser.evaluate(`document.querySelectorAll('#recent-list .recent-sub[data-session-key]')[1].dataset.sessionKey`);
+    await browser.evaluate(`document.querySelectorAll('#recent-list .recent-sub[data-session-key]')[1].focus()`);
     await browser.press('Enter');
-    assert.deepEqual(await browser.evaluate(`(() => ({ value: document.getElementById('prompt').value, focused: document.activeElement.id }))()`),
-      { value: expected, focused: 'prompt' }, 'an example fills the prompt and hands focus to it');
+    await browser.until(`document.querySelector('#recent-list .recent-sub[aria-current="true"]')?.dataset.sessionKey === ${JSON.stringify(key)}`, 'the activated session row');
+    assert.deepEqual(await browser.evaluate(`(() => ({
+      active: document.querySelectorAll('#recent-list .recent-sub[aria-current="true"]').length,
+      focused: document.activeElement.dataset.sessionKey
+    }))()`), { active:1, focused:key },
+      'choosing a task marks exactly one active row and leaves focus in the list');
   } finally {
     await browser.close();
     await bridge.close();
   }
 });
 
-test('Task sheet: choosing another task closes the sheet and leaves the composer focused', { skip }, async () => {
+test('Sidebar first: five menu entries with Korean names, and a keyboard activation opens what it names', { skip }, async () => {
   const bridge = await createBridge({ mock: true });
   const baseUrl = await bridge.start(0);
   const browser = await launch();
   try {
     await openApp(browser, baseUrl);
-    await browser.evaluate(`document.getElementById('rail-new').click()`);
-    await browser.until(`document.getElementById('rail-task-count').hidden === false`, 'two sessions');
-    await browser.evaluate(`document.getElementById('rail-tasks').click()`);
-    await browser.until(`document.getElementById('sheet-tasks').open && document.querySelectorAll('#tasks-body .task-row[data-session-key]').length >= 2`, 'the task rows');
-    await browser.evaluate(`document.querySelectorAll('#tasks-body .task-row[data-session-key]')[1].focus()`);
-    await browser.press('Enter');
-    await browser.until(`!document.getElementById('sheet-tasks').open`, 'the sheet to close on activation');
-    assert.deepEqual(await browser.evaluate(`(() => ({ focused: document.activeElement.id }))()`), { focused:'prompt' },
-      'choosing a task closes the sheet and leaves the composer focused');
-  } finally {
-    await browser.close();
-    await bridge.close();
-  }
-});
-
-test('Rail first: five working rail entries with Korean names, and the composer owns the initial focus', { skip }, async () => {
-  const bridge = await createBridge({ mock: true });
-  const baseUrl = await bridge.start(0);
-  const browser = await launch();
-  try {
-    await openApp(browser, baseUrl);
-    const rail = await browser.evaluate(`(() => {
-      const buttons = [...document.querySelectorAll('.rail .rail-btn')];
-      return { count: buttons.length, disabled: buttons.filter(b => b.disabled).length, labels: buttons.map(b => b.getAttribute('aria-label')) };
+    const menu = await browser.evaluate(`(() => {
+      const rows = [...document.querySelectorAll('.menu .menu-row')];
+      return { count: rows.length, labels: rows.map(row => row.querySelector('span').textContent.trim()) };
     })()`);
-    assert.deepEqual(rail, { count:5, disabled:0, labels:['새 작업','작업 목록','결과','안전','설정'] },
-      'the rail is five working entries with Korean accessible names');
-    assert.equal(await browser.evaluate(`document.activeElement.id`), 'prompt', 'the page loads with the composer focused');
-    assert.equal(await browser.evaluate(`document.getElementById('hero-note').textContent`), '무엇을 만들지 한국어로 적어 주세요.',
-      'the first screen states the one instruction');
+    assert.deepEqual(menu, { count:5, labels:['새 작업', '검색', '에이전트 목록', '메모리', '더 보기'] },
+      'the sidebar is five menu entries with Korean accessible names');
+    await browser.evaluate(`document.getElementById('menu-search').focus()`);
+    await browser.press('Enter');
+    await browser.until(`!document.getElementById('search-bar').hidden && document.activeElement.id === 'search-input'`, 'the search field to take focus');
   } finally {
     await browser.close();
     await bridge.close();

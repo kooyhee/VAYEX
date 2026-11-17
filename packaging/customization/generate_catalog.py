@@ -2,9 +2,7 @@
 
 The catalog is generated data: the engine's curated preset registry is the source
 of truth for release version, primary model, valid roles and every model record.
-``scripts/verify_customization.ps1`` rebuilds the same structure and fails when
-the committed file differs, so this script is the only supported way to change
-the catalog. Never hand-edit the JSON.
+Never hand-edit the JSON; run this script to regenerate it.
 
 Usage (from ``40_AI보고서``)::
 

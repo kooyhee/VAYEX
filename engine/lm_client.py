@@ -217,7 +217,7 @@ class LmClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "text/event-stream" if stream else "application/json",
-            "User-Agent": "deepseek-harness-engine/1.0",
+            "User-Agent": "local-harness-engine/1.0",
         }
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"

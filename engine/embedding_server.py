@@ -635,7 +635,7 @@ class RemoteBackend:
             headers={
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "User-Agent": "dsh-embedding-server/1.0",
+                "User-Agent": "local-embedding-server/1.0",
             },
             method="POST",
         )
@@ -1113,7 +1113,7 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
     """OpenAI 호환 임베딩 라우터. 인증 없음 — 로컬 전용을 전제한다."""
 
     protocol_version = "HTTP/1.1"
-    server_version = "dsh-embedding-server/1.0"
+    server_version = "local-embedding-server/1.0"
     server: EmbeddingHTTPServer
 
     def setup(self) -> None:
@@ -1329,7 +1329,7 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
             "id": info["model_id"],
             "object": "model",
             "created": int(time.time()),
-            "owned_by": "dsh-local",
+            "owned_by": "local",
             "dimensions": info["dimensions"],
             "synthetic": info["synthetic"],
             "status": info["status"],
@@ -1352,7 +1352,7 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
         body = {
             "status": "ok" if ready else "unavailable",
             "ok": ready,
-            "service": "dsh-local-embedding",
+            "service": "local-embedding",
             "backend": info,
             "cost": describe_cost(self.server.backend),
             # 바인드 주소는 이미 검증된 루프백 리터럴이다. 여기서 이름 해석을 하지 않는다

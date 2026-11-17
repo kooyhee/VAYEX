@@ -37,6 +37,39 @@ import {
 } from './local-model.mjs';
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
+const TITLE_SESSION_LIMIT = 200;
+
+/** Session id a title belongs to, or null when the caller names no session. */
+function titleSessionOf(body) {
+  const session = body?.session;
+  if (typeof session !== 'string') return null;
+  const key = session.trim();
+  return key ? key.slice(0, 200) : null;
+}
+
+/** Identity of one activity revision: same prompt/reply/files answers the same title. */
+function titleRevisionOf(body) {
+  const text = `${body?.prompt ?? ''}\u0000${body?.reply ?? ''}\u0000${Array.isArray(body?.files) ? body.files.join('\u0000') : ''}`;
+  let hash = 0;
+  for (let index = 0; index < text.length; index += 1) hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+  return `${text.length}:${hash}`;
+}
+
+/** The observable half of a title record: what the endpoint answers. */
+function titlePayload(record, { cached = false } = {}) {
+  return {
+    title: record.title,
+    tier: record.tier,
+    source: record.source,
+    modelId: record.modelId,
+    modelStatus: record.modelStatus,
+    fallbackReason: record.fallbackReason ?? null,
+    session: record.session,
+    settled: record.settled,
+    cached,
+    ...(record.generationMs !== undefined ? { generationMs: record.generationMs } : {}),
+  };
+}
 
 export function createInsightRouter(options = {}) {
   const basePath = options.basePath ?? '/api/insight';
@@ -51,6 +84,10 @@ export function createInsightRouter(options = {}) {
   }));
   const polishTasks = options.polishTasks ?? polishJournalTasks;
   const generateTitle = options.generateTitle ?? generateSessionTitle;
+  // One title per session: a settled session is answered from here and never runs
+  // the model again; a new revision may refine the title but a model title is never
+  // replaced by a rules one, so the header cannot oscillate between the two tiers.
+  const titles = new Map();
 
   async function sourceEvents(request) {
     if (Array.isArray(request.events)) {
@@ -132,6 +169,18 @@ export function createInsightRouter(options = {}) {
       if (path === '/title' && req.method === 'POST') {
         const body = await readJson(req);
         const localModel = detectModel();
+        const session = titleSessionOf(body);
+        const revision = titleRevisionOf(body);
+        const settled = Boolean(body?.settled);
+        const prior = session ? titles.get(session) ?? null : null;
+        // A settled session keeps its title; the same revision with a model title
+        // answers from the record. Only a revision that is new (or never settled)
+        // may reach the generator.
+        if (prior && (prior.settled || (prior.tier === 'local-model' && prior.revision === revision))) {
+          const cached = { ...prior, settled: prior.settled || settled };
+          if (session) titles.set(session, cached);
+          return send(res, 200, titlePayload(cached, { cached: true }));
+        }
         const result = await generateTitle(
           { prompt: body?.prompt, reply: body?.reply, files: body?.files },
           {
@@ -144,15 +193,29 @@ export function createInsightRouter(options = {}) {
             ...(options.budgetMs !== undefined ? { budgetMs: options.budgetMs } : {}),
           },
         );
-        return send(res, 200, {
-          title: result.title,
-          tier: result.tier,
-          source: result.source,
-          modelId: result.modelId,
+        // Never downgrade: a refinement may replace a rule title with a model one,
+        // not the reverse. The reason a refinement failed is still reported.
+        const keepPrior = prior && prior.tier === 'local-model' && result.tier !== 'local-model';
+        const record = {
+          title: keepPrior ? prior.title : result.title,
+          tier: keepPrior ? prior.tier : result.tier,
+          source: keepPrior ? prior.source : result.source,
+          modelId: keepPrior ? prior.modelId : result.modelId,
           modelStatus: result.modelStatus ?? localModel?.status ?? 'rule-fallback (weights not installed)',
-          fallbackReason: result.fallbackReason ?? null,
+          fallbackReason: result.fallbackReason ?? (keepPrior ? prior.fallbackReason : null) ?? null,
+          session,
+          revision,
+          settled: settled || Boolean(prior?.settled),
           ...(result.generationMs !== undefined ? { generationMs: result.generationMs } : {}),
-        });
+        };
+        if (session) {
+          if (titles.size >= TITLE_SESSION_LIMIT && !titles.has(session)) {
+            const oldest = titles.keys().next().value;
+            if (oldest !== undefined) titles.delete(oldest);
+          }
+          titles.set(session, record);
+        }
+        return send(res, 200, titlePayload(record));
       }
       if (path === '/local-model' && req.method === 'GET') {
         return send(res, 200, detectModel());

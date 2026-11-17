@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import {
   STUB_KEY,
   BYOK_KEY,
@@ -480,6 +480,56 @@ test('quota exhaustion returns 429 and counters survive a restart', async (t) =>
   assert.equal(userB.status, 200, 'another identity keeps its own counters across the restart');
   const ledger = JSON.parse(readFileSync(h.config.quota.ledgerPath, 'utf8'));
   assert.equal(Object.values(ledger.users['user-b'])[0].requests, 2);
+});
+
+test('an uncapped gateway reports null caps and admits usage beyond the old 200k default', async (t) => {
+  const h = await startHarness({
+    configOverrides: { quota: { requests_per_day: null, tokens_per_day: null } },
+  });
+  t.after(() => h.stop());
+
+  const health = await call(h.baseUrl, '/healthz');
+  assert.equal(health.json.quota.requests_per_day, null);
+  assert.equal(health.json.quota.tokens_per_day, null);
+
+  // Seed persisted usage past the old defaults, then restart so the new process
+  // reads those counters. A bounded ledger would refuse this request outright.
+  const day = new Date().toISOString().slice(0, 10);
+  writeFileSync(h.config.quota.ledgerPath, JSON.stringify({
+    version: 1,
+    users: {
+      'user-a': {
+        [day]: {
+          requests: 200,
+          tokens: 200001,
+          unknown_usage: 0,
+          reserved_requests: 0,
+          reserved_tokens: 0,
+          images: 0,
+          video_submissions: 0,
+          video_completions: 0,
+        },
+      },
+    },
+  }));
+  await h.restart();
+
+  const res = await call(h.baseUrl, '/v1/chat/completions', {
+    method: 'POST',
+    headers: ID,
+    body: {
+      model: 'deepseek/deepseek-v4.1-flash-1017',
+      messages: [{ role: 'user', content: 'beyond the old daily total' }],
+      max_tokens: 100000,
+    },
+  });
+  assert.equal(res.status, 200, 'an uncapped ledger must not refuse at the old 200k boundary');
+
+  const ledger = JSON.parse(readFileSync(h.config.quota.ledgerPath, 'utf8'));
+  const counters = ledger.users['user-a'][day];
+  assert.equal(counters.requests, 201);
+  assert.equal(counters.tokens, 200013, 'the reported 12 tokens were counted on top of the seeded usage');
+  assert.equal(counters.reserved_tokens, 0, 'the uncapped reservation was still released on settle');
 });
 
 test('usage the provider never reports is recorded as unknown, not zero', async (t) => {

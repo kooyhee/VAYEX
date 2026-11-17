@@ -126,9 +126,14 @@ function taskNameOf(activity, taskId) {
 /**
  * One row per task per category that has at least one reported write.
  * Categories with nothing produce no row at all.
+ * `reported` is the bridge's file ledger from tool results (`{ path, op, taskId, added, removed, at }`).
+ * It only stands in for the activity stream when that stream carries no write row of its own,
+ * and every field of it is taken verbatim from what the tool reported.
+ * @param {any} activity
+ * @param {{path?:string,op?:string,taskId?:string,added?:number|null,removed?:number|null,at?:number|null}[]} reported
  * @returns {{tasks:{taskId:string,taskName:string,state:string,rows:{category:string,text:string,source:'rules',events:any[],paths:string[],subjects:string[]}[]}[], total:number}}
  */
-export function ruleSummary(activity) {
+export function ruleSummary(activity, reported = []) {
   const buckets = new Map();
   const bucketFor = (taskId, category) => {
     const key = `${taskId}|${category}`;
@@ -167,6 +172,33 @@ export function ruleSummary(activity) {
       if (INVESTIGATION_TOOLS.test(String(event.facts?.tool ?? ''))) bucketFor(taskId, '조사').events.push(event);
     }
   }
+  // The activity stream only sees writes the bridge classifies as activity events. A session whose
+  // edits arrive as tool results keeps its file ledger in the transcript instead, so the journal
+  // reads that ledger rather than claiming no work was done.
+  const writeRows = (activity?.events ?? []).filter(event => event.kind === 'write' && String(event.facts?.path ?? '').trim()).length;
+  if (!writeRows) {
+    for (const item of reported) {
+      const path = String(item?.path ?? '').trim();
+      if (!path) continue;
+      const taskId = String(item?.taskId ?? 'main');
+      const bucket = bucketFor(taskId, categoryOf(item?.op));
+      bucket.events.push({
+        kind:'write',
+        taskId,
+        at:Number.isFinite(item?.at) ? item.at : null,
+        facts:{
+          path,
+          op:String(item?.op ?? '수정'),
+          added:Number.isFinite(item?.added) ? item.added : null,
+          removed:Number.isFinite(item?.removed) ? item.removed : null,
+          reported:true
+        }
+      });
+      bucket.paths.add(path);
+      const subject = subjectOf(path);
+      if (subject && !bucket.subjects.includes(subject)) bucket.subjects.push(subject);
+    }
+  }
   const taskIds = [...new Set([...buckets.values()].map(bucket => bucket.taskId))];
   const tasks = [];
   for (const taskId of taskIds) {
@@ -193,8 +225,8 @@ export function ruleSummary(activity) {
  * The request body the local summarizer receives. Paths are included because
  * the local model may need them; nothing here is network-bound.
  */
-export function insightPayload(activity) {
-  const rule = ruleSummary(activity);
+export function insightPayload(activity, reported = []) {
+  const rule = ruleSummary(activity, reported);
   return {
     tasks: rule.tasks.map(task => ({
       taskId:task.taskId,
@@ -240,8 +272,8 @@ function collectModelRows(data) {
  * Ask the local summarizer. Returns `null` for any failure, an empty answer or
  * an unusable one; the caller then keeps the rule rows and says so in the UI.
  */
-export async function fetchInsight(activity, { fetchImpl = globalThis.fetch, signal = null, timeoutMs = 15000 } = {}) {
-  const payload = insightPayload(activity);
+export async function fetchInsight(activity, { fetchImpl = globalThis.fetch, signal = null, timeoutMs = 120000, reported = [] } = {}) {
+  const payload = insightPayload(activity, reported);
   if (!payload.tasks.length || typeof fetchImpl !== 'function') return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -276,8 +308,8 @@ export async function fetchInsight(activity, { fetchImpl = globalThis.fetch, sig
  * exact task+category the rule pass found, so a stale or partial answer can
  * never invent a row.
  */
-export function summarizeView(activity, model = null) {
-  const rule = ruleSummary(activity);
+export function summarizeView(activity, model = null, reported = []) {
+  const rule = ruleSummary(activity, reported);
   const tasks = rule.tasks.map(task => ({
     ...task,
     rows:task.rows.map(row => {

@@ -8,15 +8,20 @@ const root = dirname(fileURLToPath(import.meta.url));
 
 test('CHANGE 1: every surface the product still has is reachable from the shell', async () => {
   const html = await readFile(resolve(root, '../public/index.html'), 'utf8');
-  // Rail entries: new task, task list, results, safety, settings.
-  for (const id of ['rail-new', 'rail-tasks', 'rail-results', 'rail-safety', 'rail-settings']) assert(html.includes(`id="${id}"`), `${id} missing from the rail`);
-  // Everything that used to be a tab or a quick-action is a sheet now, opened from the rail.
-  for (const id of ['sheet-preview', 'sheet-docs', 'sheet-stats', 'sheet-settings', 'sheet-safety']) assert(html.includes(`id="${id}"`), `${id} sheet missing`);
-  for (const id of ['preview-frame', 'pane-preview', 'pane-visualize', 'pane-stats']) assert(html.includes(`id="${id}"`), `${id} missing`);
-  assert(html.includes('id="dock"') && html.includes('id="diff-rollback"'), 'the result dock is the change-review surface now');
+  // The restored three-pane shell: one sidebar, one conversation column, one inspector column,
+  // each side pane reachable from its header toggle.
+  for (const id of ['sidebar', 'center', 'inspector']) assert(html.includes(`id="${id}"`), `${id} pane missing from the shell`);
+  for (const id of ['toggle-sidebar', 'toggle-inspector']) assert(html.includes(`id="${id}"`), `${id} missing from the header`);
+  // Sidebar entries open the product's surfaces: a new task, search, agents, memory, more.
+  for (const id of ['new-session', 'menu-search', 'menu-agents', 'menu-memory', 'menu-more', 'recent-list']) assert(html.includes(`id="${id}"`), `${id} missing from the sidebar`);
+  // Every inspector tab has its own pane behind it.
+  for (const [tab, pane] of [['tab-overview', 'pane-overview'], ['tab-agents', 'pane-agents'], ['tab-visualize', 'pane-visualize'], ['tab-stats', 'pane-stats'], ['tab-preview', 'pane-preview'], ['tab-diff', 'pane-diff'], ['tab-memory', 'pane-memory']]) {
+    assert(html.includes(`id="${tab}"`) && html.includes(`id="${pane}"`), `${tab}/${pane} missing from the inspector`);
+  }
   assert(html.includes('id="transcript"') && html.includes('role="log"'), 'the conversation is the only log surface');
-  // Deleted surfaces stay deleted.
-  for (const gone of ['card-quick', 'timeline', 'insp-tabs', 'theme-toggle']) assert(!html.includes(`id="${gone}"`), `${gone} came back`);
+  assert(html.includes('id="theme-studio"') && html.includes('<dialog'), 'the theme studio is a native dialog');
+  // The discarded rail/sheet redesign must not return: the restored shell owns these surfaces.
+  for (const gone of ['rail-new', 'rail-tasks', 'rail-safety', 'sheet-settings', 'strip-path', 'model-chip']) assert(!html.includes(`id="${gone}"`), `${gone} belongs to the retired shell`);
 });
 
 test('CHANGE 2: Insight summarizer module and Korean rule fallback', async () => {
@@ -59,24 +64,28 @@ test('CHANGE 3: Visualize module renders inline SVG without external libraries',
   assert.equal(typeof renderMemoryChart, 'function');
 });
 
-test('CHANGE 4: route and model are disclosed once, in the status strip; consent lives in the safety sheet', async () => {
+test('CHANGE 4: route and model are disclosed once, in the status bar; consent lives in the header', async () => {
   const html = await readFile(resolve(root, '../public/index.html'), 'utf8');
-  // The strip states the route as a sentence, the model in one chip, the cost once.
-  assert(html.includes('id="strip-path"'), 'the strip must state the route');
-  assert(html.includes('id="model-chip"') && html.includes('id="model-chip-label"'), 'the strip must carry the one model chip');
-  assert(html.includes('id="strip-cost"'), 'the strip must state the cost');
-  assert(html.includes('id="status-bar"'), 'the status strip is missing');
-  // The four duplicates are gone: composer chip, footer model, inspector model row, header meta.
-  for (const gone of ['composer-auto', 'foot-model', 'foot-speed', 'foot-cache', 'foot-tokens', 'foot-mode', 'head-meta', 'head-stage', 'head-run', 'head-plan', 'consent-toggle']) {
-    assert(!html.includes(`id="${gone}"`), `${gone} still renders a second copy of a fact`);
+  // The status bar states tokens, speed, cache and the one gateway-chosen model.
+  assert(html.includes('id="status-bar"'), 'the status bar is missing');
+  for (const id of ['stat-tokens', 'stat-speed', 'stat-cache', 'stat-model']) assert(html.includes(`id="${id}"`), `${id} readout missing from the status bar`);
+  // Each measurement has exactly one home: the stats group on the left, the model on the right.
+  assert(html.includes('id="foot-stats"') && html.includes('id="foot-right"'), 'the bar must keep its two measurement groups');
+  // The header states the run's route/consent honestly, in the one consent control.
+  assert(html.includes('id="consent-toggle"') && html.includes('id="consent-label"'), 'the header must carry the consent state');
+  // The retired rail strip and its duplicate copies of these facts stay retired.
+  for (const gone of ['strip-path', 'model-chip', 'strip-cost', 'sheet-safety']) assert(!html.includes(`id="${gone}"`), `${gone} belongs to the retired shell`);
+  assert(html.includes('id="card-viz-doc"'), 'the document preview card must survive');
+  for (const gone of ['viz-doc-types', 'viz-doc-generate', 'viz-doc-fullscreen', 'viz-doc-open', 'viz-doc-save', 'viz-doc-pdf', 'timeline-chrono', 'timeline-modes']) {
+    assert(!html.includes(`id="${gone}"`), `${gone} should be removed`);
   }
-  assert(html.includes('id="sheet-safety"') && html.includes('id="safety-body"'), 'the cloud consent control belongs to the safety sheet');
-  assert(html.includes('id="card-viz-doc"'), 'the document generator must survive');
+  assert(!html.includes('세션 문서 생성'), '세션 문서 생성 controls should be removed');
+  const css = await readFile(resolve(root, '../public/styles.css'), 'utf8');
+  assert(!css.includes('tl-work-sweep'), 'tl-work-sweep animation should be removed');
 
   const appJs = await readFile(resolve(root, '../public/app.js'), 'utf8');
-  assert(appJs.includes('renderStrip'), 'the strip is built by renderStrip');
-  assert(appJs.includes('renderSafety'), 'the safety sheet is built by renderSafety');
-  assert(!appJs.includes('renderFooterMetrics'), 'the removed footer metrics must not be re-rendered');
+  assert(appJs.includes('function renderFooterMetrics'), 'the status bar is built by renderFooterMetrics');
+  assert(appJs.includes("$('stat-model')") && appJs.includes("$('consent-label')"), 'both readouts are written from reported state');
   assert(appJs.includes('refreshVizDoc'), 'the document generator still runs');
   assert(appJs.includes('reportFileName'), 'the HTML/PDF export still names its artifact');
 });

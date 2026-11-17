@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createBridge, sanitizeDiagnostics } from '../server.mjs';
 import { sanitizeText } from '../privacy/index.mjs';
-import { applyFrame, command, createViewModel, privacyLine, promptCommand, transcriptEntries } from '../public/protocol.js';
+import { applyFrame, command, createViewModel, mergePrivacyRecords, privacyLine, promptCommand, transcriptEntries, transcriptSegments } from '../public/protocol.js';
 import { events, resetEvents } from '../../gateway/lib/events.mjs';
 
 const PHONE = '010-1234-5678';
@@ -957,4 +957,29 @@ test('repeated findings in one field collapse to one line', { timeout: 30000 }, 
   const lines = transcriptEntries(vm).filter(entry => entry.privacy);
   assert.equal(lines.length, 1, 'exactly one privacy line, not one per occurrence');
   assert.equal(privacyLine(lines[0].privacy).text, '개인정보 보호 · 전화번호 2건 · 가명화 · 요청 전송됨');
+});
+
+test('same-turn alternating tool and privacy entries merge into one tool batch and one privacy notice', () => {
+  const vm = createViewModel();
+  applyFrame(vm, { type: 'message_start', message: { role: 'user', content: '정리해 주세요' } });
+  applyFrame(vm, { type: 'message_end', message: { role: 'user', content: '정리해 주세요' } });
+  applyFrame(vm, { type: 'tool_execution_start', toolCallId: 'call_1', toolName: 'todo', args: {} });
+  applyFrame(vm, { type: 'tool_execution_end', toolCallId: 'call_1', toolName: 'todo', result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['korean_name'], counts: { korean_name: 1 }, fields: ['messages[0].content'], fingerprint: '1111aaaa' } });
+  applyFrame(vm, { type: 'tool_execution_start', toolCallId: 'call_2', toolName: 'read', args: {} });
+  applyFrame(vm, { type: 'tool_execution_end', toolCallId: 'call_2', toolName: 'read', result: { content: [{ type: 'text', text: 'ok' }] }, isError: false });
+  applyFrame(vm, { type: 'privacy.masked', data: { rules: ['korean_name', 'phone_number'], counts: { korean_name: 1, phone_number: 2 }, fields: ['messages[2].content'], fingerprint: '2222bbbb' } });
+
+  const segments = transcriptSegments(transcriptEntries(vm));
+  assert.equal(segments.length, 3, 'user + one merged tool batch + one merged privacy line');
+  assert.equal(segments[1].foldable, true);
+  assert.equal(segments[1].entries.filter(entry => entry.tool).length, 2);
+  assert.equal(segments[2].foldable, false);
+  assert.equal(privacyLine(segments[2].entry.privacy).text, '개인정보 보호 · 이름 2건, 전화번호 2건 · 가명화 · 요청 전송됨');
+
+  const mixed = mergePrivacyRecords([
+    { kind: 'privacy', action: 'masked', sent: true, rules: ['korean_name'], counts: { korean_name: 1 }, fields: ['messages[0].content'], fingerprint: 'aaaa1111', code: null, order: 1, turn: 1 },
+    { kind: 'privacy', action: 'blocked', sent: false, rules: ['provider_key'], counts: { provider_key: 1 }, fields: ['messages[2].content'], fingerprint: 'bbbb2222', code: 'privacy_guard_blocked', order: 2, turn: 1 },
+  ]);
+  assert.equal(mixed.length, 2, 'masked and blocked records never merge across sent states');
 });
