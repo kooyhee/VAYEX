@@ -1,0 +1,2170 @@
+{
+  "measurement": "live",
+  "lane": "live_2env_official",
+  "command": "node scripts/benchmark-live-2env-official.mjs -n 3",
+  "repetitions": 3,
+  "slots": 24,
+  "recordedRuns": 24,
+  "aborted": false,
+  "abortReason": null,
+  "startedAt": "2026-11-08T21:34:52.653Z",
+  "completedAt": "2026-11-08T22:11:24.595Z",
+  "pricing": {
+    "source": "output/official-api-pricing.json",
+    "available": true,
+    "vayexRateBasis": {
+      "model": "deepseek-v4.1-flash-1017 (deepseek-flash / DeepSeek-V4.1-Flash-1017)",
+      "peak": {
+        "inputMissPerM": 0.3,
+        "cacheHitPerM": 0.006,
+        "outputPerM": 1.2,
+        "cacheWritePerM": 0
+      },
+      "offPeak": {
+        "inputMissPerM": 0.15,
+        "cacheHitPerM": 0.003,
+        "outputPerM": 0.6,
+        "cacheWritePerM": 0
+      },
+      "sourceUrl": "https://api-docs.deepseek.com/quick_start/pricing"
+    },
+    "entries": [
+      {
+        "modelId": "anthropic/claude-opus-5-5",
+        "vendor": "Anthropic",
+        "vendorModelName": "claude-opus-5-5 (Claude Opus 5.5)",
+        "inputPerM": 4,
+        "outputPerM": 20,
+        "cacheReadPerM": 0.2,
+        "cacheWritePerM": 5,
+        "notes": "USD/1M tokens, standard tier, 5-minute cache write; 1-hour cache write $8.00. Cache hit = 5% of input. Full 1M context billed at standard rate (no long-context premium tier). Fast mode 2x; US-only inference 1.1x. Gateway id carries provider prefix only.",
+        "sourceUrl": "https://docs.claude.com/en/docs/about-claude/pricing",
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "scripts/lib/live-environments.mjs:124 (model: 'anthropic/claude-opus-5-5'); app/config.json:142 (allowlist id); docs model id claude-opus-5-5 confirmed at https://docs.claude.com/en/docs/about-claude/models/overview"
+      },
+      {
+        "modelId": "drex-max-v1.1",
+        "vendor": "Nace.AI",
+        "vendorModelName": "drex-max (Drex Max v1.1)",
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Official page prices this model per decision, not per token: $0.03 per 1,000 decisions at 50% launch price (cost-per-1,000-decisions chart, developers page). No per-token or cache rates published; token fields left null rather than derived.",
+        "sourceUrl": "https://www.nace.ai/drex",
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "scripts/lib/live-environments.mjs:164-171 (route: model=combo/main -> gateway decision model drex-max-v1.1); gateway/lib/decision-planner.mjs:163,184; README.md:333; https://www.nace.ai/developers (Drex Max v1.1, API id drex-max)"
+      },
+      {
+        "modelId": "combo/main",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role-routing alias, not a vendor model id; concrete worker chosen per request by drex-max-v1.1 and not observable from the client. No official vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "app/config.json:41 (upstream opencodex-nace, id combo/main, metadata.decision_model=true); scripts/lib/live-environments.mjs:164"
+      },
+      {
+        "modelId": "combo/advisor",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (planner primary); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:63-68,184-185; app/config.json:49"
+      },
+      {
+        "modelId": "combo/front-worker",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (frontend primary); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:85-91,185; app/config.json:57"
+      },
+      {
+        "modelId": "combo/worker",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (backend primary); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:105-111,185; app/config.json:65"
+      },
+      {
+        "modelId": "combo/heavy-worker",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (fallback for backend/planner); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:106,184-185; app/config.json:73"
+      },
+      {
+        "modelId": "combo/reviewer",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (verifier primary); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:145-147,185; app/config.json:81"
+      },
+      {
+        "modelId": "combo/security",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway role alias (verifier fallback); worker resolved remotely, no vendor price page.",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "gateway/lib/decision-planner.mjs:146,185; app/config.json:89"
+      },
+      {
+        "modelId": "combo/claude-opus-5-5",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway routing target id, not an Anthropic model id; config explicitly forbids collapsing combo/* onto vendor ids sharing the trailing name (decision-planner.mjs:607-610), so no vendor mapping is claimed. Nearest vendor id present in the same allowlist: anthropic/claude-opus-5-5 (app/config.json:142).",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "app/config.json:97; gateway/lib/decision-planner.mjs:67,89,184; gateway/lib/decision-planner.mjs:606-610 (no suffix collapse for category remote_decision)"
+      },
+      {
+        "modelId": "combo/gemini-4-argon",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway routing target id; no config mapping to a Google model id (decision-planner.mjs:607-610 forbids suffix collapse). Nearest vendor ids in the allowlist: aistudio/gemini-4-argon (app/config.json:135), google-antigravity/gemini-4-argon (app/config.json:163); vendor page for gemini-4-argon lists $2.00/$10.00/$0.10 through 2026-11-30 ($4.00/$20.00/$0.20 from 2026-12-01).",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "app/config.json:105; gateway/lib/decision-planner.mjs:125,184"
+      },
+      {
+        "modelId": "combo/deepseek-v4.1-flash",
+        "vendor": "opencodex-nace (gateway)",
+        "vendorModelName": null,
+        "officialPrice": null,
+        "inputPerM": null,
+        "outputPerM": null,
+        "cacheReadPerM": null,
+        "cacheWritePerM": null,
+        "notes": "Gateway routing target id; no config mapping to a DeepSeek model id (decision-planner.mjs:607-610 forbids suffix collapse). Nearest vendor id in the allowlist: thehive/deepseek-ai/deepseek-v4.1-flash-1017 (app/config.json:184), whose vendor model is deepseek-flash/DeepSeek-V4.1-Flash-1017 (peak $0.30 input / $1.20 output / $0.006 cache hit; off-peak half).",
+        "sourceUrl": null,
+        "retrievedAt": "2026-11-09",
+        "configEvidence": "app/config.json:113; gateway/lib/decision-planner.mjs:47,184"
+      }
+    ]
+  },
+  "stopRule": {
+    "transportRetriesPerRun": 1,
+    "retryPauseMs": 2000,
+    "perRunTimeoutMs": {
+      "claude-opus-5-5": 240000,
+      "vayex-harness": 300000
+    },
+    "abortAfterConsecutiveTransportFailures": 5
+  },
+  "environments": {
+    "claude-opus-5-5": {
+      "id": "claude-opus-5-5",
+      "name": "Claude Opus 5.5 (게이트웨이 단일 모델 호출, 에이전트 CLI 미실행)",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "runTimeoutMs": 240000,
+      "costBasis": "tokens"
+    },
+    "vayex-harness": {
+      "id": "vayex-harness",
+      "name": "VAYEX 하네스 (원격 역할 라우팅 combo/main)",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "runTimeoutMs": 300000,
+      "costBasis": "decisions"
+    }
+  },
+  "perEnv": {
+    "claude-opus-5-5": {
+      "envId": "claude-opus-5-5",
+      "name": "Claude Opus 5.5 (게이트웨이 단일 모델 호출, 에이전트 CLI 미실행)",
+      "model": "anthropic/claude-opus-5-5",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions",
+      "reasoningEffort": "medium",
+      "runs": 12,
+      "successes": 12,
+      "successRate": 1,
+      "fullyPassingTasks": 4,
+      "successfulCompletionMsMedian": 24361,
+      "ttftMedianMs": 3414,
+      "decisions": 12,
+      "modelTotals": [
+        {
+          "model": "anthropic/claude-opus-5-5",
+          "input": 9240,
+          "output": 59469,
+          "cacheRead": 8064,
+          "cacheWrite": null,
+          "runs": 12
+        }
+      ],
+      "routedTargets": {},
+      "routedTotals": [],
+      "unpricedRuns": [],
+      "totalCostUsd": 1.1956968,
+      "costPerSuccessfulTaskUsd": 0.2989242,
+      "failures": []
+    },
+    "vayex-harness": {
+      "envId": "vayex-harness",
+      "name": "VAYEX 하네스 (원격 역할 라우팅 combo/main)",
+      "model": "combo/main",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions",
+      "reasoningEffort": null,
+      "runs": 12,
+      "successes": 12,
+      "successRate": 1,
+      "fullyPassingTasks": 4,
+      "successfulCompletionMsMedian": 46205,
+      "ttftMedianMs": 3953.5,
+      "decisions": 12,
+      "modelTotals": [
+        {
+          "model": "combo/main",
+          "input": 9240,
+          "output": 63856,
+          "cacheRead": 8064,
+          "cacheWrite": null,
+          "runs": 12
+        }
+      ],
+      "routedTargets": {
+        "opendesign/deepseek-v4.1-flash-eco": 10,
+        "google-antigravity/gemini-3.8-flash": 2
+      },
+      "routedTotals": [
+        {
+          "model": "opendesign/deepseek-v4.1-flash-eco",
+          "runs": 10,
+          "input": 7964,
+          "output": 55136,
+          "cacheRead": 7040,
+          "costUsd": 0.03324132
+        },
+        {
+          "model": "google-antigravity/gemini-3.8-flash",
+          "runs": 2,
+          "input": 1276,
+          "output": 8720,
+          "cacheRead": 1024,
+          "costUsd": 0.0329658
+        }
+      ],
+      "unpricedRuns": [],
+      "totalCostUsd": 0.06620712,
+      "costPerSuccessfulTaskUsd": 0.01655178,
+      "failures": []
+    }
+  },
+  "runs": [
+    {
+      "runId": "live2_task-a-single-line-fix_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:34:52.657Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 7437,
+      "completionTimeMs": 7437,
+      "ttftMs": 3849,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 657,
+          "output": 401,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 1058,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-a-single-line-fix_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:35:00.102Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 4104,
+      "completionTimeMs": 4104,
+      "ttftMs": 1829,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 657,
+          "output": 260,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 917,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-a-single-line-fix_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:35:04.210Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 5836,
+      "completionTimeMs": 5836,
+      "ttftMs": 2979,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 657,
+          "output": 324,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 981,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-b-frontend-component_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:35:10.050Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 25569,
+      "completionTimeMs": 25569,
+      "ttftMs": 1795,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 638,
+          "output": 2583,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 3221,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-b-frontend-component_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:35:35.625Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 7907,
+      "completionTimeMs": 7907,
+      "ttftMs": 7907,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 638,
+          "output": 774,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 1412,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-b-frontend-component_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:35:43.537Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 76722,
+      "completionTimeMs": 76722,
+      "ttftMs": 3930,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 638,
+          "output": 7431,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 8069,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:37:00.265Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 23153,
+      "completionTimeMs": 23153,
+      "ttftMs": 1740,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 764,
+          "output": 2092,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 2856,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:37:23.435Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 30827,
+      "completionTimeMs": 30827,
+      "ttftMs": 4732,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 764,
+          "output": 2620,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 3384,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:37:54.267Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 6645,
+      "completionTimeMs": 6645,
+      "ttftMs": 6645,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 764,
+          "output": 533,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 1297,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:38:00.918Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 186775,
+      "completionTimeMs": 186775,
+      "ttftMs": 1928,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 1021,
+          "output": 16023,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 17044,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:41:07.970Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 121277,
+      "completionTimeMs": 121277,
+      "ttftMs": 6294,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 1021,
+          "output": 11136,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 12157,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "anthropic/claude-opus-5-5",
+      "modelReported": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T21:43:09.534Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 162192,
+      "completionTimeMs": 162192,
+      "ttftMs": 2721,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "anthropic/claude-opus-5-5",
+          "input": 1021,
+          "output": 15292,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 16313,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1
+    },
+    {
+      "runId": "live2_task-a-single-line-fix_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T21:58:54.274Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 6942,
+      "completionTimeMs": 6942,
+      "ttftMs": 4424,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 657,
+          "output": 290,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 947,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-ac645338003b93e72a2d3a7b2451e632",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-a-single-line-fix_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T21:59:10.106Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 4780,
+      "completionTimeMs": 4780,
+      "ttftMs": 1903,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 657,
+          "output": 291,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 948,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-60679dae3152dbd51186acd21642e02d",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-a-single-line-fix_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T21:59:15.533Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 6,
+        "totalTests": 6,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 5273,
+      "completionTimeMs": 5273,
+      "ttftMs": 1979,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 657,
+          "output": 324,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 981,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-5d7c694b66a3d52fcceb40e3f5e983f7",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-b-frontend-component_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T21:59:21.665Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 81366,
+      "completionTimeMs": 81366,
+      "ttftMs": 10425,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 638,
+          "output": 7513,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 8151,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-ffa0cb639a2b6bbd75cb198ba4950623",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-b-frontend-component_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:00:43.714Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 78508,
+      "completionTimeMs": 78508,
+      "ttftMs": 2898,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 638,
+          "output": 7470,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 8108,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-4beb9015cb26f6d204763e9b04c82ca0",
+      "routedModel": "google-antigravity/gemini-3.8-flash",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-b-frontend-component_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:02:02.873Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 17982,
+      "completionTimeMs": 17982,
+      "ttftMs": 17982,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 638,
+          "output": 1250,
+          "cacheRead": 512,
+          "cacheWrite": null,
+          "total": 1888,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-3081ce01e3906ecbfac14878374475b5",
+      "routedModel": "google-antigravity/gemini-3.8-flash",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:02:21.376Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 40771,
+      "completionTimeMs": 40771,
+      "ttftMs": 7734,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 764,
+          "output": 3208,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 3972,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-9661fbc8b7f8226772ee2c8b83ee9c90",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:03:02.736Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 51639,
+      "completionTimeMs": 51639,
+      "ttftMs": 1899,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 764,
+          "output": 4685,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 5449,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-8c6f1f4ff8649616649229ebdb13f121",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-c-multifile-refactor_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:03:55.064Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 11130,
+      "completionTimeMs": 11130,
+      "ttftMs": 2922,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 764,
+          "output": 910,
+          "cacheRead": 640,
+          "cacheWrite": null,
+          "total": 1674,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-afec0a1f6ae6276155c6af89c0163771",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 1,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:04:07.193Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 148039,
+      "completionTimeMs": 148039,
+      "ttftMs": 7156,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 1021,
+          "output": 12799,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 13820,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-72432b9d0bab6163312edf189531ab03",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 2,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:06:36.113Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 193589,
+      "completionTimeMs": 193589,
+      "ttftMs": 3483,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 1021,
+          "output": 17117,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 18138,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-a75ba69005f71f761e57860bf12bf3ec",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    },
+    {
+      "runId": "live2_task-d-complex-debugging_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "repetition": 3,
+      "promptMode": "corrected",
+      "taskFingerprint": "[REDACTED_64HEX]",
+      "measurement": "live",
+      "modelRequested": "combo/main",
+      "modelReported": "combo/main",
+      "startedAt": "2026-11-08T22:10:00.521Z",
+      "codingTaskSuccess": true,
+      "success": true,
+      "testSuccess": {
+        "passedCount": 5,
+        "totalTests": 5,
+        "passRate": 1
+      },
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 83035,
+      "completionTimeMs": 83035,
+      "ttftMs": 7213,
+      "usagePerModel": [
+        {
+          "reported": true,
+          "model": "combo/main",
+          "input": 1021,
+          "output": 7999,
+          "cacheRead": 896,
+          "cacheWrite": null,
+          "total": 9020,
+          "usageEvents": 1
+        }
+      ],
+      "decisions": 1,
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "failureKind": null,
+      "failureReason": null,
+      "attempts": 1,
+      "requestId": "ocx-ee3f1677857adba58b171a76ac2b2f41",
+      "routedModel": "opendesign/deepseek-v4.1-flash-eco",
+      "routedProviderReason": "combo-pick",
+      "routeCandidates": [
+        "google-antigravity/gemini-3.8-flash",
+        "tokenharbor/deepseek-v4.1-flash:free",
+        "opendesign/deepseek-v4.1-flash-eco",
+        "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+        "google-antigravity/gemini-4-argon",
+        "aistudio/gemini-4-argon",
+        "openai/gpt-6.1-sol",
+        "anthropic/claude-opus-5-5"
+      ]
+    }
+  ],
+  "runSources": {
+    "claude": "node scripts/benchmark-live-2env-official.mjs -n 3",
+    "vayex": "node scripts/benchmark-live-2env-official.mjs --env=vayex-harness -n 3 --out=<scratch>\\vayex-routed.json --md-out=<scratch>\\vayex-routed.md"
+  }
+}

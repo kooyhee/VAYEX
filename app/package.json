@@ -1,0 +1,13 @@
+{
+  "name": "student-omp-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=26" },
+  "scripts": {
+    "start": "node server.mjs",
+    "mock": "node server.mjs --mock",
+    "stub": "node ../gateway/stub/stub-upstream.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

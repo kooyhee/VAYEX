@@ -1,0 +1,186 @@
+{
+  "coreArgs": [
+    "--no-title",
+    "--approval-mode", "yolo",
+    "--config", "omp-overlay.yml",
+    "--extension", "omp/bounded-tool-result.js",
+    "--extension", "app/memory/extension.mjs"
+  ],
+  "coreEnv": {},
+  "identity": "local-user",
+  "local": {
+    "label": "로컬 하네스 자동 선택 · 테스트 스텁 (추론 아님)",
+    "provider": "harness-local",
+    "model": "auto"
+  },
+  "background": {
+    "label": "하네스 자동 선택",
+    "provider": "harness-local",
+    "model": "auto"
+  },
+  "backgroundModel": null,
+  "cloud": null,
+  "inference": {
+    "route": {"default": "any_cloud"},
+    "quota": {
+      "identity_header": "x-user-id",
+      "requests_per_day": 200,
+      "tokens_per_day": 200000,
+      "ledger_path": "./data/quota-ledger.json"
+    },
+    "logging": {"level": "info", "file": null, "log_request_bodies": false},
+    "upstreams": [
+      {
+        "id": "opencodex-nace",
+        "class": "proxy",
+        "kind": "openai",
+        "base_url": "https://49.173.53.4/v1",
+        "auth_mode": "gateway_key",
+        "key_env": "OPENCODEX_API_KEY",
+        "models": [
+          {
+            "id": "combo/advisor",
+            "display_name": "combo · advisor",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/front-worker",
+            "display_name": "combo · front-worker",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/lead",
+            "display_name": "combo · lead",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/worker",
+            "display_name": "combo · worker",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/writer",
+            "display_name": "combo · writer",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/heavy-worker",
+            "display_name": "combo · heavy-worker",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/reviewer",
+            "display_name": "combo · reviewer",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "combo/security",
+            "display_name": "combo · security",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "metadata": {"decision_model": true}
+          },
+          {
+            "id": "infron/qwen/qwen3.8-27b:free",
+            "display_name": "Qwen 3.8 27B (Infron, free)",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false
+          }
+        ]
+      },
+      {
+        "id": "demo-stub",
+        "class": "server_local",
+        "kind": "openai",
+        "base_url": "http://127.0.0.1:8799/local/v1",
+        "auth_mode": "none",
+        "models": [{
+          "id": "demo-chat",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 32768,
+          "thinking_limit": 8192
+        }]
+      },
+      {
+        "id": "openrouter-zdr",
+        "class": "proxy",
+        "kind": "openai",
+        "base_url": "https://openrouter.ai/api/v1",
+        "auth_mode": "gateway_key",
+        "key_env": "OPENROUTER_API_KEY",
+        "models": [
+          {
+            "id": "deepseek/deepseek-chat",
+            "display_name": "DeepSeek V3 (OpenRouter ZDR)",
+            "capabilities": ["chat"],
+            "zero_data_retention": true,
+            "training_opt_out": true,
+            "context_window": 131072,
+            "thinking_limit": 8192
+          },
+          {
+            "id": "anthropic/claude-3.5-haiku",
+            "display_name": "Claude 3.5 Haiku (OpenRouter ZDR)",
+            "capabilities": ["chat"],
+            "zero_data_retention": true,
+            "training_opt_out": true,
+            "context_window": 200000
+          },
+          {
+            "id": "qwen/qwen-2.5-coder-32b-instruct",
+            "display_name": "Qwen 2.5 Coder 32B (OpenRouter ZDR)",
+            "capabilities": ["chat"],
+            "zero_data_retention": true,
+            "training_opt_out": true,
+            "context_window": 32768
+          }
+        ]
+      },
+      {
+        "id": "a6api",
+        "class": "proxy",
+        "kind": "openai",
+        "base_url": "https://api.a6api.com/v1",
+        "auth_mode": "gateway_key",
+        "key_env": "A6API_KEY",
+        "models": [
+          {
+            "id": "gpt-4o-mini",
+            "display_name": "GPT-4o mini (A6API Any-Cloud)",
+            "capabilities": ["chat"],
+            "zero_data_retention": false,
+            "training_opt_out": false,
+            "context_window": 128000
+          }
+        ]
+      }
+    ]
+  }
+}
+
+

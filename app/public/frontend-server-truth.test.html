@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><title>VAYEX — 서버 실값 회귀 검사</title>
+<style>body{margin:0;padding:16px;background:#1f1f1f;color:#ededed;font:13px/1.5 system-ui,sans-serif}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 ui-monospace,Consolas,monospace}#fixture iframe{width:100%;height:700px;border:0;display:block}</style></head>
+<body><h1 style="font-size:16px">VAYEX — 서버 실값 회귀 검사</h1><p>네 곳의 화면이 서버가 보고한 값을 그대로 그리는지 확인합니다. 실제 코어, 모델, 클라우드 또는 SSH를 호출하지 않습니다.</p><pre id="results">검사 중…</pre><div id="fixture"></div>
+<script type="module">
+const results = [];
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+const until = async (check, doc = document, timeout = 8000) => {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  throw new Error('Timed out waiting for fixture state');
+};
+const consoleErrors = [];
+let currentTest = '';
+
+async function fixture(run) {
+  const frame = document.createElement('iframe');
+  frame.title = '격리된 실제 화면';
+  const source = await (await fetch('./index.html')).text();
+  const setup = () => {
+    // The scenario's server payload lives on the window so a test can change it
+    // between refreshes: the UI must follow whatever the server reports now.
+    window.harnessServer = {
+      memory: {
+        total: 9, active: 7, superseded: 1, quarantined: 1, driver: 'sqlite',
+        types: ['user-preference', 'project-rule', 'past-task', 'error-fix', 'exploration-finding', 'failure-analysis'],
+        typeBreakdown: [
+          { type: 'user-preference', count: 1 },
+          { type: 'project-rule', count: 4 },
+          { type: 'past-task', count: 2 },
+          { type: 'error-fix', count: 0 },
+          { type: 'exploration-finding', count: 0 },
+          { type: 'failure-analysis', count: 0 }
+        ]
+      },
+      list: {
+        dir: 'data/visualizations', count: 1,
+        items: [{
+          session: 'other-profile', type: 'spec', format: 'html', hash: 'abcdef1234',
+          bytes: 4096, modifiedAt: Date.UTC(2026, 0, 2, 12),
+          name: 'other-profile-spec-abcdef1234.html',
+          url: '/api/visualize/html?session=other-profile&type=spec&hash=abcdef1234'
+        }]
+      }
+    };
+    window.testErrors = [];
+    window.harnessFetches = [];
+    window.addEventListener('error', event => window.testErrors.push(String(event.message)));
+    window.addEventListener('unhandledrejection', event => window.testErrors.push(String(event.reason)));
+    // Split widths remembered on a much wider window, plus one locally recorded
+    // document row for whichever session key the page ends up using.
+    try {
+      window.localStorage.setItem('student-omp:col-sidebar-w', '9999');
+      window.localStorage.setItem('student-omp:col-inspector-w', '12');
+    } catch {}
+    window.storeLocalDocument = sessionKey => window.localStorage.setItem('student-omp:viz-docs', JSON.stringify({
+      [sessionKey]: [{ type: 'report', at: Date.UTC(2026, 0, 1, 9), title: '로컬 문서', hash: '1111222' }]
+    }));
+    window.fetch = async input => {
+      const url = new URL(String(input), document.baseURI);
+      window.harnessFetches.push(url.pathname + url.search);
+      const json = payload => new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      if (url.pathname.startsWith('/api/memory/status')) return json(window.harnessServer.memory);
+      if (url.pathname.startsWith('/api/memory/list')) return json({ items: [] });
+      if (url.pathname.startsWith('/api/visualize/list')) return json(window.harnessServer.list);
+      if (url.pathname.startsWith('/api/dx/cost/overview')) return json({ totalTokens: 0 });
+      return json({
+        mock: true,
+        defaultRoute: 'local_only',
+        route: { route: 'local_only', consent: false, invalid: null },
+        local: { provider: 'mock', model: 'local-test', available: true, label: 'Local fixture', reason: 'Browser fixture only' },
+        background: { available: false, label: 'Unavailable fixture', reason: 'Not configured' },
+        cloud: null
+      });
+    };
+    window.testSockets = [];
+    window.WebSocket = class extends EventTarget {
+      static OPEN = 1;
+      readyState = 1;
+      sent = [];
+      model = 'local-test';
+      constructor(url) { super(); this.url = new URL(url, location.href); window.testSockets.push(this); queueMicrotask(() => this.frame({ type: 'bridge_ready' })); }
+      frame(data) { this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(data) })); }
+      send(raw) {
+        const command = JSON.parse(raw); this.sent.push(command);
+        if (command.type === 'get_state') queueMicrotask(() => this.frame({ type: 'response', command: 'get_state', id: command.id, success: true, data: { model: { provider: 'mock', id: this.model }, isStreaming: false, isCompacting: false } }));
+      }
+      close() { this.readyState = 3; this.dispatchEvent(new Event('close')); }
+    };
+  };
+  frame.srcdoc = source.replace('<head>', `<head><base href="${new URL('./', location.href)}"><script>(${setup.toString()})()<` + '/script>');
+  document.querySelector('#fixture').append(frame);
+  try {
+    await new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+    const win = frame.contentWindow, doc = win.document;
+    await until(() => win.testSockets?.length && doc.querySelector('#connection')?.dataset.state === 'ready', doc);
+    try {
+      await run({ win, doc });
+    } catch (error) {
+      const facts = `state=${doc.querySelector('#connection')?.dataset.state} errors=${(win.testErrors ?? []).join(' | ')} fetches=${(win.harnessFetches ?? []).join(' ')}`;
+      throw new Error(`${error.message} [${facts}]`);
+    }
+  } finally {
+    for (const error of frame.contentWindow?.testErrors ?? []) consoleErrors.push(`${currentTest}: ${error}`);
+    frame.remove();
+  }
+}
+
+async function test(name, run) {
+  currentTest = name;
+  try { await fixture(run); results.push({ name, status: 'pass' }); }
+  catch (error) { results.push({ name, status: 'fail', error: error.message }); }
+  document.querySelector('#results').textContent = JSON.stringify(results, null, 2);
+}
+
+await test('메모리 구성: 서버가 센 유형별 건수를 그대로 그린다', async ({ win, doc }) => {
+  doc.querySelector('#tab-stats').click();
+  await until(() => (doc.querySelector('#viz-memory')?.textContent ?? '').includes('4건'), doc);
+  // Count the chart's own rows, not the pane prose: each `role=listitem` carries one
+  // server figure in its accessible name, so the assertion cannot be met by body copy.
+  const rows = [...doc.querySelectorAll('#viz-memory [role=listitem]')].map(row => row.getAttribute('aria-label'));
+  const typeRows = rows.filter(label => label.startsWith('유형 '));
+  assert(typeRows.length === 6, `유형별 행이 6개가 아닙니다: ${rows}`);
+  assert(typeRows.includes('유형 user-preference 1건'), `user-preference 1건이 사라졌습니다: ${rows}`);
+  assert(typeRows.includes('유형 project-rule 4건'), `project-rule 4건이 사라졌습니다: ${rows}`);
+  assert(typeRows.includes('유형 past-task 2건'), `past-task 2건이 사라졌습니다: ${rows}`);
+  for (const name of ['error-fix', 'exploration-finding', 'failure-analysis']) assert(typeRows.includes(`유형 ${name} 0건`), `0건인 유형은 0건으로 그려야 합니다: ${rows}`);
+  assert(!rows.some(label => label.includes('미집계')), `건수를 보고했는데 미집계로 그렸습니다: ${rows}`);
+});
+
+await test('메모리 구성: 서버가 건수를 보고하지 않으면 미집계로 남긴다', async ({ win, doc }) => {
+  doc.querySelector('#tab-stats').click();
+  await until(() => (doc.querySelector('#viz-memory')?.textContent ?? '').includes('4건'), doc);
+  // A status payload that names the six types and reports no figures for them.
+  win.harnessServer.memory = {
+    total: 0, active: 0, superseded: 0, quarantined: 0, driver: 'sqlite',
+    types: win.harnessServer.memory.types
+  };
+  doc.querySelector('#viz-refresh').click();
+  // Wait for the redrawn rows, not the pane prose, which always explains 미집계.
+  await until(() => [...doc.querySelectorAll('#viz-memory [role=listitem]')].some(row => row.getAttribute('aria-label').endsWith(' 미집계')), doc);
+  const rows = [...doc.querySelectorAll('#viz-memory [role=listitem]')].map(row => row.getAttribute('aria-label'));
+  const typeRows = rows.filter(label => label.startsWith('유형 '));
+  assert(typeRows.length === 6 && typeRows.every(label => label.endsWith(' 미집계')), `여섯 유형 모두 미집계여야 합니다: ${rows}`);
+  assert(!typeRows.some(label => /\d건/.test(label)), `보고되지 않은 값을 지어냈습니다: ${rows}`);
+});
+
+await test('문서 목록: /api/visualize/list의 서버 행을 로컬 행과 함께 보여준다', async ({ win, doc }) => {
+  doc.querySelector('#tab-visualize').click();
+  await until(() => win.harnessFetches.some(url => url.startsWith('/api/visualize/list')), doc);
+  await until(() => (doc.querySelector('#viz-doc-list')?.textContent ?? '').includes('v-abcdef'), doc);
+  const serverRow = doc.querySelector('#viz-doc-list').textContent;
+  assert(serverRow.includes('v-abcdef'), `다른 프로필의 문서가 보이지 않습니다: ${serverRow}`);
+  // A row this browser recorded earlier must not disappear when the endpoint answers.
+  const asked = win.harnessFetches.find(url => url.startsWith('/api/visualize/list'));
+  const sessionKey = new URLSearchParams(asked.split('?')[1] ?? '').get('session');
+  win.storeLocalDocument(sessionKey);
+  doc.querySelector('#tab-stats').click();
+  doc.querySelector('#tab-visualize').click();
+  await until(() => (doc.querySelector('#viz-doc-list')?.textContent ?? '').includes('v-111122'), doc);
+  const text = doc.querySelector('#viz-doc-list').textContent;
+  assert(text.includes('로컬 문서'), `localStorage 행이 사라졌습니다: ${text}`);
+  assert(text.includes('v-abcdef'), `서버 행이 사라졌습니다: ${text}`);
+  assert(doc.querySelector('#viz-doc-count').textContent === '2개', `행 수가 실제와 다릅니다: ${doc.querySelector('#viz-doc-count').textContent}`);
+});
+
+await test('스플릿: 복원된 너비도 드래그와 같은 최소·최대 안으로 당긴다', async ({ win, doc }) => {
+  const read = name => win.getComputedStyle(doc.documentElement).getPropertyValue(name).trim();
+  assert(read('--col-sidebar') === '420px', `넓은 창에서 저장한 사이드바 너비가 그대로 적용됐습니다: ${read('--col-sidebar')}`);
+  assert(read('--col-inspector') === '300px', `좁은 창에서 저장한 인스펙터 너비가 그대로 적용됐습니다: ${read('--col-inspector')}`);
+  assert(doc.querySelector('#split-sidebar').getAttribute('aria-valuenow') === '420', '사이드바 aria-valuenow가 실제 너비와 다릅니다');
+  assert(doc.querySelector('#split-inspector').getAttribute('aria-valuenow') === '300', '인스펙터 aria-valuenow가 실제 너비와 다릅니다');
+  assert(win.localStorage.getItem('student-omp:col-sidebar-w') === '420', 'clamp된 값이 저장소에 반영되지 않았습니다');
+});
+
+await test('문서 유형 라벨: 문서화된 네 이름과 같다', async ({ doc }) => {
+  const labels = [...doc.querySelectorAll('[data-doc-type] span')].map(node => node.textContent.trim());
+  assert(JSON.stringify(labels) === JSON.stringify(['작업 결과 보고서', '선행 연구·기술 검토', '시스템 아키텍처 명세서', '경영진·심사위원 1장 요약']), `문서 유형 라벨이 문서화된 이름과 다릅니다: ${labels.join(' / ')}`);
+  // The list rows and the status line name a type through the same table.
+  doc.querySelector('#tab-visualize').click();
+  await until(() => (doc.querySelector('#viz-doc-list')?.textContent ?? '').includes('v-abcdef'), doc);
+  assert(doc.querySelector('#viz-doc-list').textContent.includes('시스템 아키텍처 명세서'), `목록 행이 다른 유형 이름을 씁니다: ${doc.querySelector('#viz-doc-list').textContent}`);
+});
+
+window.harnessResult = { tests: results.length, passed: results.filter(row => row.status === 'pass').length, failed: results.filter(row => row.status === 'fail').length, consoleErrors, results };
+document.querySelector('#results').textContent = JSON.stringify(window.harnessResult, null, 2);
+document.body.dataset.complete = 'true';
+</script></body></html>

@@ -1,0 +1,209 @@
+{
+  "listen": {
+    "host": "127.0.0.1",
+    "port": 8000,
+    "allow_non_loopback_bind": false,
+    "open_files_target": 65535
+  },
+  "route": { "default": "zdr_cloud" },
+  "keys": { "upstream_key_env": "GATEWAY_UPSTREAM_KEY" },
+  "quota": {
+    "identity_header": "x-user-id",
+    "requests_per_day": 200,
+    "tokens_per_day": 200000,
+    "ledger_path": "./data/quota-ledger.json"
+  },
+  "logging": {
+    "level": "info",
+    "log_request_bodies": false,
+    "file": "./data/gateway.log"
+  },
+  "health": { "cache_ms": 5000, "timeout_ms": 2500 },
+  "timeouts": { "upstream_ms": 60000, "video_ms": 30000 },
+  "max_body_bytes": 2097152,
+  "upstreams": [
+    {
+      "id": "ollama",
+      "class": "server_local",
+      "kind": "ollama",
+      "base_url": "http://127.0.0.1:11434/v1",
+      "auth_mode": "none",
+      "paths": {
+        "models": "/models",
+        "chat": "/chat/completions",
+        "images": "/images/generations",
+        "tags": "/api/tags",
+        "ps": "/api/ps"
+      },
+      "models": [
+        {
+          "id": "qwen2.5:72b",
+          "display_name": "Qwen2.5 72B (Ollama)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 32768
+        },
+        {
+          "id": "qwen3:32b",
+          "display_name": "Qwen3 32B (Ollama)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 40960
+        },
+        {
+          "id": "qwen2.5:32b",
+          "display_name": "Qwen2.5 32B (Ollama)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 32768
+        }
+      ]
+    },
+    {
+      "id": "server_gpu",
+      "class": "server_local",
+      "base_url": "http://127.0.0.1:8080/v1",
+      "auth_mode": "none",
+      "paths": {
+        "models": "/models",
+        "chat": "/chat/completions",
+        "images": "/images/generations"
+      },
+      "video": {
+        "create_path": "/videos",
+        "poll_path": "/videos/{id}",
+        "content_path": "/videos/{id}/content"
+      },
+      "models": [
+        {
+          "id": "server/qwen3-coder-30b",
+          "display_name": "Qwen3 Coder 30B (server GPU)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 262144
+        },
+        {
+          "id": "server/flux-schnell",
+          "display_name": "FLUX schnell (server GPU)",
+          "capabilities": ["images"],
+          "zero_data_retention": true,
+          "training_opt_out": true
+        },
+        {
+          "id": "server/wan-2.2-t2v",
+          "display_name": "Wan 2.2 T2V (server GPU)",
+          "capabilities": ["video"],
+          "zero_data_retention": true,
+          "training_opt_out": true
+        }
+      ],
+      "_candidates_not_active": {
+        "note": "Documentary-only candidate configuration for designated server-plane 27B IQ3_S GGUF thinking model. Unverified release label (Qwen3.5 vs Qwen3.8), exact model card artifact, and live server loading remain unproven, so it is NOT included in the active allowlist. Operators must verify the exact local model and alias before adding it to active models.",
+        "candidate": {
+          "id": "server/qwen3.8-27b-iq3s",
+          "display_name": "Qwen 27B IQ3_S Thinking (server GPU, candidate-only)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 32768,
+          "thinking_limit": 8192,
+          "metadata": {
+            "format": "GGUF",
+            "quant": "IQ3_S",
+            "parameter_size": "27B",
+            "thinking": true,
+            "public_alias_verified": "Qwen3.8",
+            "hf_candidate": "Qwen3.8-27B-Thinking-GGUF",
+            "reference_thinking_limit": 8192,
+            "reference_source": "screenshot configuration (not architecture proof)"
+          }
+        }
+      }
+    },
+    {
+      "id": "openrouter",
+      "class": "proxy",
+      "base_url": "https://openrouter.ai/api/v1",
+      "auth_mode": "gateway_key",
+      "key_env": "OPENROUTER_API_KEY",
+      "paths": {
+        "models": "/models",
+        "chat": "/chat/completions",
+        "images": "/images/generations"
+      },
+      "models": [
+        {
+          "id": "deepseek/deepseek-v4.1-flash-1017",
+          "display_name": "DeepSeek V4.1 Flash (1017) [Primary Main]",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 131072
+        },
+        {
+          "id": "anthropic/claude-sonnet-4.5",
+          "display_name": "Claude Sonnet 4.5",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 1000000
+        },
+        {
+          "id": "google/gemini-2.5-flash",
+          "display_name": "Gemini 2.5 Flash",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 1048576
+        }
+      ]
+    },
+    {
+      "id": "a6api",
+      "class": "proxy",
+      "base_url": "https://a6api.vip/v1",
+      "auth_mode": "pass_through",
+      "paths": {
+        "models": "/models",
+        "chat": "/chat/completions",
+        "images": "/images/generations"
+      },
+      "models": [
+        {
+          "id": "a6api/deepseek-chat-v3.1",
+          "display_name": "DeepSeek V3.1 (A6API Proxy)",
+          "capabilities": ["chat"],
+          "zero_data_retention": false,
+          "training_opt_out": false,
+          "context_window": 163840
+        }
+      ]
+    },
+    {
+      "id": "baseten",
+      "class": "direct",
+      "base_url": "https://inference.baseten.co/v1",
+      "auth_mode": "gateway_key",
+      "key_env": "BASETEN_API_KEY",
+      "paths": {
+        "models": "/models",
+        "chat": "/chat/completions",
+        "images": "/images/generations"
+      },
+      "models": [
+        {
+          "id": "baseten/mammoth-1",
+          "display_name": "Mammoth-1 (27B Decision)",
+          "capabilities": ["chat"],
+          "zero_data_retention": true,
+          "training_opt_out": true,
+          "context_window": 16384
+        }
+      ]
+    }
+  ]
+}

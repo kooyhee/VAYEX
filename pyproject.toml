@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deepseek-harness-customization"
+# Must equal engine.registry.CURATED_APP_RELEASE_VERSION:
+# scripts/verify_customization.ps1 fails when the two drift apart, and
+# packaging/legacy/harness.spec refuses to build.
+version = "2026.11.1"
+description = "Customization layer (presets, routing metadata, Cordis patch) for DeepSeek Harness (dsh)"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+# No Python runtime dependency: this project is the customization layer only.
+# The actual agent runtime is DeepSeek Harness (`dsh`, a Node application) and is
+# NOT installable from PyPI - see [tool.harness.dsh] and README.md.
+dependencies = []
+
+# No Python entry points: the app that runs is `dsh`, started by
+# scripts/launch.ps1 with the generated Cordis patch. The former
+# harness/harness-gui scripts pointed at prototype.main (a Tkinter shell of our
+# own) and are intentionally gone.
+
+[tool.setuptools]
+packages = ["engine", "harness", "prototype"]
+include-package-data = false
+zip-safe = false
+
+# No package data at all: model weights are never shipped inside this project.
+[tool.setuptools.package-data]
+engine = []
+harness = []
+prototype = []
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.gguf", "*.safetensors", "*.onnx", "*.pt", "*.pth", "*.ckpt", "*.ggml", "*.pq2", "*.bin"]
+
+# --------------------------------------------------------------------------- #
+# Runtime dependency (verified 2026-11-04 against the npm registry)
+# --------------------------------------------------------------------------- #
+[tool.harness]
+runtime = "DeepSeek Harness"
+launcher = "scripts/launch.ps1"
+installer = "scripts/install.ps1"
+patch_template = "packaging/customization/cordis.patch.template.yml"
+
+[tool.harness.dsh]
+# `npm view @deepseek-ai/dsh version license bin` on this machine returned
+# 0.2.1-rc.5 / MIT / {"dsh": "lib/bin.js"}.
+package = "@deepseek-ai/dsh"
+bin = "dsh"
+license = "MIT"
+source = "https://github.com/deepseek-ai/deepseek-harness"
+# Developer preview: dsh declares compatibility-breaking changes between releases.
+verified_against = "0.2.1-rc.5"
+# DSH is a Node application; no Python package provides it.
+requires_node = ">=20"
+

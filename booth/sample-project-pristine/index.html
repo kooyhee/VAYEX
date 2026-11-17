@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>국립목포해양대학교 AI 부스</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <header class="header">
+      <span class="badge">현장 실작업 세션</span>
+      <h1 id="title">국립목포해양대학교 AI 코딩 부스에 오신 것을 환영합니다!</h1>
+      <p class="subtitle">자연어로 요청하고, 변경 사항을 승인한 뒤 즉시 확인해 보세요.</p>
+    </header>
+
+    <section class="content">
+      <div class="input-group">
+        <label for="message-input">방문자 응원 한마디</label>
+        <input type="text" id="message-input" placeholder="이곳에 응원 메시지를 입력하세요" autocomplete="off" />
+      </div>
+
+      <div class="actions">
+        <button type="button" id="submit-btn" class="btn-primary">메시지 등록</button>
+      </div>
+
+      <div id="status-msg" class="status-box" aria-live="polite"></div>
+    </section>
+
+    <footer class="footer">
+      <p>비용절감위원회 · 로컬 통합 AI 코딩 하네스 시연</p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

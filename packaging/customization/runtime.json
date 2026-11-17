@@ -1,0 +1,5 @@
+{
+  "package": "@deepseek-ai/dsh",
+  "version": "0.2.1-rc.5",
+  "note": "The single place the runtime version is stated. scripts/install.ps1, scripts/launch.ps1 and scripts/verify_customization.ps1 all read this file; verify enforces that it equals pyproject.toml [tool.harness.dsh].verified_against."
+}

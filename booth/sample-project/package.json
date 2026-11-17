@@ -1,0 +1,11 @@
+{
+  "name": "booth-sample-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "국립목포해양대학교 공학작품경진대회 부스 시연용 실작업 예제",
+  "main": "app.js",
+  "scripts": {
+    "test": "node test.js",
+    "build": "node -e \"console.log('Build OK: Static site ready')\""
+  }
+}

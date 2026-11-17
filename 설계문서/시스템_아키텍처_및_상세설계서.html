@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>시스템 아키텍처 및 상세 설계서</title>
+<style>
+  @page {
+    size: A4;
+    margin: 12mm 14mm 12mm 14mm;
+    @top-right {
+      content: "지능형 모델 라우팅 기반 AI 코딩 플랫폼 설계서";
+      font-family: "Malgun Gothic", "Noto Sans KR", sans-serif;
+      font-size: 7.5pt;
+      color: #64748b;
+    }
+    @bottom-center {
+      content: "- " counter(page) " -";
+      font-family: "Malgun Gothic", "Noto Sans KR", sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+    }
+  }
+
+  @page :first {
+    @top-right { content: none; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Malgun Gothic", "Noto Sans KR", sans-serif;
+    font-size: 8.3pt;
+    line-height: 1.40;
+    color: #1e293b;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  .doc-header {
+    border-bottom: 2pt solid #1e3a8a;
+    padding-bottom: 4pt;
+    margin-bottom: 5pt;
+  }
+  .doc-category {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #1d4ed8;
+    letter-spacing: 0.5px;
+    margin-bottom: 1pt;
+  }
+  .doc-title {
+    font-size: 13.5pt;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 2.5pt;
+  }
+  .doc-subtitle {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.35;
+    margin-bottom: 2pt;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4pt;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 3pt;
+    padding: 4.5pt 7pt;
+    margin-bottom: 6pt;
+    font-size: 7.8pt;
+  }
+  .meta-item strong {
+    color: #475569;
+    display: block;
+    font-size: 7.1pt;
+    margin-bottom: 1pt;
+  }
+  .meta-item span {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-size: 9.8pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-left: 3pt solid #2563eb;
+    padding-left: 5pt;
+    margin-top: 6pt;
+    margin-bottom: 3pt;
+    break-after: avoid;
+    line-height: 1.25;
+  }
+  h3 {
+    font-size: 8.7pt;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-top: 4.5pt;
+    margin-bottom: 2pt;
+    break-after: avoid;
+  }
+
+  p { margin-bottom: 3pt; text-align: justify; }
+
+  ul, ol { margin-left: 11pt; margin-bottom: 3.5pt; }
+  li { margin-bottom: 1.5pt; line-height: 1.36; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3.5pt 0 5pt 0;
+    font-size: 7.6pt;
+    table-layout: fixed;
+    break-inside: avoid;
+  }
+  thead { display: table-header-group; }
+  th {
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 3.5pt 4.5pt;
+    text-align: left;
+    border: 1px solid #1e293b;
+    font-size: 7.5pt;
+  }
+  td {
+    padding: 3pt 4.5pt;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+    line-height: 1.32;
+  }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5pt;
+    margin: 3.5pt 0 4.5pt 0;
+    break-inside: avoid;
+  }
+  .col-box {
+    border: 1px solid #e2e8f0;
+    border-radius: 3pt;
+    padding: 4pt 6pt;
+    background: #fdfdfd;
+  }
+  .col-box h4 {
+    font-size: 8.1pt;
+    font-weight: 700;
+    margin-bottom: 2pt;
+    color: #0f172a;
+  }
+  .col-box.client { border-top: 2pt solid #10b981; }
+  .col-box.server { border-top: 2pt solid #6366f1; }
+
+  .box-note {
+    background: #eff6ff;
+    border-left: 2.5pt solid #3b82f6;
+    padding: 4pt 6pt;
+    border-radius: 0 3pt 3pt 0;
+    margin: 3.5pt 0;
+    font-size: 7.9pt;
+    color: #1e40af;
+    break-inside: avoid;
+  }
+
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 5pt 7pt;
+    border-radius: 3pt;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 6.8pt;
+    line-height: 1.3;
+    overflow-x: auto;
+    margin: 3.5pt 0 4.5pt 0;
+    break-inside: avoid;
+  }
+
+  .page-break { break-before: page; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div class="doc-header">
+  <div class="doc-category">공학 작품 경진대회 시스템 상세 설계서 (v1.0.0)</div>
+  <h1 class="doc-title">적응형 멀티에이전트 및 지능형 모델 라우팅 기반 AI 코딩 플랫폼 시스템 아키텍처 및 상세 설계서</h1>
+  <div class="doc-subtitle">System Architecture and Detailed Specification for Autonomous AI Coding Platform with Adaptive Multi-Agent Orchestration</div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-item">
+    <strong>문서 버전</strong>
+    <span>v1.0.0 (Release Candidate)</span>
+  </div>
+  <div class="meta-item">
+    <strong>작성일자</strong>
+    <span>2026년 10월 21일</span>
+  </div>
+  <div class="meta-item">
+    <strong>기반 아키텍처</strong>
+    <span>DeepSeek Harness + OpenCodex</span>
+  </div>
+  <div class="meta-item">
+    <strong>목표 출품일</strong>
+    <span>2026년 11월 18일</span>
+  </div>
+</div>
+
+<h2>1. 개요 및 핵심 설계 원칙</h2>
+<p>
+  본 문서는 대규모 언어모델(LLM) 기반의 차세대 자율형 소프트웨어 엔지니어링 에이전트 플랫폼의 시스템 아키텍처와 세부 컴포넌트 명세를 규정한다. 본 플랫폼은 단일 플래그십 모델 의존에 따른 운영비 폭증과 컨텍스트 팽창 문제를 해결하기 위해 <strong>클라이언트-서버 분리형 구조</strong>와 <strong>적응형 이기종 모델 라우팅</strong>을 핵심 아키텍처로 채택한다.
+</p>
+
+<div class="box-note">
+  <strong>4대 핵심 설계 원칙:</strong>
+  1) <strong>실행권-중계권의 물리적 분리:</strong> 로컬 샌드박스가 코드 실행을 독점하고, 중앙 서버는 순수 API 중계 및 메타데이터 관리만 수행.<br>
+  2) <strong>작업 지능 요구별 최적 모델 배치:</strong> 고지능 설계는 플래그십, 일반 코딩은 가성비 중급 모델, 단위 테스트/린트는 초저가 모델을 배치.<br>
+  3) <strong>결정론적 실행 통제:</strong> 계획 생성은 LLM이 하되, 동시성·예산·타임아웃·롤백은 로컬 오케스트레이터가 강력하게 통제.<br>
+  4) <strong>프라이버시 우선(Zero-Retention):</strong> 기본값으로 데이터 학습 비동의 경로를 강제하고 적격 경로 부재 시 원천 차단.
+</div>
+
+<h2>2. 시스템 아키텍처 설계 (2-Tier 분리 구조)</h2>
+<div class="two-col">
+  <div class="col-box client">
+    <h4>[로컬 계층] DeepSeek Harness 기반 튜닝 클라이언트</h4>
+    <ul>
+      <li><strong>실행 제어권 독점:</strong> 로컬 파일 수정 및 터미널 테스트 실행 전담</li>
+      <li><strong>Desktop GUI:</strong> 원클릭 간편 모드 / 전문가용 고급 설정 모드</li>
+      <li><strong>Local Orchestrator:</strong> Plan Validator, DAG Scheduler, Budget Controller, Workspace Manager, Checkpoint Store</li>
+      <li><strong>Context & Storage:</strong> AST 파서 기반 심볼 추출, SQLite + FTS5 전문 검색(무임베딩 고속 메모리), 100만 토큰급 계층 요약 압축</li>
+    </ul>
+  </div>
+  <div class="col-box server">
+    <h4>[서버 계층] OpenCodex 기반 경량 게이트웨이</h4>
+    <ul>
+      <li><strong>무상태 경량 프록시:</strong> 코드 비실행, SSE 양방향 스트리밍 중계</li>
+      <li><strong>보안 및 키 금고:</strong> 공급자 마스터 API Key 서버 측 암호화 보관</li>
+      <li><strong>Privacy Enforcement:</strong> Zero Data Retention 경로 엄격 강제</li>
+      <li><strong>Model Intelligence Registry:</strong> 인덱스 40점 이상 필터링, 최신 단가·벤치마크·후기 수집 및 11대 전문 역할 카테고리화</li>
+    </ul>
+  </div>
+</div>
+
+<p style="font-weight: 700; margin-top: 4pt; color: #1e3a8a;">전체 시스템 아키텍처 다이어그램</p>
+<pre>
++====================================================================================================+
+| [로컬 클라이언트] DeepSeek Harness 런타임 (코드 실행 독점, 저사양 PC 최적화)                             |
+|  +--------------------+  +----------------------+  +---------------------------------------------+ |
+|  | Desktop GUI (React)|  | Intelligence Planner |  | Local Deterministic DAG Orchestrator        | |
+|  | - 간편 / 고급 모드 |  | - Fast-Path / d1-ultra|  | - Plan Validator, DAG Scheduler, Rate Limiter | |
+|  | - 실시간 텔레메트리|  | - DAG Plan Generator |  | - Workspace Manager, SQLite Checkpoint/Rollback | |
+|  +--------------------+  +----------------------+  +---------------------------------------------+ |
+|  +-----------------------------------------------------------------------------------------------+ |
+|  | Context & Storage Engine: AST Symbol Extractor, SQLite FTS5 Memory, 100만 토큰 계층 압축     | |
+|  +-----------------------------------------------------------------------------------------------+ |
++=================================================^==================================================+
+                                                  | HTTPS / Strict Privacy Header
++=================================================v==================================================+
+| [중앙 메인 서버] OpenCodex 경량 프록시 게이트웨이 (API Proxy & Model Intelligence Registry)        |
+|  +-----------------------------------------------+  +--------------------------------------------+ |
+|  | API Routing & Streaming Proxy                 |  | Model Intelligence Registry                | |
+|  | - Zero Data Retention 라우팅 검증 엔진        |  | - 벤치마크, 커뮤니티 실사용 후기, 단가 수집| |
+|  | - Provider Key Vault, SSE 스트리밍, 과금 원장 |  | - 11대 전문 역할 카테고리 매핑 및 캐싱     | |
+|  +-----------------------------------------------+  +--------------------------------------------+ |
++====================================================================================================+
+</pre>
+
+<div class="page-break"></div>
+
+<!-- PAGE 2 -->
+<h2>3. 핵심 서브시스템 상세 명세</h2>
+
+<h3>3.1 Model Intelligence Registry (동적 모델 지능 레지스트리)</h3>
+<p>
+  신규 AI 모델의 성능 지표와 가격 변동을 실시간 반영하기 위해 중앙 서버에 구축된 자율 카탈로그 엔진이다.
+</p>
+<ul>
+  <li><strong>데이터 수집원:</strong> Artificial Analysis Intelligence Index, 공식 API 사양 및 컨텍스트 윈도우, Reddit/GitHub 실사용 평판, 제공자별 입력/출력/캐시 단가.</li>
+  <li><strong>지능 필터링 기준:</strong> Intelligence Index 40점 이상을 범용 후보로 하되, 40점 미만이라도 정규식·단순 린트 등 특정 전문 영역에서 가성비가 입증되면 예외 등록. 점수 미보유 모델은 미평가 후보로 격리.</li>
+  <li><strong>11대 전문 역할 분류 체계:</strong></li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 22%;">역할 명칭</th>
+      <th style="width: 48%;">주요 담당 업무</th>
+      <th style="width: 30%;">대표 모델 예시</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>main</code></td><td>종합 오케스트레이션 및 일반 코딩 수행</td><td>DeepSeek-V3, GPT-6.1-SOL</td></tr>
+    <tr><td><code>planner</code></td><td>작업 분해, 의존성 도출 및 DAG 생성 특화</td><td>Claude 3.7 Sonnet, d1-ultra</td></tr>
+    <tr><td><code>worker</code></td><td>단일 모듈 알고리즘 구현 및 파일 수정</td><td>DeepSeek-V3, Qwen-2.5-Coder</td></tr>
+    <tr><td><code>heavy_worker</code></td><td>대규모 아키텍처 리팩터링 및 난해한 버그 추적</td><td>GPT-5 / Claude Opus급</td></tr>
+    <tr><td><code>frontend_worker</code></td><td>UI 컴포넌트, HTML/CSS, 반응형 레이아웃 구현</td><td>Claude Sonnet, GPT-4o</td></tr>
+    <tr><td><code>backend_worker</code></td><td>API 엔드포인트, DB 스키마, 서버 비즈니스 로직</td><td>DeepSeek-V3, Qwen Coder</td></tr>
+    <tr><td><code>reviewer</code></td><td>코드 품질, 네이밍, 모듈 결합도 독립 검토</td><td>Gemini 2.5 Flash, DeepSeek-V3</td></tr>
+    <tr><td><code>security_reviewer</code></td><td>보안 취약점, 인젝션, 시크릿 유출 정적 검사</td><td>Claude 3.7 Sonnet</td></tr>
+    <tr><td><code>researcher</code></td><td>외부 라이브러리 문서 탐색 및 기술 사양 조사</td><td>Perplexity, Gemini 2.5 Pro</td></tr>
+    <tr><td><code>light_worker</code></td><td>단순 오타 수정, 단위 테스트 스캐폴딩, 주석 작성</td><td>DeepSeek-V4.1-Flash-1017</td></tr>
+    <tr><td><code>vision_worker</code></td><td>설계 다이어그램, UI 와이어프레임 이미지 분석</td><td>GPT-4o Vision, Gemini Flash</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 결정론적 로컬 DAG 오케스트레이터 및 3단계 자율 복구</h3>
+<p>
+  계획 생성은 확률적(Stochastic) LLM이 수행하지만, 실제 실행과 복구는 로컬의 결정론적(Deterministic) 오케스트레이터가 엄격하게 통제한다.
+</p>
+<ul>
+  <li><strong>Simple-Task Fast-Path:</strong> 단일 파일 수정 등 단순 작업은 Decision API 호출을 생략하고 규칙 기반으로 저비용 단일 모델 직행.</li>
+  <li><strong>DAG Scheduler:</strong> 위상 정렬(Topological Sort)을 통해 선행 의존성이 해소된 노드를 병렬 실행 큐에 자동 디스패치.</li>
+  <li><strong>3단계 자율 복구 프로토콜:</strong>
+    <ol>
+      <li><strong>1차 복구 (Local Retry):</strong> 단위 테스트 실패 시 에러 로그를 주입하여 동일 모델이 1회 국소 수정.</li>
+      <li><strong>2차 복구 (Model Escalation):</strong> 실패 지속 시 상위 티어 고지능 모델로 서브에이전트를 동적 승격하여 재작성.</li>
+      <li><strong>3차 복구 (Local Replanning):</strong> 승격 실패 시 Planning Engine에 해당 노드 하위 DAG 재계획 요청.</li>
+      <li><strong>최종 안전망 (SQLite Rollback):</strong> 3회 연속 실패 시 스냅샷을 통해 원본 코드로 즉각 롤백하고 사용자에게 리포트.</li>
+    </ol>
+  </li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- PAGE 3 -->
+<h2>4. 데이터 인터페이스 및 정밀 통신 프로토콜</h2>
+
+<h3>4.1 Model Intelligence Registry 엔트리 명세 (JSON Schema)</h3>
+<pre>
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModelIntelligenceEntry",
+  "type": "object",
+  "required": ["model_id", "provider", "intelligence_index", "roles", "pricing", "privacy"],
+  "properties": {
+    "model_id": { "type": "string", "example": "deepseek/deepseek-chat-v3" },
+    "display_name": { "type": "string", "example": "DeepSeek-V3" },
+    "provider": { "type": "string", "enum": ["openrouter", "a6api", "anthropic", "openai"] },
+    "intelligence_index": { "type": "number", "minimum": 0, "maximum": 100, "example": 78.4 },
+    "context_window": { "type": "integer", "example": 131072 },
+    "roles": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["main", "planner", "worker", "heavy_worker", "frontend_worker", "backend_worker", "reviewer", "security_reviewer", "researcher", "light_worker", "vision_worker"] }
+    },
+    "pricing": {
+      "type": "object",
+      "required": ["input_per_million", "output_per_million", "cache_read_per_million"],
+      "properties": {
+        "input_per_million": { "type": "number", "example": 0.14 },
+        "output_per_million": { "type": "number", "example": 0.28 },
+        "cache_read_per_million": { "type": "number", "example": 0.014 }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "required": ["zero_data_retention", "training_opt_out"],
+      "properties": {
+        "zero_data_retention": { "type": "boolean", "example": true },
+        "training_opt_out": { "type": "boolean", "example": true }
+      }
+    }
+  }
+}
+</pre>
+
+<h3>4.2 Planning Engine DAG 실행 계획 명세 (JSON Schema)</h3>
+<pre>
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionDAGPlan",
+  "type": "object",
+  "required": ["plan_id", "estimated_budget_usd", "nodes"],
+  "properties": {
+    "plan_id": { "type": "string", "format": "uuid" },
+    "task_complexity": { "type": "integer", "minimum": 1, "maximum": 10, "example": 6 },
+    "estimated_budget_usd": { "type": "number", "example": 0.045 },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "role", "model_id", "reasoning_effort", "dependencies", "instruction"],
+        "properties": {
+          "node_id": { "type": "string", "example": "task-01-scaffold" },
+          "role": { "type": "string", "example": "worker" },
+          "model_id": { "type": "string", "example": "deepseek/deepseek-chat-v3" },
+          "reasoning_effort": { "type": "string", "enum": ["none", "low", "medium", "high"], "example": "low" },
+          "dependencies": { "type": "array", "items": { "type": "string" }, "example": [] },
+          "target_files": { "type": "array", "items": { "type": "string" }, "example": ["src/service/auth.ts"] },
+          "instruction": { "type": "string", "example": "Create JWT authentication middleware." },
+          "verification_command": { "type": "string", "example": "npm test test/auth.test.ts" }
+        }
+      }
+    }
+  }
+}
+</pre>
+
+<div class="page-break"></div>
+
+<!-- PAGE 4 -->
+<h2>5. 10대 정량 검증 지표 및 4개 군 대조 평가 방법론</h2>
+
+<h3>5.1 4개 대조 비교군 설계</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 14%;">실험군</th>
+      <th style="width: 26%;">에이전트 구성</th>
+      <th style="width: 34%;">모델 및 라우팅 전략</th>
+      <th style="width: 26%;">평가 목적</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>군 A</strong></td><td>단일 에이전트</td><td>플래그십 고정 (GPT-6.1-SOL)</td><td>기존 표준 상용 코딩 방식 기준선</td></tr>
+    <tr><td><strong>군 B</strong></td><td>단일 에이전트</td><td>작업 단계별 모델 전환</td><td>단일 에이전트 환경의 라우팅 효과 측정</td></tr>
+    <tr><td><strong>군 C</strong></td><td>멀티 에이전트</td><td>모든 에이전트에 동일 플래그십 배정</td><td>단순 멀티에이전트의 비용 팽창 실측</td></tr>
+    <tr><td><strong style="color: #2563eb;">군 D (제안)</strong></td><td><strong style="color: #2563eb;">적응형 이기종 멀티</strong></td><td><strong style="color: #2563eb;">지능 요구별 다중 모델 적재적소 분배</strong></td><td><strong style="color: #2563eb;">품질 유지 및 비용·시간 최적화 입증</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 10대 정량 평가 지표</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 26%;">평가 지표</th>
+      <th style="width: 74%;">측정 내용 및 실측 방법</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>1. 작업 성공률 (%)</strong></td><td>사전 정의된 동일 코딩 테스트 케이스 및 린트 통과율</td></tr>
+    <tr><td><strong>2. 전체 완료 시간 (s)</strong></td><td>프롬프트 입력부터 최종 검증 통과까지 총 소요 시간 (Latency)</td></tr>
+    <tr><td><strong>3. 실제 총 API 비용 ($)</strong></td><td>게이트웨이에서 공급자에게 실제 결제 청구된 API 금액</td></tr>
+    <tr><td><strong>4. 성공 작업당 비용 ($)</strong></td><td>총 발생 비용 / 성공 작업 수 ($/Success) — 본 작품의 핵심 경제성 지표</td></tr>
+    <tr><td><strong>5. 세부 토큰 사용량</strong></td><td>입력 토큰, 출력 토큰, Prompt Cache 적중 토큰 세부 구분 집계</td></tr>
+    <tr><td><strong>6. 결정/계획 오버헤드</strong></td><td>Decision/Planning 호출에 소요된 시간 및 비용의 전체 대비 비중 (%)</td></tr>
+    <tr><td><strong>7. 서브에이전트 효율</strong></td><td>병렬 처리에 따른 시간 단축 배율 및 작업 분할·조율 오버헤드 측정</td></tr>
+    <tr><td><strong>8. 실패 복구율</strong></td><td>1차 검증 실패 후 국소 재계획 및 상위 모델 승격을 통한 최종 회복 성공 횟수</td></tr>
+    <tr><td><strong>9. 사용자 개입 횟수</strong></td><td>작업 진행 중 사용자가 수동으로 개입하거나 설정을 조정한 횟수</td></tr>
+    <tr><td><strong>10. 정책 준수율 (100%)</strong></td><td>데이터 학습 비동의 환경에서 미승인 경로로의 유출 차단율 (100% 필수)</td></tr>
+  </tbody>
+</table>
+
+<h2>6. 개발 마일스톤 및 결론</h2>
+<p>
+  <strong>개발 로드맵:</strong> 이번 주(10.19 ~ 10.25) 아키텍처 및 상세 설계를 완료하고, 다음 주(10.26 ~ 11.01) 시험 기간 동안 자료 조사를 거쳐 11.02부터 핵심 엔진 구현과 4개 군 대조 벤치마크 측정을 집중 진행하여 11월 18일 공학 작품 경진대회에 출품한다.
+</p>
+<p>
+  <strong>결론:</strong> 본 플랫폼은 DeepSeek Harness의 강력한 로컬 실행력과 OpenCodex 기반 모델 지능 게이트웨이를 융합하여, 개발자가 일일이 모델을 고민하지 않아도 자율적으로 최소 비용과 최고 품질을 달성하는 차세대 AI 개발 생태계의 표준을 제시한다.
+</p>
+
+</body>
+</html>

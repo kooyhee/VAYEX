@@ -1,0 +1,69 @@
+# VAYEX publishable tree.
+# Runtime state, model weights and recorded artifacts stay on the working machine.
+
+# Vendored runtime and dependencies
+.omp-runtime/
+node_modules/
+.ruff_cache/
+__pycache__/
+*.pyc
+
+# Model weights (download into models/, see README)
+models/
+app/data/
+app/memory/data/
+*.onnx
+
+# Runtime state and databases (quarantine, sqlite/WAL, quota ledgers, generated visualizations)
+data/
+app/state/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-journal
+
+# Secrets and credentials
+.env
+.env.*
+*.apiKey*
+.apiKey*
+*.dpapi
+*.pem
+*.key
+
+# Recorded videos, frame dumps and rendered presentation artifacts
+output/demo/
+output/panel/
+*.mp4
+*.webm
+*.mov
+*.mkv
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.pptx
+
+# Scratch, logs and temporary artifacts
+*.tmp.mjs
+*.tmp
+*.log
+out-suite*.txt
+_backup/
+scratch/
+
+# Withheld from publication (kept on disk, never committed):
+# personal absolute paths in tests, a Slack-shaped token fixture blocked by
+# GitHub push protection, and benchmark-host absolute paths in scripts.
+app/test/privacy-benchmark.test.mjs
+app/test/bench/tool-bytes.bench.mjs
+app/test/bridge.integration.test.mjs
+app/test/real-fixture.mjs
+app/insight/test/local-model.test.mjs
+scripts/lib/live-environments.mjs
+scripts/lib/live-task-runner.mjs
+scripts/lib/live-report-formatter.mjs
+scripts/benchmark-live-2env-official.mjs
+scripts/benchmark-live-4env.mjs
+scripts/reexport-artifacts.mjs

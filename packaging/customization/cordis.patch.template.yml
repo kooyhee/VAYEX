@@ -1,0 +1,58 @@
+# DeepSeek Harness (dsh) Cordis patch overlay - OUR customization layer.
+#
+# This file is a TEMPLATE. scripts/launch.ps1 renders it to
+#   %LOCALAPPDATA%\DeepSeekHarness\customization\cordis.patch.yml
+# and passes the rendered file to dsh with `--patch <file>` (opt-in: -ModelPatch).
+#
+# Format facts verified live against @deepseek-ai/dsh@0.2.1-rc.5
+# (`dsh --profile web --dump-config-schema`, `--dump-config --patch <file>`, and a
+# real boot whose model catalog and one prompt round-trip were observed):
+#   * a patch layer is a YAML entry list applied over the profile's composed tree;
+#     `id` names the row to retarget, and `config` is its complete replacement value;
+#   * a patch REPLACES the targeted row's complete `config` value - it does not
+#     deep-merge keys. Post-processing with dsh is therefore opt-in here, because
+#     the `llm-pi-ai` row also carries the providers dsh ships with.
+#   * `llm-pi-ai` config accepts exactly one top-level key, `providers`, whose keys
+#     are route names. A route accepts `api`, `baseURL`, `apiKeyEnv`, `models`,
+#     `displayName`, `compat`, `modelOverrides`, `defaultContextWindow`,
+#     `defaultMaxTokens`, `headers`, `reasoning`, `retryPolicy`, timeout fields.
+#   * `api` is one of openai-completions | openai-responses | anthropic-messages;
+#     a route the shipped catalog does not describe needs `api`, `baseURL`, and a
+#     non-empty `models` list. `models[]` items accept `id` (required), `name`,
+#     `contextWindow`, `maxTokens`, `input`, `reasoningEfforts`, `compat`.
+#   * `apiKeyEnv` names an environment variable, it does not store a secret; a
+#     reference that resolves to nothing fails the request with MISSING_CREDENTIAL.
+#   * the default selection is a separate row (`agent-default-model`, keys
+#     `provider`, `model`, `reasoningEffort`) that ships pointing at
+#     deepseek-official/deepseek-flash. Replacing only `llm-pi-ai` leaves that
+#     default intact, so the first prompt still goes to the DeepSeek route and
+#     fails with MISSING_CREDENTIAL unless DEEPSEEK_API_KEY is exported. The second
+#     entry below retargets it at our route, which is what makes this layer the
+#     machine's actual model route.
+#
+# Reviewed 2026-11-04 against @deepseek-ai/dsh 0.2.1-rc.5. DSH is a developer
+# preview and breaks compatibility between releases; re-check this file after an
+# upgrade (dsh --profile web --dump-config --patch <file> prints the composed tree
+# with the file that supplied every row).
+
+- id: llm-pi-ai
+  config:
+    providers:
+      harness-gateway:
+        # Our OpenAI-compatible gateway. One provider speaks one protocol.
+        api: openai-completions
+        baseURL: __BASE_URL__
+        # The key stays an environment reference; nothing secret is written here.
+        apiKeyEnv: HARNESS_LLM_API_KEY
+        # Model ids come from packaging/customization/catalog.json
+        # (release __RELEASE__, primary __PRIMARY__), rendered by scripts/launch.ps1.
+        # A request naming a model this endpoint does not serve is rejected by the
+        # gateway; keep the list to what your gateway actually exposes.
+__MODELS__
+
+- id: agent-default-model
+  # Without this row dsh keeps its shipped default (deepseek-official /
+  # deepseek-flash) and the first prompt fails with MISSING_CREDENTIAL.
+  config:
+    provider: harness-gateway
+    model: __PRIMARY__

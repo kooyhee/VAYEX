@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><title>VAYEX — 화면 회귀 검사</title><style>body{margin:0;padding:16px;background:#1f1f1f;color:#ededed;font:13px/1.5 system-ui,sans-serif}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 ui-monospace,Consolas,monospace}#fixture iframe{width:100%;height:700px;border:0;display:block}</style></head>
+<body><h1 style="font-size:16px">VAYEX — 화면 회귀 검사</h1><p>격리된 브라우저 검사입니다. 실제 코어, 모델, 클라우드 또는 SSH를 호출하지 않습니다.</p><pre id="results">검사 중…</pre><div id="fixture"></div>
+<script type="module">
+const results = [];
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+async function until(check, doc = document) {
+  if (check()) return;
+  await new Promise((resolve, reject) => {
+    const observer = new MutationObserver(() => { if (check()) finish(); });
+    const timeout = setTimeout(() => finish(new Error('Timed out waiting for fixture state')), 5000);
+    function finish(error) { observer.disconnect(); clearTimeout(timeout); error ? reject(error) : resolve(); }
+    observer.observe(doc, { subtree:true, childList:true, attributes:true, characterData:true });
+  });
+}
+const consoleErrors = [];
+let currentTest = '';
+async function fixture(run) {
+  const frame = document.createElement('iframe');
+  frame.title = '격리된 실제 화면'; frame.style.cssText = 'width:100%;height:700px;border:0';
+  const source = await (await fetch('./index.html')).text();
+  const setup = () => {
+    const config = {
+      mock:true,
+      defaultRoute:'any_cloud',
+      route:{ route:'any_cloud',consent:false,invalid:null },
+      local:{ provider:'mock',model:'local-test',available:true,label:'Local fixture',reason:'Browser fixture only' },
+      background:{ available:false,label:'Unavailable fixture',reason:'Not configured' },
+      cloud:{ provider:'mock',model:'cloud-test',label:'Cloud fixture',reason:'No external calls' }
+    };
+    window.testFetches = [];
+    window.testErrors = [];
+    window.testConfig = config;
+    window.addEventListener('error',event => window.testErrors.push(String(event.message)));
+    window.addEventListener('unhandledrejection',event => window.testErrors.push(String(event.reason)));
+    const report = console.error;
+    console.error = (...args) => { window.testErrors.push(args.map(String).join(' ')); report.apply(console,args); };
+    window.fetch = async url => {
+      const asked = new URL(url, document.baseURI);
+      window.testFetches.push(asked);
+      // Echo the conversation route the way the real bridge does: consent off on a
+      // cloud route reconciles to local_only and reports what was requested.
+      const base = window.testConfig;
+      const requested = asked.searchParams.get('route');
+      const consent = asked.searchParams.get('consent') === '1';
+      const cloud = requested === 'zdr_cloud' || requested === 'any_cloud';
+      const server = base.route?.invalid ? { route:'local_only', consent:false, invalid:base.route.invalid, requested, fallback:'invalid_route' }
+        : !cloud ? { route:requested ?? 'local_only', consent:false, invalid:null, requested, fallback:null }
+        : !consent ? { route:'local_only', consent:false, invalid:null, requested, fallback:'consent_off' }
+        : { route:requested, consent:true, invalid:null, requested, fallback:null };
+      const served = base.route?.served;
+      return new Response(JSON.stringify({ ...base, route:{ ...server, ...(served === undefined ? {} : { served, servedReason:base.route.servedReason }) } }));
+    };
+    window.testSockets = [];
+    window.WebSocket = class extends EventTarget {
+      static OPEN = 1;
+      readyState = 1;
+      sent = [];
+      model = 'local-test';
+      constructor(url) { super(); this.url = new URL(url, location.href); window.testSockets.push(this); queueMicrotask(() => this.frame({ type:'bridge_ready' })); }
+      frame(data) { this.dispatchEvent(new MessageEvent('message', { data:JSON.stringify(data) })); }
+      send(raw) {
+        const command = JSON.parse(raw); this.sent.push(command);
+        if (command.type === 'get_state') queueMicrotask(() => this.frame({ type:'response',command:'get_state',id:command.id,success:true,data:{ model:window.testConfig.reportModel === false ? null : { provider:'mock',id:this.model },isStreaming:false,isCompacting:false } }));
+      }
+      close() { this.readyState = 3; this.dispatchEvent(new Event('close')); }
+    };
+  };
+  frame.srcdoc = source.replace('<head>', `<head><base href="${new URL('./', location.href)}"><script>(${setup.toString()})()<` + '/script>');
+  document.querySelector('#fixture').append(frame);
+  try {
+    await new Promise(resolve => frame.addEventListener('load', resolve, { once:true }));
+    const win = frame.contentWindow, doc = win.document;
+    await until(() => win.testSockets?.length && (doc.querySelector('#connection').dataset.state === 'ready' || !doc.querySelector('#send-reason').hidden), doc);
+    // Consent starts off by design; the visible toggle is the operator's explicit act.
+    if (!doc.querySelector('#cloud-consent').checked) doc.querySelector('#consent-toggle').click();
+    await until(() => doc.querySelector('#connection').dataset.state === 'ready' && !doc.querySelector('#send').disabled, doc);
+    // The suite's socket/fetch counts describe the session after the operator act; keep the pre-consent trail apart.
+    win.initialFetches = win.testFetches.splice(0, win.testFetches.length - 1);
+    win.testSockets.splice(0, win.testSockets.length - 1);
+    const change = (selector, value) => { const el = doc.querySelector(selector); if (el.type === 'checkbox') el.checked = value; else el.value = value; el.dispatchEvent(new win.Event('change', { bubbles:true })); };
+    try {
+      await run({ win,doc,change,socket:() => win.testSockets.at(-1) });
+    } catch (error) {
+      const facts = `state=${doc.querySelector('#connection')?.dataset.state} send=${doc.querySelector('#send')?.disabled} reason=${doc.querySelector('#send-reason')?.textContent?.slice(0,120)} sockets=${win.testSockets?.length} fetches=${win.testFetches?.map(u => u.pathname + u.search).join(' ')} errors=${(win.testErrors ?? []).join(' | ')}`;
+      throw new Error(`${error.message} [${facts}]`);
+    }
+  } finally {
+    for (const error of frame.contentWindow?.testErrors ?? []) consoleErrors.push(`${currentTest}: ${error}`);
+    frame.remove();
+  }
+}
+async function test(name, run) {
+  currentTest = name;
+  try { await fixture(run); results.push({ name,status:'pass' }); }
+  catch (error) { results.push({ name,status:'fail',error:error.message }); }
+  document.querySelector('#results').textContent = JSON.stringify(results, null, 2);
+}
+
+await test('The command catalog popup, the sidebar command row and the approval scope are gone', async ({ win,doc,socket }) => {
+  const gone = () => [...['modes','modes-pop','modes-source','modes-list','menu-commands','scope'].filter(id => doc.getElementById(id))];
+  assert(!gone().length, `Deleted surfaces are back: ${gone().join(', ')}`);
+  assert(!doc.querySelector('.modes-pop,.pop-head,.pop-list,.pop-item,.ctl-note'), 'Deleted popup markup is back');
+  assert(!/매번 확인/.test(doc.body.textContent), 'An ask-every-time option is still rendered');
+  socket().frame({ type:'available_commands_update', commands:[{ name:'alpha',description:'First catalog' }] });
+  socket().frame({ type:'available_commands_update', commands:[{ name:'beta',description:'Second catalog' },{ name:'gamma' }] });
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && doc.querySelector('#connection').dataset.state === 'ready', doc);
+  win.testSockets.at(-1).frame({ type:'available_commands_update', commands:[{ name:'delta' }] });
+  assert(!win.testErrors.length, `A catalog frame threw: ${win.testErrors.join(' | ')}`);
+  assert(!gone().length, `A catalog frame recreated: ${gone().join(', ')}`);
+  assert(!doc.querySelector('.modes-pop,.pop-item'), 'A catalog frame opened a popup');
+});
+
+for (const [code,detail] of [
+  ['consent_required','클라우드'],
+  ['invalid_route','local_only']]) await test(`${code} ends the socket as a distinct refusal, not an outage`, async ({ win,doc,socket }) => {
+  const failed = socket(), count = win.testSockets.length, sent = failed.sent.length;
+  failed.frame({ type:'bridge_error',code });
+  const state = doc.querySelector('#connection').dataset.state;
+  assert(state === 'refused', `Failure is not a refusal state (state=${state})`);
+  const label = doc.querySelector('#connection-label').textContent;
+  assert(/[가-힣]/.test(label) && !label.includes('연결할 수 없'), `Refusal lost its distinct Korean label: ${label}`);
+  const refusal = doc.querySelector('#transcript .refusal-box');
+  assert(refusal?.dataset.state === 'refused', 'Failure did not render a refusal box');
+  assert(refusal.textContent.includes(detail), `Failure did not explain the policy outcome: ${refusal.textContent}`);
+  assert(/실행되지 않았습니다|실행하지 않았습니다/.test(refusal.textContent), `Refusal omitted the no-process-started guarantee: ${refusal.textContent}`);
+  assert(code !== 'invalid_route' || refusal.textContent.includes('local_only'), 'Invalid route was not explained');
+  assert(code !== 'consent_required' || refusal.textContent.includes('클라우드'), 'Cloud consent requirement was not explicit');
+  assert(failed.readyState === 3, 'Terminal refusal left the socket open');
+  failed.frame({ type:'bridge_ready' }); failed.dispatchEvent(new win.Event('error'));
+  doc.querySelector('#composer').requestSubmit();
+  assert(failed.sent.length === sent && win.testSockets.length === count, 'Terminal refusal retried or dispatched commands');
+  assert(doc.querySelector('#connection').dataset.state === 'refused' && doc.querySelector('#send').disabled, 'Terminal refusal was overwritten');
+});
+
+await test('Unavailable policy probes render consent refusal rather than bridge outage', async ({ win,doc,change,socket }) => {
+  const previous = socket();
+  win.testConfig = { ...win.testConfig, mock:false,
+    route:{ route:'zdr_cloud',consent:false,invalid:null },
+    local:{ ...win.testConfig.local,available:false,reason:'Cloud route requires explicit consent before probing.' },
+    background:{ available:false,reason:'Cloud route requires explicit consent before probing.' }
+  };
+  change('#route','zdr_cloud');
+  await until(() => socket() !== previous && doc.querySelector('#connection').dataset.state === 'refused', doc);
+  assert(doc.querySelector('#connection').dataset.state === 'refused', 'Policy refusal rendered as an outage or readiness');
+  assert(doc.querySelector('#model-status').dataset.state === 'refused', 'Model status did not expose refusal');
+  assert(doc.querySelector('#model-status').textContent.includes('requires explicit consent'), `Reported refusal reason was hidden: ${doc.querySelector('#model-status').textContent}`);
+  assert(!doc.querySelector('#transcript .error-box'), 'Policy refusal was styled as a bridge error');
+});
+
+await test('Route and consent plumbing still drive the probe, the socket and socket replacement', async ({ win,doc,change,socket }) => {
+  const query = (url,route,consent) => {
+    assert(url.searchParams.get('route') === route, `Wrong route: ${url}`);
+    assert(url.searchParams.get('consent') === consent, `Wrong consent: ${url}`);
+    assert(!url.searchParams.has('session'), 'Authorization change reused a bridge session');
+  };
+  query(win.testFetches.at(-1),'any_cloud','1'); query(socket().url,'any_cloud','1');
+  for (const route of ['zdr_cloud','any_cloud']) {
+    const previous = socket();
+    change('#route',route);
+    assert(previous.readyState === 3, 'Route change kept the old socket open');
+    await until(() => socket() !== previous && socket().url.searchParams.get('route') === route, doc);
+    query(win.testFetches.at(-1),route,'0'); query(socket().url,route,'0');
+    assert(doc.querySelector('#send').disabled, `${route} sends without consent`);
+    const unconsented = socket();
+    change('#cloud-consent',true);
+    assert(unconsented.readyState === 3, 'Consent grant kept the old authorization');
+    await until(() => socket() !== unconsented && !doc.querySelector('#send').disabled, doc);
+    query(win.testFetches.at(-1),route,'1'); query(socket().url,route,'1');
+    previous.frame({ type:'bridge_error',code:'transport_closed',message:'stale socket' });
+    assert(!doc.querySelector('#transcript').textContent.includes('stale socket'), 'A replaced socket changed the active UI');
+    assert(doc.querySelector('#connection').dataset.state === 'ready', 'A replaced socket changed the connection state');
+  }
+  change('#route','local_only');
+  await until(() => socket().url.searchParams.get('route') === 'local_only' && !doc.querySelector('#send').disabled, doc);
+  query(win.testFetches.at(-1),'local_only','0'); query(socket().url,'local_only','0');
+});
+
+// Consent is granted only by the visible toggle, never by a constant.
+await test('Consent off shows the inline reason, disables send and sends nothing until the toggle is used', async ({ win,doc,socket }) => {
+  assert(win.initialFetches[0].searchParams.get('route') === 'any_cloud' && win.initialFetches[0].searchParams.get('consent') === '0', `A fresh page did not start unconsented on the served route: ${win.initialFetches[0]}`);
+  // The fixture's operator act turned consent on; the visitor-facing toggle revokes it first.
+  doc.querySelector('#consent-toggle').click();
+  const revoked = win.testSockets.length;
+  await until(() => win.testSockets.length === revoked + 1 && doc.querySelector('#send').disabled, doc);
+  assert(!doc.querySelector('#cloud-consent').checked, 'The toggle did not record the operator turning consent off');
+  assert(!doc.querySelector('#send-reason').hidden && doc.querySelector('#send-reason').textContent.includes('외부 모델 사용에 동의해야'), `The consent reason is not shown inline before the first send: ${doc.querySelector('#send-reason').textContent}`);
+  assert(!socket().sent.some(x => x.type === 'prompt'), 'A request went out without consent');
+  doc.querySelector('#prompt').value = 'consent gate prompt';
+  doc.querySelector('#composer').requestSubmit();
+  assert(!socket().sent.some(x => x.type === 'prompt'), 'A submit bypassed the consent gate');
+  doc.querySelector('#consent-toggle').click();
+  const consented = win.testSockets.length;
+  await until(() => win.testSockets.length === consented + 1 && !doc.querySelector('#send').disabled, doc);
+  assert(doc.querySelector('#cloud-consent').checked && socket().url.searchParams.get('consent') === '1', 'The visible toggle did not grant consent');
+  assert(doc.querySelector('#send-reason').hidden, 'The consent gate stayed visible after the toggle');
+  doc.querySelector('#prompt').value = 'fresh session prompt';
+  doc.querySelector('#composer').requestSubmit();
+  assert(socket().sent.some(x => x.type === 'prompt' && x.message === 'fresh session prompt'), 'A consented prompt did not round-trip');
+  assert(!doc.querySelector('.approval') && !doc.querySelector('#approvals .approval'), 'A prompt opened an approval dialog');
+  win.testConfig = { ...win.testConfig, route:{ route:'any_cloud',consent:true,invalid:null,served:false,servedReason:'로컬 모델이 실행 중이 아닙니다.' } };
+  doc.querySelector('#new-session').click();
+  const unserved = win.testSockets.length;
+  await until(() => win.testSockets.length === unserved + 1 && doc.querySelector('#send').disabled && !doc.querySelector('#send-reason').hidden, doc);
+  assert(doc.querySelector('#send-reason').textContent.includes('로컬 모델이 실행 중이 아닙니다'), 'An unserved route is not shown before the first send');
+  assert(!socket().sent.some(x => x.type === 'prompt'), 'A request went out on an unserved route');
+  win.testConfig = { ...win.testConfig, route:{ route:'any_cloud',consent:true,invalid:null } };
+});
+
+await test('Approval drafts and focus survive unrelated renders and are cleared when resolved', async ({ win,doc,change,socket }) => {
+  const request = (id,method,prefill) => socket().frame({ type:'extension_ui_request',id,method,title:`${method} fixture`,prefill });
+  const field = id => doc.getElementById(`value-${id}`);
+  request('input-a','input','original input'); request('editor-b','editor','original editor');
+  field('input-a').value = 'unsent input draft'; field('input-a').dispatchEvent(new win.Event('input',{ bubbles:true }));
+  field('editor-b').value = 'unsent editor draft\nsecond line'; field('editor-b').dispatchEvent(new win.Event('input',{ bubbles:true }));
+  field('editor-b').focus(); field('editor-b').setSelectionRange(3,12,'backward');
+  socket().frame({ type:'turn_start' });
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ thinkingLevel:'medium' } });
+  assert(doc.querySelector('#approvals .approval'), 'Approval cards are hosted by the center column container');
+  assert(field('input-a').value === 'unsent input draft', 'Input draft lost during unrelated render');
+  assert(field('editor-b').value === 'unsent editor draft\nsecond line', 'Editor draft lost during unrelated render');
+  assert(doc.activeElement === field('editor-b'), 'Editor focus lost during unrelated render');
+  assert(field('editor-b').selectionStart === 3 && field('editor-b').selectionEnd === 12 && field('editor-b').selectionDirection === 'backward', 'Editor caret/selection lost during unrelated render');
+  field('input-a').closest('.approval').querySelector('button').click();
+  assert(socket().sent.some(x => x.type === 'extension_ui_response' && x.id === 'input-a' && x.value === 'unsent input draft'), 'Submitted approval did not use draft');
+  assert(!field('input-a'), 'Submitted request field retained');
+  socket().frame({ type:'extension_ui_request',method:'cancel',targetId:'editor-b' });
+  assert(!field('editor-b'), 'Cancelled request field retained');
+  request('input-a','input','fresh input'); request('editor-b','editor','fresh editor');
+  assert(field('input-a').value === 'fresh input' && field('editor-b').value === 'fresh editor', 'Resolved request reused stale draft');
+  doc.querySelector('#abort').click();
+  assert(!doc.querySelector('.approval'), 'Aborted request retained');
+  request('input-a','input','before reset'); field('input-a').value = 'discard on session reset';
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && doc.querySelectorAll('#recent-list .recent-sub').length >= 2, doc);
+  assert(!doc.querySelector('.approval'), 'New session retained old approval');
+  request('input-a','input','new session input');
+  assert(field('input-a').value === 'new session input', 'New session reused prior approval draft');
+});
+
+await test('The agent list stays empty until the core reports and then renders exactly the reported rows', async ({ win,doc,socket }) => {
+  const rows = () => [...doc.querySelectorAll('#agent-list .agent-row')];
+  assert(rows().length === 0, `Agent rows are rendered before any report: ${rows().length}`);
+  assert(doc.querySelector('#agent-list .agent-empty')?.textContent === '브리지가 하위 에이전트 현황을 아직 보고하지 않았습니다.', `The not-reported empty state is not distinct: ${doc.querySelector('#agent-list .agent-empty')?.textContent}`);
+  assert(doc.querySelector('#agents-count').textContent === '보고 없음', `Unreported agent counter is not 보고 없음: ${doc.querySelector('#agents-count').textContent}`);
+  assert(!doc.querySelector('.demo-tag,.demo-note,#agents-tag'), 'A demo agent marker is still rendered');
+  assert(!/예시/.test(doc.querySelector('#agents').textContent), 'The agents card still carries demo copy');
+  socket().frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[
+    { id:'agent-a',name:'조사',status:'completed',model:'local/model-a' },
+    { id:'agent-b',name:'구현',status:'running',detail:'배치 확인' }
+  ] } });
+  await until(() => rows().length === 2, doc);
+  assert(rows().map(row => row.dataset.state).join(',') === 'completed,running', `Reported rows lost their states: ${rows().map(row => row.dataset.state).join(',')}`);
+  assert(doc.querySelector('#agents-count').textContent === '1/2', `Agent counter is not running/total: ${doc.querySelector('#agents-count').textContent}`);
+  assert(rows()[0].textContent.includes('조사') && rows()[1].textContent.includes('구현'), 'Reported agent names are missing');
+  assert(rows()[0].textContent.includes('local/model-a'), 'A reported model id is missing from its row');
+  assert(!doc.querySelector('.demo-tag') && !/예시/.test(doc.querySelector('#agents').textContent), 'Demo copy survived a real report');
+  const second = rows()[1], disc = second.querySelector('.agent-disc'), detail = second.querySelector('.agent-detail');
+  const initial = detail.hidden;
+  assert(disc.getAttribute('aria-expanded') === String(!initial), 'The disclosure state disagrees with the reported detail');
+  disc.click();
+  assert(detail.hidden === !initial && disc.getAttribute('aria-expanded') === String(initial), 'Disclosure did not toggle the reported detail');
+  disc.click();
+  assert(detail.hidden === initial && disc.getAttribute('aria-expanded') === String(!initial), 'Disclosure did not restore the reported detail');
+  assert(second.querySelector('.agent-status').textContent.includes('실행 중'), 'A running row lost its status pill');
+  doc.querySelector('#agents-graph').click();
+  assert(doc.querySelector('#agent-graph').hidden === false && doc.querySelector('#agent-list').hidden === true, 'Graph view does not replace the list');
+  assert(doc.querySelectorAll('#agent-graph svg circle').length === 3, 'Graph view does not draw the session plus both reported agents');
+  doc.querySelector('#agents-list').click();
+  assert(rows().length === 2, 'List view lost the reported rows');
+  const running = [...doc.querySelectorAll('#running-rows li:not(.agent-empty)')];
+  assert(running.length === 2 && running.some(row => row.textContent.includes('구현')), 'The running card does not mirror the reported agents');
+});
+
+await test('Measured values come only from the core report and no demo figure is rendered before it', async ({ win,doc,socket }) => {
+  assert(!doc.querySelector('.demo-tag,.demo-note'), 'A demo marker is still rendered');
+  assert(doc.querySelector('#head-meta').textContent === '토큰 미보고' || doc.querySelector('#head-meta').textContent === '측정값 없음', `Unreported usage is not the unreported wording: ${doc.querySelector('#head-meta').textContent}`);
+  assert(doc.querySelector('#foot-right').textContent === '토큰 미보고', `Unreported context is not the unreported wording: ${doc.querySelector('#foot-right').textContent}`);
+  assert(doc.querySelector('#ctx-percent').textContent === '사용률 미확인' && doc.querySelector('#ctx-total').textContent === '미확인', `Unreported context card claims a value: ${doc.querySelector('#ctx-percent').textContent} / ${doc.querySelector('#ctx-total').textContent}`);
+  assert(doc.querySelector('#ctx-bar').getAttribute('aria-label') === '컨텍스트 사용량은 보고되지 않았습니다', 'The unreported context bar does not say so');
+  assert(!doc.querySelector('#running-rows li:not(.agent-empty)'), 'Unreported running rows render demo entries');
+  assert(!doc.querySelector('.thread-title,.user-bubble'), 'A demo transcript is rendered before any message');
+  socket().frame({ type:'response',command:'get_session_stats',success:true,data:{ tokens:{ total:24600 },cost:0.051,contextUsage:{ tokens:18400,contextWindow:200000,percent:9 } } });
+  await until(() => doc.querySelector('#head-meta').textContent.includes('24.6k'), doc);
+  assert(doc.querySelector('#foot-right').textContent.startsWith('200.0k 중 9%'), `Reported context does not drive the ring label: ${doc.querySelector('#foot-right').textContent}`);
+  assert(doc.querySelector('#ctx-total').textContent.includes('200.0k'), 'Reported context window is not shown in the context card');
+  socket().frame({ type:'message_start', message:{ role:'user', content:[{ type:'text',text:'make the settings page accessible' }] } });
+  socket().frame({ type:'message_end', message:{ role:'user', content:[{ type:'text',text:'make the settings page accessible' }] } });
+  await until(() => doc.querySelector('#head-title').textContent === 'make the settings page accessible', doc);
+  assert(doc.querySelector('.user-bubble')?.textContent === 'make the settings page accessible', 'The reported prompt is not rendered');
+  assert(!doc.querySelector('.thread-title'), 'A demo result block is rendered next to real messages');
+});
+
+await test('Composer preserves a draft while cloud consent is pending and dispatches after acknowledgement', async ({ win,doc,change,socket }) => {
+  const prompt = doc.querySelector('#prompt');
+  prompt.value = 'draft that must survive';
+  const previous = socket();
+  change('#cloud-consent',false);
+  await until(() => socket() !== previous && doc.querySelector('#send-reason').textContent.includes('동의'), doc);
+  assert(doc.querySelector('#send').disabled, 'Cloud prompt is gated on consent');
+  assert(doc.querySelector('#send-reason').hidden === false && /[가-힣]/.test(doc.querySelector('#send-reason').textContent), 'Consent gate explains why sending is blocked');
+  assert(prompt.value === 'draft that must survive', 'Composer draft survived reconnection');
+  doc.querySelector('#composer').requestSubmit();
+  assert(!socket().sent.some(x => x.type === 'prompt'), 'Unacknowledged prompt dispatched');
+  change('#cloud-consent',true);
+  await until(() => !doc.querySelector('#send').disabled, doc);
+  doc.querySelector('#composer').requestSubmit();
+  assert(socket().sent.some(x => x.type === 'prompt' && x.message === 'draft that must survive'), 'Acknowledged route dispatches the draft');
+  assert(prompt.value === '', 'Composer clears after a dispatched prompt');
+});
+
+await test('One workspace keeps conversation, agents and code review usable across navigation and session switches', async ({ win,doc,socket }) => {
+  socket().frame({ type:'message_start', message:{ role:'user', content:[{ type:'text',text:'first conversation' }] } });
+  socket().frame({ type:'message_end', message:{ role:'user', content:[{ type:'text',text:'first conversation' }] } });
+  socket().frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[{ id:'workspace-agent',name:'수정 확인',status:'running' }] } });
+  perFileFrame(socket(),{ name:'apply_patch',path:'src/workspace.ts',toolCallId:'workspace-edit',files:[
+    { path:'src/workspace.ts',existed_before:true,diff:'--- a/src/workspace.ts\n+++ b/src/workspace.ts\n-old\n+new' }
+  ] });
+  await until(() => doc.querySelector('.user-bubble') && doc.querySelector('#changes-rows .file-diff'), doc);
+  doc.querySelector('#prompt').value = '이어서 확인해 주세요';
+  doc.querySelector('#agents-collapse').click();
+  doc.querySelector('#menu-agents').click();
+  assert(!doc.querySelector('#agents-body').hidden && doc.querySelector('#agent-list').textContent.includes('수정 확인'), 'Agent navigation did not reveal the reported task');
+  for (const id of ['new-session','menu-search','menu-agents']) {
+    const button = doc.getElementById(id);
+    assert(!button.disabled && button.getBoundingClientRect().width > 0 && win.getComputedStyle(button).display !== 'none', `Workspace navigation is unreachable: ${id}`);
+  }
+  doc.querySelector('#menu-search').click();
+  const search = doc.querySelector('#search-input');
+  search.value = 'first conversation';
+  search.dispatchEvent(new win.Event('input',{ bubbles:true }));
+  assert(!doc.querySelector('#search-bar').hidden && doc.querySelector('.user-bubble').textContent === 'first conversation', 'Conversation search lost the active session');
+  doc.querySelector('#search-close').click();
+  doc.querySelector('#toggle-inspector').click();
+  doc.querySelector('#changes-review').click();
+  assert(doc.body.dataset.inspector === '' && doc.querySelector('#changes-rows details').open, 'Code review did not reopen the inspector and diff');
+  assert(doc.querySelector('#changes-rows .file-diff').textContent.includes('+new'), 'Code review lost the reported diff');
+  assert(doc.querySelector('#prompt').value === '이어서 확인해 주세요' && win.testSockets.length === 1, 'Navigating the workspace reset the draft or connection');
+  doc.querySelector('#composer').requestSubmit();
+  assert(socket().sent.some(frame => frame.type === 'prompt' && frame.message === '이어서 확인해 주세요'), 'Workspace navigation prevented a follow-up prompt');
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && doc.querySelector('#connection').dataset.state === 'ready', doc);
+  assert(!doc.querySelector('.user-bubble'), 'Second session inherited the first transcript');
+  assert(doc.querySelector('.thread-empty'), 'Second session does not render its own empty transcript');
+  assert(!doc.querySelector('#changes-rows .file-diff') && !doc.querySelector('#agent-list .agent-row'), 'Second session inherited code or task evidence');
+  const first = [...doc.querySelectorAll('#recent-list .recent-sub')].find(row => row.textContent.includes('first conversation'));
+  assert(first, 'First conversation is listed in Recent');
+  first.click();
+  await until(() => doc.querySelector('.user-bubble'), doc);
+  assert(doc.querySelector('.user-bubble').textContent === 'first conversation', 'Returning to a session restores its messages');
+  assert(!doc.querySelector('.thread-empty'), 'Returning to a session kept the empty placeholder');
+  assert(doc.querySelector('#changes-rows .file-diff').textContent.includes('+new') && doc.querySelector('#agent-list').textContent.includes('수정 확인'), 'Returning to a session lost code or task evidence');
+  assert(win.testSockets.length === 2 && win.testSockets[0].readyState === 1, 'Switching back does not open or close another socket');
+});
+
+await test('Unsent composer drafts stay with their session and only dispatch on that session socket', async ({ win,doc,socket }) => {
+  const firstSocket = socket();
+  firstSocket.frame({ type:'message_start',message:{ role:'user',content:'대화 A' } });
+  const prompt = doc.querySelector('#prompt');
+  prompt.value = 'A에만 보낼 초안';
+  prompt.dispatchEvent(new win.Event('input',{ bubbles:true }));
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && !doc.querySelector('#send').disabled,doc);
+  const secondSocket = socket();
+  assert(prompt.value === '', 'New session inherited another session’s unsent draft');
+  doc.querySelector('#composer').requestSubmit();
+  assert(!secondSocket.sent.some(frame => frame.type === 'prompt'), 'New session dispatched another session’s draft');
+  secondSocket.frame({ type:'message_start',message:{ role:'user',content:'대화 B' } });
+  prompt.value = 'B에만 보낼 초안';
+  prompt.dispatchEvent(new win.Event('input',{ bubbles:true }));
+  const select = title => [...doc.querySelectorAll('#recent-list .recent-sub')].find(row => row.querySelector('.t').textContent === title).click();
+  select('대화 A');
+  assert(prompt.value === 'A에만 보낼 초안', 'Returning to A did not restore its unsent draft');
+  secondSocket.frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  assert(prompt.value === 'A에만 보낼 초안', 'A background session update replaced the active draft');
+  select('대화 B');
+  assert(prompt.value === 'B에만 보낼 초안', 'Returning to B did not restore its own draft');
+  doc.querySelector('#composer').requestSubmit();
+  select('대화 A');
+  assert(prompt.value === 'A에만 보낼 초안', 'Submitting B cleared A’s draft');
+  doc.querySelector('#composer').requestSubmit();
+  select('대화 B');
+  assert(prompt.value === '', 'A submitted draft reappeared after switching sessions');
+  assert(firstSocket.sent.filter(frame => frame.type === 'prompt').map(frame => frame.message).join() === 'A에만 보낼 초안', 'A dispatched a foreign draft');
+  assert(secondSocket.sent.filter(frame => frame.type === 'prompt').map(frame => frame.message).join() === 'B에만 보낼 초안', 'B dispatched a foreign draft');
+});
+
+await test('Changed-file review keeps disclosure, focus and scroll through active and background updates', async ({ win,doc,socket }) => {
+  const firstSocket = socket();
+  firstSocket.frame({ type:'message_start',message:{ role:'user',content:'검토 A' } });
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && !doc.querySelector('#send').disabled,doc);
+  const backgroundSocket = socket();
+  backgroundSocket.frame({ type:'message_start',message:{ role:'user',content:'검토 B' } });
+  [...doc.querySelectorAll('#recent-list .recent-sub')].find(row => row.querySelector('.t').textContent === '검토 A').click();
+  const diffText = Array.from({ length:80 },(_,i) => `+수정된 줄 ${i}`).join('\n');
+  perFileFrame(firstSocket,{ name:'apply_patch',path:'src/review.ts',toolCallId:'review-main',files:[{ path:'src/review.ts',existed_before:true,diff:diffText }] });
+  doc.querySelector('#changes-review').click();
+  const details = doc.querySelector('#changes-rows details');
+  const summary = details.querySelector('summary');
+  const diff = details.querySelector('.file-diff');
+  const scroller = doc.querySelector('.inspector-scroll:not([hidden])');
+  summary.focus();
+  diff.scrollTop = 100;
+  scroller.scrollTop = 80;
+  const diffScroll = diff.scrollTop, panelScroll = scroller.scrollTop;
+  assert(diffScroll > 0 && panelScroll === 80 && scroller.scrollHeight - scroller.clientHeight > panelScroll, 'Review fixture did not establish scroll positions away from the panel’s clamped bottom');
+  const preserved = label => {
+    assert(doc.querySelector('#changes-rows details') === details && details.open, `${label}: an open diff was replaced or collapsed`);
+    assert(doc.activeElement === summary, `${label}: code-review focus was lost`);
+    assert(diff.scrollTop === diffScroll && scroller.scrollTop === panelScroll, `${label}: code-review scroll moved (diff ${diffScroll} → ${diff.scrollTop}, panel ${panelScroll} → ${scroller.scrollTop})`);
+  };
+  firstSocket.frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  preserved('Active session report');
+  backgroundSocket.frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  preserved('Background session report');
+  perFileFrame(firstSocket,{ name:'apply_patch',path:'src/other.ts',toolCallId:'review-other',files:[{ path:'src/other.ts',created:true,diff:'+another file' }] });
+  preserved('Additional changed file');
+  perFileFrame(firstSocket,{ name:'apply_patch',path:'src/review.ts',toolCallId:'review-main',files:[{ path:'src/review.ts',existed_before:true,diff:diffText + '\n+추가 확인' }] });
+  preserved('Updated diff');
+  assert(diff.textContent.endsWith('+추가 확인'), 'Preserving review state hid a new diff report');
+  details.open = false;
+  backgroundSocket.frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  assert(doc.querySelector('#changes-rows details') === details && !details.open, 'A deliberately closed diff reopened on an incoming frame');
+});
+
+await test('Reported task-only progress is visible, expandable and updated without chat or tool messages', async ({ win,doc,socket }) => {
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ todoPhases:[{ name:'작업 확인',tasks:[
+    { content:'구현 확인',status:'completed' },{ content:'회귀 검사',status:'in_progress' }
+  ] }] } });
+  const steps = doc.querySelector('#transcript .steps');
+  assert(steps?.textContent.includes('2단계 중 1단계 완료'), 'Reported task-only progress is missing from the workspace');
+  steps.click();
+  const tasks = doc.querySelector('#transcript .turn .agent-detail');
+  assert(!tasks.hidden && tasks.textContent.includes('완료 · 구현 확인') && tasks.textContent.includes('진행 중 · 회귀 검사'), 'Task-only details do not show reported content and status');
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ todoPhases:[{ name:'작업 확인',tasks:[
+    { content:'구현 확인',status:'completed' },{ content:'회귀 검사',status:'completed' }
+  ] }] } });
+  assert(doc.querySelector('#transcript .steps')?.textContent.includes('2단계 중 2단계 완료'), 'Task-only progress did not update');
+  doc.querySelector('#menu-search').click();
+  const search = doc.querySelector('#search-input');
+  search.value = '없는 대화'; search.dispatchEvent(new win.Event('input',{ bubbles:true }));
+  assert(doc.querySelector('#transcript .steps')?.textContent.includes('2단계 중 2단계 완료'), 'Empty chat search hid independent reported tasks');
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === 2 && !doc.querySelector('#send').disabled,doc);
+  assert(!doc.querySelector('#transcript .steps'), 'A fresh session inherited another session’s tasks');
+});
+
+await test('Three-column desktop shell stays exact and the narrow shell reflows into reachable drawers', async ({ win,doc,socket }) => {
+  // Replaces the former desktop-only contract: the 1180px floor is now a breakpoint,
+  // not a page minimum, and the side panels become drawers below it.
+  const shell = win.getComputedStyle(doc.documentElement);
+  assert(Number.parseInt(shell.minWidth,10) === 1180, `Desktop floor is 1180px at and above the breakpoint, saw ${shell.minWidth}`);
+  const columns = () => win.getComputedStyle(doc.querySelector('.app')).gridTemplateColumns.split(' ').map(x => Number.parseFloat(x));
+  const [side,centerFor,insp] = columns();
+  assert(centerFor > 0 && insp === 364 && side === 260, `Three columns keep 260/364 widths, saw ${columns().join(' ')}`);
+
+  doc.querySelector('#toggle-sidebar').click();
+  assert(doc.body.dataset.sidebar === 'closed' && !doc.querySelector('.sidebar').offsetParent, 'Sidebar toggle collapses the desktop column');
+  let [closedSide,centerSide]=columns();
+  assert(closedSide === 0 && centerSide === centerFor + side, `Closed sidebar hands its track to the center, saw ${columns().join(' ')}`);
+  assert(doc.querySelector('#toggle-sidebar').getBoundingClientRect().width > 0, 'Center header keeps the reopen control with the sidebar closed');
+
+  doc.querySelector('#toggle-sidebar').click();
+  assert(doc.querySelector('.sidebar').offsetParent, 'Sidebar toggle restores the desktop column');
+  doc.querySelector('#toggle-inspector').click();
+  assert(doc.body.dataset.inspector === 'closed', 'Overview toggle collapses the desktop column');
+  let [keptSide,centerInsp,closedInsp]=columns();
+  assert(keptSide === 260 && closedInsp === 0 && centerInsp === centerFor + insp, `Closed inspector hands its track to the center, saw ${columns().join(' ')}`);
+
+  doc.querySelector('#toggle-sidebar').click();
+  const [zeroSide,wideCenter,zeroInsp] = columns();
+  assert(zeroSide === 0 && zeroInsp === 0 && wideCenter > 0, `Both closed still leaves the center track, saw ${columns().join(' ')}`);
+  assert(doc.querySelector('#toggle-sidebar').getBoundingClientRect().width > 0, 'Both closed keeps the sidebar toggle reachable');
+  doc.querySelector('#toggle-sidebar').click();
+
+  doc.querySelector('#changes-review').click();
+  assert(doc.body.dataset.inspector === '' && doc.querySelector('#toggle-inspector').getAttribute('aria-pressed') === 'true', 'Review reopens the collapsed overview before scrolling to Changes');
+  for (const id of ['scrim','sidebar-close']) assert(win.getComputedStyle(doc.getElementById(id)).display === 'none', `Drawer-only control ${id} renders on the wide shell`);
+  assert(!doc.body.dataset.drawer && !doc.querySelector('#sidebar').hasAttribute('role') && !doc.querySelector('#center').inert, 'The wide shell carries drawer modality');
+});
+
+await test('Narrow shell at 320px has no horizontal overflow and opens both side panels as keyboard drawers', async ({ win,doc,socket }) => {
+  const frame = win.frameElement;
+  frame.style.width = '320px';
+  await until(() => win.innerWidth === 320, doc);
+  await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+  const root = doc.scrollingElement;
+  const fits = () => root.scrollWidth <= root.clientWidth;
+  assert(fits(), `320px viewport scrolls horizontally: scrollWidth=${root.scrollWidth} clientWidth=${root.clientWidth}`);
+  assert(win.getComputedStyle(doc.querySelector('#split-sidebar')).display === 'none', 'Splitters remain on the narrow shell');
+  const center = doc.querySelector('#center').getBoundingClientRect();
+  assert(center.left >= 0 && center.right <= 320 + 0.5, `Center column leaves the viewport: ${center.left}-${center.right}`);
+  for (const id of ['toggle-sidebar','toggle-inspector','prompt','send']) {
+    const box = doc.getElementById(id).getBoundingClientRect();
+    assert(box.width > 0 && box.left >= 0 && box.right <= 320 + 0.5, `${id} is not reachable inside 320px: ${box.left}-${box.right}`);
+  }
+  const sidebarToggle = doc.querySelector('#toggle-sidebar');
+  assert(sidebarToggle.getAttribute('aria-expanded') === 'false' && sidebarToggle.getAttribute('aria-controls') === 'sidebar', 'Sidebar trigger is not a disclosure for the drawer');
+  sidebarToggle.focus();
+  sidebarToggle.click();
+  const sidebar = doc.querySelector('#sidebar');
+  assert(doc.body.dataset.drawer === 'sidebar' && sidebar.getBoundingClientRect().width > 0, 'Sidebar drawer did not open');
+  assert(sidebar.getAttribute('role') === 'dialog' && sidebar.getAttribute('aria-modal') === 'true', 'Open sidebar drawer is not exposed as a modal dialog');
+  assert(sidebarToggle.getAttribute('aria-expanded') === 'true', 'Sidebar trigger did not report the open drawer');
+  assert(doc.querySelector('#center').inert && doc.querySelector('#inspector').inert, 'Content behind the drawer stayed interactive');
+  assert(doc.activeElement === doc.querySelector('#sidebar-close'), `Focus did not move into the drawer: ${doc.activeElement?.id}`);
+  // Measure the drawer at rest, after its slide-in (none under reduced motion).
+  const settle = node => Promise.all(node.getAnimations().map(animation => animation.finished));
+  await settle(sidebar);
+  const sideBox = sidebar.getBoundingClientRect();
+  assert(sideBox.left >= -0.5 && sideBox.right <= 320 + 0.5 && fits(), `Open sidebar drawer overflows the viewport: ${sideBox.left}-${sideBox.right}`);
+  doc.activeElement.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Escape',bubbles:true,cancelable:true }));
+  assert(!doc.body.dataset.drawer && !sidebar.getBoundingClientRect().width, 'Escape did not close the sidebar drawer');
+  assert(doc.activeElement === sidebarToggle && !doc.querySelector('#center').inert, 'Closing the drawer did not restore focus and interactivity');
+
+  const inspectorToggle = doc.querySelector('#toggle-inspector');
+  inspectorToggle.focus();
+  inspectorToggle.click();
+  const inspector = doc.querySelector('#inspector');
+  assert(doc.body.dataset.drawer === 'inspector' && inspector.getAttribute('role') === 'dialog', 'Inspector drawer did not open as a dialog');
+  assert(inspector.contains(doc.activeElement), 'Focus did not move into the inspector drawer');
+  await settle(inspector);
+  const box = inspector.getBoundingClientRect();
+  assert(box.left >= -0.5 && box.right <= 320 + 0.5 && fits(), `Inspector drawer overflows: ${box.left}-${box.right}`);
+  doc.querySelector('#tab-stats').click();
+  assert(doc.querySelector('#tab-stats').getAttribute('aria-selected') === 'true' && !doc.querySelector('#pane-stats').hidden, 'Inspector tabs are not operable inside the drawer');
+  assert(fits(), 'A drawer tab overflows the 320px viewport');
+  doc.querySelector('#insp-collapse').click();
+  assert(!doc.body.dataset.drawer && doc.activeElement === inspectorToggle, 'Inspector collapse did not close the drawer back to its trigger');
+  inspectorToggle.click();
+  doc.querySelector('#scrim').click();
+  assert(!doc.body.dataset.drawer, 'Tapping the scrim did not close the drawer');
+  doc.querySelector('#changes-review').click();
+  assert(doc.body.dataset.drawer === 'inspector' && doc.querySelector('#tab-diff').getAttribute('aria-selected') === 'true', 'A jump target did not open the inspector drawer');
+  frame.style.width = '1280px';
+  await until(() => win.innerWidth === 1280 && !doc.body.dataset.drawer, doc);
+  assert(!doc.querySelector('#center').inert && !inspector.hasAttribute('role'), 'Crossing back to the desktop left drawer modality on the columns');
+  const [side,,insp] = win.getComputedStyle(doc.querySelector('.app')).gridTemplateColumns.split(' ').map(x => Number.parseFloat(x));
+  assert(side === 260 && insp === 364, `Desktop columns did not return: ${side}/${insp}`);
+});
+
+await test('200% zoom of a 1280px window reflows to 640 CSS px without horizontal overflow', async ({ win,doc }) => {
+  // Browser zoom of 200% on a 1280px window leaves a 640 CSS px layout viewport.
+  win.frameElement.style.width = '640px';
+  await until(() => win.innerWidth === 640, doc);
+  await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+  const root = doc.scrollingElement;
+  assert(root.scrollWidth <= root.clientWidth, `640px viewport scrolls horizontally: ${root.scrollWidth}/${root.clientWidth}`);
+  doc.querySelector('#toggle-inspector').click();
+  doc.querySelector('#tab-visualize').click();
+  await Promise.all(doc.querySelector('#inspector').getAnimations().map(animation => animation.finished));
+  assert(root.scrollWidth <= root.clientWidth, 'The document tab overflows at 200% zoom');
+  const pills = [...doc.querySelectorAll('.doc-type')];
+  assert(pills.every(pill => pill.getBoundingClientRect().right <= 640 + 0.5), 'A document-type pill is cut off at 200% zoom');
+});
+
+await test('Inspector panels adapt to their own column width through container queries', async ({ win,doc }) => {
+  const pills = doc.querySelector('.doc-type-pills');
+  doc.querySelector('#tab-visualize').click();
+  // Count laid-out columns from the boxes themselves, not from the serialized track list.
+  const columnsOf = nodes => new Set([...nodes].filter(node => node.getClientRects().length).map(node => Math.round(node.getBoundingClientRect().left))).size;
+  const tracks = () => columnsOf(pills.querySelectorAll('.doc-type'));
+  const kv = () => columnsOf(doc.querySelector('#card-workspace .kv>div').children);
+  doc.documentElement.style.setProperty('--col-inspector','300px');
+  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  assert(tracks() === 1, `A 300px inspector keeps cramped two-up document pills: ${tracks()}`);
+  doc.documentElement.style.setProperty('--col-inspector','560px');
+  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  assert(tracks() === 4, `A 560px inspector wastes width on two-up document pills: ${tracks()}`);
+  doc.documentElement.style.setProperty('--col-inspector','364px');
+  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  assert(tracks() === 2, `The default 364px inspector changed its document pills: ${tracks()}`);
+  doc.querySelector('#tab-overview').click();
+  doc.documentElement.style.setProperty('--col-inspector','300px');
+  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  assert(kv() === 1, `A 300px inspector keeps the side-by-side workspace rows: ${kv()}`);
+  doc.documentElement.style.setProperty('--col-inspector','364px');
+  await new Promise(resolve => win.requestAnimationFrame(resolve));
+  assert(kv() === 2, `The default inspector changed its workspace rows: ${kv()}`);
+});
+
+await test('Inspector tab and timeline mode switches stay synchronous around a scoped swap animation', async ({ win,doc,socket }) => {
+  const started = [];
+  const native = win.Element.prototype.animate;
+  // Record which element animates; the state must already be applied by then.
+  win.Element.prototype.animate = function (...args) {
+    if (/^pane-|^timeline-groups$/.test(this.id)) started.push({ scope:this.id === 'timeline-groups' ? 'timeline-body' : 'inspector', pane:this.id, selected:doc.querySelector('.insp-tab[aria-selected=true]')?.dataset.tab, raw:doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') });
+    return native.apply(this, args);
+  };
+  try {
+    doc.querySelector('#tab-stats').click();
+    assert(doc.querySelector('#tab-stats').getAttribute('aria-selected') === 'true' && doc.querySelector('#tab-stats').tabIndex === 0 && !doc.querySelector('#pane-stats').hidden, 'Tab state did not update synchronously');
+    const motionReduced = win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (motionReduced) assert(started.length === 0, 'A transition ran under prefers-reduced-motion');
+    else assert(started.length === 1 && started[0].scope === 'inspector' && started[0].selected === 'stats', `Inspector switch did not start a transition scoped to the inspector: ${JSON.stringify(started)}`);
+    doc.querySelector('#tab-stats').click();
+    assert(started.length === (motionReduced ? 0 : 1), 'Re-selecting the active tab started another transition');
+    // The timeline file list lives in a collapsed <details>, so nothing visible swaps
+    // and no transition may start until it is open.
+    doc.querySelector('#journal-detail').open = false;
+    const before = started.length;
+    doc.querySelector('#timeline-chrono').click();
+    assert(doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') === 'true', 'Timeline mode did not update synchronously');
+    assert(started.length === before, 'A hidden timeline started a transition');
+    doc.querySelector('#journal-detail').open = true;
+    doc.querySelector('#timeline-grouped').click();
+    assert(doc.querySelector('#timeline-grouped').getAttribute('aria-pressed') === 'true' && !doc.querySelector('#timeline-groups').hidden, 'Grouped view did not render synchronously');
+    if (!motionReduced) assert(started.at(-1)?.scope === 'timeline-body' && started.at(-1).raw === 'false', `Timeline switch did not start a transition scoped to the timeline: ${JSON.stringify(started)}`);
+    // Unsupported browsers: no API, same synchronous result and no error.
+    Object.defineProperty(win.Element.prototype,'animate',{ value:undefined, configurable:true, writable:true });
+    doc.querySelector('#tab-diff').click();
+    assert(doc.querySelector('#tab-diff').getAttribute('aria-selected') === 'true' && !doc.querySelector('#pane-diff').hidden, 'Without Web Animations the tab switch broke');
+    doc.querySelector('#timeline-chrono').click();
+    assert(doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') === 'true', 'Without Web Animations the timeline switch broke');
+  } finally {
+    win.Element.prototype.animate = native;
+  }
+});
+
+await test('Inspector tabs and document-type pills expose their hints as described-by tooltips on focus and hover', async ({ win,doc }) => {
+  const triggers = [...doc.querySelectorAll('#insp-tabs .insp-tab'), ...doc.querySelectorAll('.doc-type input')];
+  assert(triggers.length === 10, `Expected 6 tabs and 4 document types, saw ${triggers.length}`);
+  for (const trigger of triggers) {
+    const tip = doc.getElementById(trigger.getAttribute('aria-describedby'));
+    assert(tip?.getAttribute('popover') === 'hint' && tip.getAttribute('role') === 'tooltip' && tip.textContent.trim(), `${trigger.id || trigger.value} has no hint popover`);
+    assert(!trigger.hasAttribute('title') && !trigger.closest('label')?.hasAttribute('title'), `${trigger.id || trigger.value} still relies on a title hint`);
+  }
+  assert(doc.querySelector('#tab-preview').textContent.trim() === '미리보기', 'A hint changed the tab name');
+  assert(doc.getElementById('hint-tab-preview').textContent === '학생 부스 화면을 실제로 열어 보고 요소를 고릅니다', 'Korean hint copy changed');
+  const tab = doc.querySelector('#tab-stats'), tip = doc.getElementById('hint-tab-stats');
+  tab.focus();
+  assert(tip.matches(':popover-open'), 'Keyboard focus did not show the tab hint');
+  const tabBox = tab.getBoundingClientRect(), tipBox = tip.getBoundingClientRect();
+  assert(tipBox.width > 0 && tipBox.top >= tabBox.bottom - 1 && tipBox.right <= win.innerWidth + 0.5, `The hint is not placed below its tab inside the viewport: ${JSON.stringify(tipBox)}`);
+  tab.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Escape',bubbles:true,cancelable:true }));
+  assert(!tip.matches(':popover-open') && doc.activeElement === tab, 'Escape did not dismiss the hint while keeping focus');
+  tab.blur();
+  doc.querySelector('#tab-visualize').click();
+  const pill = doc.querySelector('.doc-type input[value=study]').closest('label');
+  pill.dispatchEvent(new win.PointerEvent('pointerenter',{ pointerType:'mouse' }));
+  assert(doc.getElementById('hint-doc-study').matches(':popover-open'), 'Hover did not show the document-type hint');
+  pill.dispatchEvent(new win.PointerEvent('pointerleave',{ pointerType:'mouse' }));
+  assert(!doc.getElementById('hint-doc-study').matches(':popover-open'), 'Leaving the pill did not hide its hint');
+});
+
+await test('Aborting a turn prunes its approval drafts so a reused request id shows the new prefill', async ({ win,doc,socket }) => {
+  const field = id => doc.getElementById(`value-${id}`);
+  socket().frame({ type:'extension_ui_request',id:'reuse-1',method:'input',title:'input fixture',prefill:'original prefill' });
+  field('reuse-1').value = 'aborted draft'; field('reuse-1').dispatchEvent(new win.Event('input',{ bubbles:true }));
+  socket().frame({ type:'turn_start' });
+  await until(() => !doc.querySelector('#abort').disabled && !doc.querySelector('#abort').hidden, doc);
+  doc.querySelector('#abort').click();
+  assert(!doc.querySelector('.approval'), 'Abort removed the pending approval card');
+  socket().frame({ type:'extension_ui_request',id:'reuse-1',method:'input',title:'input fixture',prefill:'prefill after abort' });
+  assert(field('reuse-1').value === 'prefill after abort', 'Reused request id restored the aborted draft');
+  field('reuse-1').value = 'kept draft'; field('reuse-1').dispatchEvent(new win.Event('input',{ bubbles:true }));
+  socket().frame({ type:'turn_start' });
+  assert(field('reuse-1') && field('reuse-1').value === 'kept draft', 'Unrelated frames keep a live draft');
+});
+
+await test('Not-reported and reported-empty subagent lists stay distinct', async ({ win,doc,socket }) => {
+  const empty = () => doc.querySelector('#agent-list .agent-empty')?.textContent;
+  assert(!doc.querySelector('#agent-list .agent-row'), 'Agent rows are rendered before any report');
+  assert(empty() === '브리지가 하위 에이전트 현황을 아직 보고하지 않았습니다.', `A not-reported list does not explain itself: ${empty()}`);
+  assert(doc.querySelector('#agents-count').textContent === '보고 없음', `A not-reported counter claims a number: ${doc.querySelector('#agents-count').textContent}`);
+  assert(doc.querySelector('#running-count').textContent === '보고 없음', `The unreported running count claims a value: ${doc.querySelector('#running-count').textContent}`);
+  socket().frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  await until(() => empty() === '이번 세션에는 하위 에이전트가 없습니다.', doc);
+  assert(!doc.querySelector('#agent-list .agent-row'), 'A reported empty list rendered rows');
+  assert(doc.querySelector('#agents-count').textContent === '0/0', `Reported empty counter is not 0/0: ${doc.querySelector('#agents-count').textContent}`);
+  assert(!doc.querySelector('.demo-tag,#agents-tag'), 'A reported empty list rendered a demo marker');
+  assert(doc.querySelector('#running-count').textContent === '실행 중인 하위 에이전트 없음', 'The running card claims running subagents');
+  assert(!doc.querySelector('#running-rows li:not(.agent-empty)'), 'The running card rendered rows for a reported empty list');
+  socket().frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[{ id:'one',name:'검토',status:'running' }] } });
+  await until(() => doc.querySelectorAll('#agent-list .agent-row').length === 1, doc);
+  assert(doc.querySelector('#agents-count').textContent === '1/1', `A reported running agent is not counted: ${doc.querySelector('#agents-count').textContent}`);
+  assert(doc.querySelector('#running-count').textContent === '하위 에이전트 1개 실행 중', `The running card lost the reported agent: ${doc.querySelector('#running-count').textContent}`);
+  socket().frame({ type:'response',command:'get_subagents',success:true,data:{ subagents:[] } });
+  await until(() => !doc.querySelector('#agent-list .agent-row'), doc);
+  assert(doc.querySelector('#agents-count').textContent === '0/0', 'A later empty report did not clear the counter');
+  assert(doc.querySelector('#running-count').textContent === '실행 중인 하위 에이전트 없음', 'A later empty report left the running count stale');
+  assert(!doc.querySelector('#running-rows li:not(.agent-empty)'), 'A later empty report left running rows behind');
+});
+
+await test('The inspector states unreported facts instead of local or empty ones', async ({ win,doc,socket }) => {
+  const folder = doc.querySelector('#ws-folder'), branch = doc.querySelector('#ws-branch');
+  assert(folder.textContent === '보고 없음' && branch.textContent === '보고 없음', `Folder/branch are not the unreported wording: ${folder.textContent} / ${branch.textContent}`);
+  assert(!folder.textContent.includes('40_AI보고서') && branch.textContent !== 'main', 'An unreported folder or branch was filled in from the page');
+  assert(folder.title.includes('보고하지 않습니다') && branch.title.includes('보고하지 않습니다'), `Unreported folder/branch do not explain the bridge limitation: ${folder.title} / ${branch.title}`);
+  const mcp = [...doc.querySelectorAll('#mcp-rows li')];
+  assert(mcp.length === 1 && mcp[0].textContent === '브리지는 MCP 서버 현황을 보고하지 않습니다.', `MCP card claims knowledge of servers: ${mcp.map(x => x.textContent).join(' | ')}`);
+  assert(!/연결된 MCP 서버가 없습니다|MCP 서버 없음/.test(doc.querySelector('#mcp-rows').textContent), 'The MCP card asserts that no servers are connected');
+  assert(!doc.querySelector('#mcp-rows li:not(.agent-empty)'), 'The MCP card renders server rows without a report');
+  const changes = doc.querySelector('#changes-rows');
+  assert(doc.querySelector('#changes-count').textContent === '변경된 파일 없음', `Unreported changes claim a count: ${doc.querySelector('#changes-count').textContent}`);
+  assert(changes.querySelector('.agent-empty') && !changes.querySelector('.mbadge'), 'A row with no reported change carries a badge');
+  assert(!doc.querySelector('#changes-rows li[data-badge=none] .mbadge'), 'An unreported row was stamped with a badge');
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ model:{ provider:'mock',id:'local-test' } } });
+  assert(folder.textContent === '보고 없음' && branch.textContent === '보고 없음', 'A state report invented a folder or branch');
+});
+
+await test('The changed-file badge comes from reported evidence and is absent when nothing is reported', async ({ win,doc,socket }) => {
+  const rows = () => [...doc.querySelectorAll('#changes-rows li')];
+  const badgeOf = path => {
+    const row = rows().find(item => item.querySelector('.path')?.textContent === path);
+    assert(row, `Missing changed-file row for ${path}`);
+    const mark = row.querySelector('.mbadge');
+    return mark ? mark.textContent : (row.dataset.badge === 'none' ? 'none' : '');
+  };
+  assert(!doc.querySelector('#changes-rows .mbadge'), 'A badge is rendered before any file change is reported');
+  perFileFrame(socket(),{ name:'apply_patch',path:'src/badge',toolCallId:'badge-1',files:[
+    { path:'src/badge/created.ts',created:true },
+    { path:'src/badge/new.ts',existed_before:false },
+    { path:'src/badge/modified.ts',existed_before:true },
+    { path:'src/badge/deleted.ts',deleted:true },
+    { path:'src/badge/unknown.ts' }
+  ] });
+  await until(() => rows().length === 5, doc);
+  assert(doc.querySelector('#changes-count').textContent === '파일 5개 변경됨', `Changed-file count does not follow the report: ${doc.querySelector('#changes-count').textContent}`);
+  assert(badgeOf('src/badge/created.ts') === 'A', `A reported creation is not stamped A: ${badgeOf('src/badge/created.ts')}`);
+  assert(badgeOf('src/badge/created.ts') !== 'M', 'A created file was stamped as a modification');
+  assert(badgeOf('src/badge/new.ts') === 'A', `existedBefore:false is not stamped A: ${badgeOf('src/badge/new.ts')}`);
+  assert(badgeOf('src/badge/modified.ts') === 'M', `existedBefore:true is not stamped M: ${badgeOf('src/badge/modified.ts')}`);
+  assert(badgeOf('src/badge/deleted.ts') === 'D', `A reported deletion is not stamped D: ${badgeOf('src/badge/deleted.ts')}`);
+  assert(badgeOf('src/badge/unknown.ts') === 'none', `A file with no lifecycle evidence carries a badge: ${badgeOf('src/badge/unknown.ts')}`);
+  assert(badgeOf('src/badge/unknown.ts') !== 'M', 'A file with no lifecycle evidence was stamped M by default');
+});
+
+await test('The hidden route plumbing is unreachable but still drives the probe and socket', async ({ win,doc,change,socket }) => {
+  const ids = ['route','cloud-consent','model-status','route-privacy'];
+  const wrapper = doc.querySelector('#route').closest('[hidden]');
+  assert(wrapper, 'The route controls are not inside a hidden wrapper');
+  assert(ids.every(id => wrapper.contains(doc.getElementById(id))), 'A route control escaped the hidden wrapper');
+  assert(wrapper.getClientRects().length === 0, 'The route wrapper is still painted');
+  assert(doc.querySelector('#route').value === 'any_cloud' && doc.querySelector('#cloud-consent').checked, 'The hidden controls no longer mirror the live session values');
+  assert(/[가-힣]/.test(doc.querySelector('#model-status').textContent) && doc.querySelector('#route-privacy').textContent.includes('이 기기 밖'), 'The hidden controls stopped receiving rendered copy');
+  for (const id of ids) {
+    const node = doc.getElementById(id);
+    assert(node.getClientRects().length === 0, `${id} is painted although it should be unreachable`);
+    node.focus?.();
+    assert(doc.activeElement !== node, `${id} is focusable while hidden`);
+  }
+  const previous = socket();
+  change('#route','local_only');
+  await until(() => socket() !== previous && socket().url.searchParams.get('route') === 'local_only', doc);
+  assert(win.testFetches.at(-1).searchParams.get('route') === 'local_only', 'A hidden route select no longer drives the config probe');
+  const unconsented = socket();
+  change('#cloud-consent',true);
+  await until(() => socket() !== unconsented && socket().url.searchParams.get('consent') === '1', doc);
+  assert(win.testFetches.at(-1).searchParams.get('consent') === '1', 'A hidden consent checkbox no longer drives the config probe');
+  assert(!doc.querySelector('#send').disabled, 'A hidden consent grant does not unblock sending');
+});
+
+await test('The model readout shows only the bridge report and the header menu keeps its keyboard contract', async ({ win,doc,socket }) => {
+  const model = () => doc.querySelector('#ws-model').textContent;
+  assert(model() === '브리지 보고: mock/local-test', `Reported model is not the bridge report: ${model()}`);
+  assert(!model().includes('설정 모델'), 'The model readout fell back to a configured model id');
+
+  const trigger = doc.querySelector('#head-more');
+  trigger.click();
+  const menu = doc.querySelector('[role=menu]');
+  assert(menu && trigger.getAttribute('aria-expanded') === 'true', 'Opening the menu sets aria-expanded="true" on the trigger');
+  const items = [...menu.querySelectorAll('[role=menuitem]:not([disabled])')];
+  assert(doc.activeElement === items[0], 'Opening the menu focuses its first enabled item');
+  menu.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'ArrowDown', bubbles:true }));
+  assert(doc.activeElement === items[1], 'ArrowDown moves focus to the next menu item');
+  menu.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Escape', bubbles:true }));
+  assert(!doc.querySelector('[role=menu]') && trigger.getAttribute('aria-expanded') === 'false' && doc.activeElement === trigger, 'Escape closes the menu, resets aria-expanded and restores focus');
+  for (const shiftKey of [false,true]) {
+    trigger.click();
+    const tab = new win.KeyboardEvent('keydown',{ key:'Tab',shiftKey,bubbles:true,cancelable:true });
+    doc.querySelector('[role=menu]').dispatchEvent(tab);
+    // Guide `menu`: Tab leaves the menu system — the menu closes and focus is back on
+    // its trigger, but the Tab itself is not swallowed, so it continues into the page.
+    assert(!doc.querySelector('[role=menu]') && doc.activeElement === trigger && !tab.defaultPrevented, 'Tab did not leave the menu system and hand the Tab back to the browser');
+  }
+});
+
+await test('An unreachable endpoint is unavailable, not a policy refusal', async ({ win,doc,change,socket }) => {
+  const old = socket();
+  win.testConfig = { ...win.testConfig,mock:false,route:{ route:'local_only',consent:false,invalid:null },local:{ ...win.testConfig.local,available:false,reason:'Endpoint unreachable: connection refused' } };
+  change('#route','local_only');
+  await until(() => socket() !== old && doc.querySelector('#model-status').dataset.state === 'error',doc);
+  const label = doc.querySelector('#connection-label').textContent;
+  assert(/[가-힣]/.test(label) && !label.includes('동의') && !label.includes('경로'), `Outage was misclassified as refusal: ${label}`);
+  assert(doc.querySelector('#model-status').dataset.state === 'error', 'Availability failure is not an error state');
+  assert(doc.querySelector('#transcript .error-box')?.textContent.includes('Endpoint unreachable'), 'Availability reason was lost');
+  assert(!doc.querySelector('#transcript .refusal-box'), 'Endpoint outage rendered as policy refusal');
+  assert(doc.querySelector('#send').disabled, 'Unavailable endpoint allows prompts');
+});
+
+await test('Transport failure takes precedence over a consent-policy probe refusal', async ({ win,doc,change,socket }) => {
+  const previous = socket();
+  win.testConfig = { ...win.testConfig,route:{ route:'zdr_cloud',consent:false,invalid:null },local:{ available:false,reason:'Explicit cloud consent required' } };
+  change('#cloud-consent',false);
+  await until(() => socket() !== previous && doc.querySelector('#connection').dataset.state === 'refused',doc);
+  assert(doc.querySelector('#connection').dataset.state === 'refused','Consent probe must first render as refusal');
+  socket().dispatchEvent(new win.Event('error'));
+  assert(doc.querySelector('#connection').dataset.state === 'error','Transport failure was masked by consent policy');
+  assert(doc.querySelector('#transcript .error-box')?.textContent.includes('브리지에 연결할 수 없습니다'), `Transport failure cause is hidden: ${doc.querySelector('#transcript')?.textContent}`);
+  assert(!doc.querySelector('#transcript .refusal-box'), 'Stale refusal masks transport failure');
+  assert(doc.querySelector('#model-status').dataset.state === 'error', 'Model status still claims refusal');
+});
+
+await test('Auto leaves selection outside the page and never sends model or reasoning commands', async ({ win,doc,change,socket }) => {
+  const indicator = doc.querySelector('#composer-auto');
+  assert(indicator.textContent === '자동' && indicator.tagName === 'SPAN' && indicator.tabIndex === -1, 'Auto is non-interactive');
+  assert(/[가-힣]/.test(indicator.title) && indicator.title.includes('게이트웨이'), `Auto does not explain where the choice is made: ${indicator.title}`);
+  for (const route of ['zdr_cloud','any_cloud']) {
+    change('#route',route); change('#cloud-consent',true);
+    await until(() => !doc.querySelector('#send').disabled,doc);
+    doc.querySelector('#prompt').value = '자동 선택 경계 확인';
+    doc.querySelector('#composer').requestSubmit();
+  }
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ model:{ provider:'bridge',id:'actual-model' },thinkingLevel:'high' } });
+  assert(doc.querySelector('#ws-model').textContent === '브리지 보고: bridge/actual-model', 'Reported model is read-only, not a configured fallback');
+  const sent = win.testSockets.flatMap(ws => ws.sent);
+  assert(sent.filter(x => x.type === 'prompt').length === 2, 'Prompts dispatch without page-side selection');
+  assert(!sent.some(x => ['set_model','set_thinking_level','get_available_thinking_levels'].includes(x.type) || ['model','modelId','level','reasoning','reasoningEffort'].some(key => key in x)), 'Page sent a model or reasoning override');
+});
+
+await test('Unreported models never fall back to a configured model id while loading or unavailable', async ({ win,doc,socket }) => {
+  const reportsAConfig = text => ['configured-not-used','local-test','mock/','설정 모델','연결할 때 받은'].some(token => text.includes(token));
+  win.testConfig = { ...win.testConfig,mock:false,reportModel:false,route:{ route:'zdr_cloud',consent:true,invalid:null },local:{ model:'configured-not-used',available:true },cloud:{ model:'configured-not-used',available:true } };
+  doc.querySelector('#new-session').click();
+  const loading = doc.querySelector('#ws-model').textContent;
+  assert(/[가-힣]/.test(loading), `The loading model readout is not Korean copy: ${loading}`);
+  assert(!reportsAConfig(loading), `The loading model readout shows a configured id: ${loading}`);
+  await until(() => !doc.querySelector('#send').disabled && doc.querySelector('#connection').dataset.state === 'ready',doc);
+  const settled = doc.querySelector('#ws-model').textContent;
+  assert(!reportsAConfig(settled), `A never-reported model shows a configured id: ${settled}`);
+  assert(!/브리지 보고/.test(settled), `A never-reported model claims a bridge report: ${settled}`);
+  win.testConfig = { ...win.testConfig,cloud:{ model:'configured-not-used',available:false,reason:'모델 미설정' } };
+  doc.querySelector('#new-session').click();
+  await until(() => doc.querySelector('#send').disabled && doc.querySelector('#model-status').textContent.includes('모델 미설정'),doc);
+  const unavailable = doc.querySelector('#ws-model').textContent;
+  assert(!reportsAConfig(unavailable), `An unavailable model shows a configured id: ${unavailable}`);
+  assert(!/브리지 보고/.test(unavailable), `An unavailable model claims a bridge report: ${unavailable}`);
+  assert(/[가-힣]/.test(unavailable), `The unavailable model readout is not Korean copy: ${unavailable}`);
+  win.testConfig = { ...win.testConfig,mock:true,reportModel:true,route:{ route:'zdr_cloud',consent:true,invalid:null },local:{ model:'local-test',available:true },cloud:{ model:'cloud-test',available:true } };
+  doc.querySelector('#new-session').click();
+  await until(() => !doc.querySelector('#send').disabled && doc.querySelector('#ws-model').textContent.includes('브리지 보고'),doc);
+  assert(doc.querySelector('#ws-model').textContent === '브리지 보고: mock/local-test', 'Mock model comes from the bridge report only');
+});
+
+await test('Local privacy copy does not treat loopback addressing as on-machine inference proof', async ({ doc,change,socket }) => {
+  const cloud = doc.querySelector('#route-privacy').textContent;
+  assert(cloud.includes('이 기기 밖'), `The default cloud route hides its egress: ${cloud}`);
+  change('#route','local_only');
+  await until(() => doc.querySelector('#route-privacy').textContent.includes('루프백'), doc);
+  const text = doc.querySelector('#route-privacy').textContent;
+  assert(text.includes('루프백') && text.includes('아닙니다') && text.includes('확인할 수 없습니다'), `Bridge privacy copy omits the local tunnel limitation: ${text}`);
+});
+
+await test('The 더 보기 menu keeps its keyboard contract with the items that still exist', async ({ win,doc }) => {
+  let error = null;
+  win.addEventListener('error',event => { error = event.message; event.preventDefault(); },{ once:true });
+  const trigger = doc.querySelector('#menu-more');
+  trigger.click();
+  const menu = doc.querySelector('[role=menu]');
+  assert(!error, `Opening 더 보기 threw: ${error}`);
+  assert(menu && trigger.getAttribute('aria-expanded') === 'true', 'Opening 더 보기 does not mark its trigger expanded');
+  const items = [...menu.querySelectorAll('[role=menuitem]')];
+  assert(items.map(item => item.textContent).join(',') === '데스크톱 앱 전용 기능,문서', `The 더 보기 items changed: ${items.map(item => item.textContent).join(',')}`);
+  assert(!items.some(item => item.textContent.includes('버전')), 'The removed version submenu is back');
+  assert(!/게이트웨이 배포|배포 환경/.test(doc.body.textContent), 'Hardcoded version or deployment facts are rendered');
+  assert(items.every(item => item.disabled), 'A menu item would act without a bridge behind it');
+  assert(items.every(item => /[가-힣]/.test(item.title)), 'A disabled item does not explain why it is unavailable');
+  assert(doc.activeElement === menu, 'An all-disabled menu focuses its own container');
+  const key = (name,extra = {}) => new win.KeyboardEvent('keydown',{ key:name,bubbles:true,cancelable:true,...extra });
+  const arrow = key('ArrowDown');
+  menu.dispatchEvent(arrow);
+  assert(arrow.defaultPrevented && doc.querySelector('[role=menu]') && doc.activeElement === menu, 'ArrowDown in an all-disabled menu left the menu');
+  const escape = key('Escape');
+  menu.dispatchEvent(escape);
+  assert(!doc.querySelector('[role=menu]') && trigger.getAttribute('aria-expanded') === 'false', 'Escape does not close 더 보기 and reset its trigger');
+  assert(escape.defaultPrevented && doc.activeElement === trigger, 'Escape does not restore focus to the 더 보기 trigger');
+  for (const shiftKey of [false,true]) {
+    trigger.click();
+    const tab = key('Tab',{ shiftKey });
+    doc.querySelector('[role=menu]').dispatchEvent(tab);
+    // Guide `menu`: Tab leaves the menu system instead of being swallowed by it.
+    assert(!doc.querySelector('[role=menu]') && doc.activeElement === trigger && !tab.defaultPrevented, 'Tab did not close 더 보기 on its trigger and hand the Tab back to the browser');
+  }
+  trigger.click();
+  const home = key('Home');
+  doc.querySelector('[role=menu]').dispatchEvent(home);
+  assert(home.defaultPrevented && doc.querySelector('[role=menu]'), 'Home in an all-disabled menu threw or closed it');
+  assert(!win.testErrors.length, `Menu keyboard handling threw: ${win.testErrors.join(' | ')}`);
+});
+
+await test('The desktop shell, accessible names and dynamic presentation use Korean', async ({ win,doc,socket }) => {
+  assert(doc.documentElement.lang === 'ko' && (doc.title === 'VAYEX · 로컬 AI 코딩 하네스' || doc.title === 'VAYEX(바엑스) · 로컬 통합 AI 코딩 하네스'), `Document language and title must be Korean: ${doc.title}`);
+  for (const node of doc.querySelectorAll('[aria-label],[title],input[placeholder],textarea[placeholder]')) {
+    for (const attribute of ['aria-label','title','placeholder']) {
+      const value = node.getAttribute(attribute);
+      if (value && !(attribute === 'title' && node.classList.contains('path'))) assert(/[가-힣]/.test(value), `Unlocalized accessible copy: ${attribute}=${value}`);
+    }
+  }
+  for (const text of ['코드','작업','새 작업','검색','에이전트','메모리','더 보기','최근 작업','선택','한국어','작업 정보','컨텍스트','작업 공간','폴더','사용 모델','변경 내역','검토','MCP 서버','관리','브리지 연결','프로토콜','전송 동의','자동']) {
+    assert(doc.body.textContent.includes(text), `Missing Korean copy: ${text}`);
+  }
+  assert(!/매번 확인|명령 모음|예시 에이전트/.test(doc.body.textContent), 'Deleted-surface copy is still rendered');
+  assert(!doc.querySelector('.demo-tag,#agents-tag'), 'A demo provenance marker is still rendered');
+  assert(doc.querySelector('#recent-list .w').textContent === '방금', 'Relative time must be Korean');
+  socket().frame({ type:'message_start',message:{ role:'user',content:'한국어 표시 확인' } });
+  socket().frame({ type:'response',command:'get_state',success:true,data:{ todoPhases:[{name:'검증',tasks:[{ content:'표시 확인',status:'completed' }]}] } });
+  assert(doc.querySelector('#transcript .steps').textContent.includes('1단계 중 1단계 완료'), 'Reported steps must be Korean');
+});
+
+const layoutMeasurements = [];
+for (const width of [1180,1240,1440,1800]) await test(`Composer controls occupy one reachable line at ${width}px`, async ({ win,doc,socket }) => {
+  win.frameElement.style.width = `${width}px`;
+  const inside = (r,box) => r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+  async function measure(state) {
+    const area = doc.querySelector('.controls').getBoundingClientRect();
+    const viewport = { left:0,top:0,right:win.innerWidth,bottom:win.innerHeight };
+    const form = doc.querySelector('#composer').getBoundingClientRect();
+    const nodes = [doc.querySelector('#composer-add'),...doc.querySelector('.controls').children,doc.querySelector('#send')];
+    const controls = nodes.map(node => {
+      const r = node.getBoundingClientRect();
+      const hit = doc.elementFromPoint(r.x + r.width / 2,r.y + r.height / 2);
+      const contentsFit = [...node.children].filter(child => !child.hidden).every(child => inside(child.getBoundingClientRect(),r));
+      return { name:node.getAttribute('aria-label') || node.textContent.trim(),width:r.width,center:r.top + r.height / 2,reachable:contentsFit && inside(r,form) && inside(r,viewport) && (node.parentElement.classList.contains('controls') ? inside(r,area) : true) && !!hit && node.contains(hit) };
+    });
+    const lineCount = new Set(controls.map(control => Math.round(control.center))).size;
+    const footer = doc.querySelector('.composer-foot').getBoundingClientRect();
+    const groups = ['.foot-left','.foot-right'].map(selector => doc.querySelector(selector));
+    const centers = groups.map(node => { const r = node.getBoundingClientRect(); return r.y + r.height / 2; });
+    const footerFits = inside(footer,viewport) && groups.every(node => inside(node.getBoundingClientRect(),footer) && node.scrollWidth <= node.clientWidth + 1);
+    const footerLineCount = new Set(centers.map(Math.round)).size;
+    const title = doc.querySelector('#head-title').getBoundingClientRect();
+    layoutMeasurements.push({ width,state,lineCount,controls,footerLineCount,footerFits,submitVisible:controls.at(-1).reachable,titleWidth:title.width });
+    assert(controls.every(control => control.reachable), `Unreachable ${state} controls at ${width}: ${controls.filter(x => !x.reachable).map(x => x.name).join(', ')}`);
+    assert(lineCount === 1, `Composer controls use ${lineCount} lines at ${width} (${state})`);
+    assert(footerLineCount === 1 && footerFits, `Footer wrapped or clipped at ${width} (${state})`);
+    assert(title.width >= 120, `Task title is unreadable at ${width}: ${title.width}px`);
+  }
+  await measure('ready');
+  socket().frame({ type:'turn_start' });
+  await measure('busy');
+  assert(!doc.querySelector('#modes,#scope,#modes-pop'), 'A deleted control is still rendered next to the composer');
+});
+
+await test('An unsupported agents note keeps the list empty and follows the card disclosure', async ({ win,doc,socket }) => {
+  socket().frame({ type:'response',command:'get_subagents',success:false,error:'Unknown command' });
+  await until(() => doc.querySelector('#agent-list .agent-empty')?.textContent === '이 브리지는 하위 에이전트 목록을 제공하지 않습니다.', doc);
+  assert(!doc.querySelector('#agent-list .agent-row'), 'An unsupported core rendered agent rows');
+  assert(!doc.querySelector('.demo-tag,#agents-tag,#agents-support'), 'An unsupported core rendered a demo marker or note');
+  const body = doc.querySelector('#agents-body');
+  doc.querySelector('#agents-collapse').click();
+  assert(body.hidden && !doc.querySelector('#agent-list').getClientRects().length, 'The empty agent list escaped the collapsed body');
+  doc.querySelector('#agents-collapse').click();
+  assert(!body.hidden && doc.querySelector('#agent-list .agent-empty').getClientRects().length > 0, 'The empty agent list did not return when expanded');
+});
+
+/* ---------------------------------------------------------- 활동 타임라인 */
+const timelineRows = doc => [...doc.querySelectorAll('#timeline-groups .tl-row')];
+const timelineGroup = (doc,category) => doc.querySelector(`#timeline-groups .tl-group[data-category="${category}"]`);
+const timelineCount = (doc,category) => doc.querySelector(`#timeline-counts .tl-c[data-category="${category}"] b`)?.textContent;
+const timelineHeights = [];
+function toolFrame(ws,{ name,path,details,toolCallId,isError = false,status = 'completed' }) {
+  ws.frame({ type:'tool_execution_start',toolCallId,toolName:name,args:{ path } });
+  ws.frame({ type:'tool_execution_end',toolCallId,toolName:name,isError,result:{ content:[{ type:'text',text:status }] },details });
+}
+/** The create/edit selector (`str_replace_editor`) travels in the start frame arguments only. */
+function toolFrameWithArgs(ws,{ name,path,args,toolCallId }) {
+  ws.frame({ type:'tool_execution_start',toolCallId,toolName:name,args:{ path,...args } });
+  ws.frame({ type:'tool_execution_end',toolCallId,toolName:name,isError:false,result:{ content:[{ type:'text',text:'completed' }] } });
+}
+/** Per-file results live under `result.details.perFileResults`, the shape the bridge forwards. */
+function perFileFrame(ws,{ name,path,toolCallId,files,isError = false }) {
+  ws.frame({ type:'tool_execution_start',toolCallId,toolName:name,args:{ path } });
+  ws.frame({ type:'tool_execution_end',toolCallId,toolName:name,isError,result:{ content:[{ type:'text',text:'completed' }],details:{ perFileResults:files } } });
+}
+
+await test('활동 타임라인 renders an honest empty state with no demo rows and keeps the 분류 불가 count visible', async ({ doc }) => {
+  assert(doc.querySelector('#timeline'), 'Timeline card is missing from the center column');
+  assert(doc.querySelector('#timeline').previousElementSibling?.id === 'agents', 'Timeline card does not follow the Agents card');
+  assert(doc.querySelector('#timeline .agents-head'), 'Timeline card does not use the shared card header');
+  assert(timelineRows(doc).length === 0, 'Empty session rendered demo timeline rows');
+  assert(doc.querySelector('#timeline-count').textContent === '0건', 'Empty timeline count is not zero');
+  assert(doc.querySelector('#timeline-empty').getClientRects().length > 0, 'Empty timeline does not explain itself');
+  assert(doc.querySelectorAll('#timeline-groups .tl-group').length === 4, 'Grouped view must show the four categories');
+  for (const name of ['추가','수정','삭제','분류 불가']) {
+    assert(timelineCount(doc,name) === '0건', `Missing zero count for ${name}`);
+    assert(timelineGroup(doc,name)?.querySelector('.tl-empty'), `Empty group ${name} has no note`);
+  }
+  assert(!doc.querySelector('#timeline .demo-tag') && !/예시/.test(doc.querySelector('#timeline').textContent), 'The empty timeline renders demo markers');
+  const provenance = doc.querySelector('#timeline-provenance');
+  assert(provenance.dataset.source === 'structural', `Empty card claims a non-structural source: ${provenance.dataset.source}`);
+  assert(!provenance.textContent.includes('모델 요약'), 'Empty card claims model output');
+});
+
+await test('활동 타임라인 classifies a reported deletion as 삭제 and a reported creation as 추가', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'delete_file',path:'src/legacy/old-labels.ts',toolCallId:'tl-del',details:{ path:'src/legacy/old-labels.ts' },status:'deleted 1 file' });
+  toolFrame(socket(),{ name:'create_file',path:'src/components/Labels.tsx',toolCallId:'tl-new',details:{ path:'src/components/Labels.tsx',created:true },status:'created' });
+  toolFrame(socket(),{ name:'write_file',path:'src/components/Settings.tsx',toolCallId:'tl-existing',details:{ path:'src/components/Settings.tsx',created:false },status:'overwrote existing' });
+  const rows = timelineRows(doc);
+  assert(rows.length === 3, `Expected three timeline rows, saw ${rows.length}`);
+  assert(timelineGroup(doc,'삭제').querySelectorAll('.tl-row').length === 1, 'Reported deletion did not land in 삭제');
+  assert(timelineGroup(doc,'삭제').querySelector('.tl-row').dataset.category === '삭제', 'Deletion row lost its category');
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 1, 'Reported creation did not land in 추가');
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 1, 'A write reported as existing did not land in 수정');
+  assert(timelineCount(doc,'분류 불가') === '0건', 'Nothing should be unclassified here');
+  assert(doc.querySelector('#timeline-count').textContent === '3건', 'Card count does not match the rows');
+  const added = timelineGroup(doc,'추가').querySelector('.tl-row');
+  assert(added.querySelector('.tl-path').textContent === 'src/components/Labels.tsx', 'Added row lost its target path');
+  assert(added.querySelector('.tl-time').textContent === '방금', 'Added row lost its relative time');
+  assert(added.querySelector('.tl-path').classList.contains('mono') && added.querySelector('.tl-cat').textContent === '추가', 'Row does not carry a monospace path and a text category label');
+  for (const name of ['추가','수정','삭제']) assert(timelineGroup(doc,name).querySelector('.tl-group-head .tl-mark svg use'), `Category ${name} has no marker`);
+  const markers = ['추가','수정','삭제'].map(name => doc.querySelector(`#timeline-groups .tl-group[data-category="${name}"] .tl-row .tl-mark svg use`).getAttribute('href'));
+  assert(new Set(markers).size === 3, `Category markers must differ in shape: ${markers.join(',')}`);
+});
+
+await test('활동 타임라인 keeps a write with unreported creation status in 분류 불가 instead of 추가', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'write_file',path:'src/components/Theme.ts',toolCallId:'tl-unknown',details:{ path:'src/components/Theme.ts' },status:'wrote 12 lines' });
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 0, 'An unreported creation was inferred as 추가');
+  const rows = timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row');
+  assert(rows.length === 1, 'Unreported write did not land in 분류 불가');
+  assert(timelineCount(doc,'분류 불가') === '1건', '분류 불가 count is not visible');
+  assert(/보고(하지|되지) 않/.test(rows[0].querySelector('.tl-text').textContent), `Unclassified row does not state its missing evidence: ${rows[0].querySelector('.tl-text').textContent}`);
+});
+
+await test('활동 타임라인 keeps a create-capable tool without creation evidence in 분류 불가', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'apply_patch',path:'src/components/Patched.tsx',toolCallId:'cc-1',details:{ path:'src/components/Patched.tsx' } });
+  toolFrame(socket(),{ name:'patch',path:'src/components/Patched2.tsx',toolCallId:'cc-2',details:{ path:'src/components/Patched2.tsx' } });
+  toolFrame(socket(),{ name:'apply_edits',path:'src/components/Patched3.tsx',toolCallId:'cc-3',details:{ path:'src/components/Patched3.tsx' } });
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 0, 'A create-capable tool was treated as a creation');
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 0, 'A create-capable tool was treated as an edit');
+  assert(timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row').length === 3, 'Create-capable tools without evidence did not stay 분류 불가');
+  assert(timelineCount(doc,'분류 불가') === '3건', '분류 불가 count lost the create-capable calls');
+});
+
+await test('활동 타임라인 honours the str_replace_editor command selector as creation evidence', async ({ doc,socket }) => {
+  toolFrameWithArgs(socket(),{ name:'str_replace_editor',path:'src/components/Created.tsx',args:{ command:'create' },toolCallId:'cmd-1' });
+  toolFrameWithArgs(socket(),{ name:'str_replace_editor',path:'src/components/Viewed.tsx',args:{ command:'view' },toolCallId:'cmd-2' });
+  const added = timelineGroup(doc,'추가').querySelectorAll('.tl-row');
+  assert(added.length === 1, `Expected one 추가 row from command=create, saw ${added.length}`);
+  assert(added[0].querySelector('.tl-path').textContent === 'src/components/Created.tsx', 'command=create landed on the wrong path');
+  const unclassified = timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row');
+  assert(unclassified.length === 1, `A create-capable tool without creation or existence evidence left 분류 불가, saw ${unclassified.length}`);
+  assert(unclassified[0].querySelector('.tl-path').textContent === 'src/components/Viewed.tsx', 'The unproven str_replace_editor call is not the unclassified row');
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 0, 'A non-create command was classified as a completed edit');
+});
+
+await test('활동 타임라인 keeps line-addition ops out of 추가 without explicit creation evidence', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'patch',path:'src/lines/add.ts',toolCallId:'weak-1',details:{ path:'src/lines/add.ts',op:'add' } });
+  toolFrame(socket(),{ name:'patch',path:'src/lines/added.ts',toolCallId:'weak-2',details:{ path:'src/lines/added.ts',op:'added' } });
+  toolFrame(socket(),{ name:'patch',path:'src/lines/new.ts',toolCallId:'weak-3',details:{ path:'src/lines/new.ts',op:'new' } });
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 0, 'Line-addition vocabulary was read as a file creation');
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 0, 'Line-addition vocabulary was read as an edit');
+  assert(timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row').length === 3, 'Line-addition ops without creation evidence did not stay 분류 불가');
+  toolFrame(socket(),{ name:'patch',path:'src/lines/confirmed.ts',toolCallId:'weak-4',details:{ path:'src/lines/confirmed.ts',op:'add',created:true } });
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 1, 'An explicit created flag did not confirm the addition');
+});
+
+await test('활동 타임라인 keeps ambiguous write ops in 분류 불가 until existence is reported', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'write_file',path:'src/write/plain.ts',toolCallId:'wop-1',details:{ path:'src/write/plain.ts',op:'write' } });
+  toolFrame(socket(),{ name:'save_file',path:'src/write/overwrite.ts',toolCallId:'wop-2',details:{ path:'src/write/overwrite.ts',op:'overwrite' } });
+  toolFrame(socket(),{ name:'write_file',path:'src/write/rewrite.ts',toolCallId:'wop-3',details:{ path:'src/write/rewrite.ts',op:'rewrite' } });
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 0, 'An ambiguous write op was classified as 수정 without existence evidence');
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 0, 'An ambiguous write op was classified as 추가');
+  assert(timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row').length === 3, 'Ambiguous write ops did not stay 분류 불가');
+  toolFrame(socket(),{ name:'write_file',path:'src/write/existing.ts',toolCallId:'wop-4',details:{ path:'src/write/existing.ts',op:'write',existed_before:true } });
+  assert(timelineGroup(doc,'수정').querySelectorAll('.tl-row').length === 1, 'existed_before:true did not confirm 수정');
+});
+
+await test('활동 타임라인 keeps an unfinished call out of the completed categories', async ({ doc,socket }) => {
+  socket().frame({ type:'tool_execution_start',toolCallId:'live-1',toolName:'create_file',args:{ path:'src/live/created.ts' } });
+  socket().frame({ type:'tool_execution_start',toolCallId:'live-2',toolName:'delete_file',args:{ path:'src/live/deleted.ts' } });
+  await until(() => timelineRows(doc).length === 2, doc);
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 0, 'A call with no result frame was reported as 추가');
+  assert(timelineGroup(doc,'삭제').querySelectorAll('.tl-row').length === 0, 'A call with no result frame was reported as 삭제');
+  const rows = timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row');
+  assert(rows.length === 2, `Unfinished calls did not stay 분류 불가, saw ${rows.length}`);
+  assert([...rows].every(row => row.querySelector('.tl-text').textContent.includes('끝나지 않')), `An unfinished call did not state that the change is undecided: ${[...rows].map(row => row.querySelector('.tl-text').textContent).join(' | ')}`);
+  assert(timelineCount(doc,'분류 불가') === '2건', '분류 불가 count omits the unfinished calls');
+  socket().frame({ type:'tool_execution_end',toolCallId:'live-1',toolName:'create_file',isError:false,result:{ content:[{ type:'text',text:'created' }],details:{ path:'src/live/created.ts',created:true } } });
+  assert(timelineGroup(doc,'추가').querySelectorAll('.tl-row').length === 1, 'The terminal frame did not confirm the addition');
+  assert(timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row').length === 1, 'The still unfinished call left 분류 불가');
+});
+
+await test('활동 타임라인 reads per-file creation, existence and error flags from perFileResults', async ({ doc,socket }) => {
+  perFileFrame(socket(),{ name:'apply_patch',path:'src/multi',toolCallId:'pf-1',files:[
+    { path:'src/multi/new.ts',created:true },
+    { path:'src/multi/existing.ts',existed_before:true },
+    { path:'src/multi/removed.ts',deleted:true },
+    { path:'src/multi/unknown.ts' }
+  ] });
+  perFileFrame(socket(),{ name:'apply_patch',path:'src/err',toolCallId:'pf-2',files:[
+    { path:'src/err/failed.ts',created:true,isError:true }
+  ] });
+  assert(timelineGroup(doc,'추가').querySelector('.tl-row')?.querySelector('.tl-path').textContent === 'src/multi/new.ts', 'Per-file created:true did not land in 추가');
+  assert(timelineGroup(doc,'수정').querySelector('.tl-row')?.querySelector('.tl-path').textContent === 'src/multi/existing.ts', 'Per-file existed_before:true did not land in 수정');
+  assert(timelineGroup(doc,'삭제').querySelector('.tl-row')?.querySelector('.tl-path').textContent === 'src/multi/removed.ts', 'Per-file deleted:true did not land in 삭제');
+  const unclassified = [...timelineGroup(doc,'분류 불가').querySelectorAll('.tl-row')];
+  assert(unclassified.length === 2, `Expected the flagless file and the failed file in 분류 불가, saw ${unclassified.length}`);
+  assert(unclassified.some(row => row.querySelector('.tl-path').textContent === 'src/multi/unknown.ts'), 'A file with no per-file flags was classified from the tool name');
+  assert(unclassified.some(row => row.querySelector('.tl-path').textContent === 'src/err/failed.ts' && row.querySelector('.tl-text').textContent.includes('변경 없음')), 'A per-file error was reported as a change');
+});
+
+await test('활동 타임라인 grouping, counts and chronological ordering come from synthetic events', async ({ doc,socket }) => {
+  const frames = [
+    { name:'edit',path:'src/a.ts',toolCallId:'a1',details:{ path:'src/a.ts' } },
+    { name:'delete',path:'src/b.ts',toolCallId:'a2',details:{ path:'src/b.ts' } },
+    { name:'create_file',path:'src/c.ts',toolCallId:'a3',details:{ path:'src/c.ts' } },
+    { name:'str_replace',path:'src/d.ts',toolCallId:'a4',details:{ path:'src/d.ts' } }
+  ];
+  for (const frame of frames) toolFrame(socket(),frame);
+  assert(doc.querySelector('#timeline-count').textContent === '4건', 'Card count does not total the events');
+  assert(timelineGroup(doc,'수정').dataset.count === '2' && timelineGroup(doc,'삭제').dataset.count === '1' && timelineGroup(doc,'추가').dataset.count === '1', 'Grouped counts do not match the reported events');
+  assert(timelineCount(doc,'수정') === '2건' && timelineCount(doc,'추가') === '1건' && timelineCount(doc,'삭제') === '1건', 'Count strip does not mirror the groups');
+  const groupedOrder = timelineRows(doc).map(row => row.querySelector('.tl-path').textContent);
+  assert(groupedOrder.length === 4, 'Grouped view lost rows');
+  assert(/\b4건/.test(doc.querySelector('#timeline-summary').textContent), `Summary does not state the reported total: ${doc.querySelector('#timeline-summary').textContent}`);
+  assert(doc.querySelector('#timeline-summary').textContent.includes('분류 불가 0건'), 'Summary omits a category count');
+  doc.querySelector('#timeline-chrono').click();
+  assert(doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') === 'true', 'Chronological toggle did not activate');
+  const chronoOrder = timelineRows(doc).map(row => row.querySelector('.tl-path').textContent);
+  assert(chronoOrder.length === 4, 'Chronological view lost rows');
+  assert(chronoOrder.join(',') === 'src/a.ts,src/b.ts,src/c.ts,src/d.ts', `Chronological rows are out of order: ${chronoOrder.join(',')}`);
+  assert(chronoOrder.join(',') !== groupedOrder.join(','), 'Chronological and grouped order should differ for this event set');
+  doc.querySelector('#timeline-grouped').click();
+  assert(timelineRows(doc).map(row => row.querySelector('.tl-path').textContent).join(',') === groupedOrder.join(','), 'Returning to grouped view lost its order');
+});
+
+await test('활동 타임라인 switches to 로컬 모델 요약 only for a validated local phrasing', async ({ doc,socket }) => {
+  toolFrame(socket(),{ name:'create_file',path:'src/components/Labels.tsx',toolCallId:'p1',details:{ path:'src/components/Labels.tsx',created:true } });
+  toolFrame(socket(),{ name:'edit',path:'src/components/Preferences.tsx',toolCallId:'p2',details:{ path:'src/components/Preferences.tsx' } });
+  const structural = doc.querySelector('#timeline-provenance');
+  assert(structural.dataset.source === 'structural', `Structural text must be labelled as tool evidence, saw ${structural.dataset.source}`);
+  assert(!structural.textContent.includes('모델'), 'Structural text claims a model wrote it');
+  const entries = timelineRows(doc).length;
+  assert(entries > 0, 'Provenance test needs reported rows');
+  socket().frame({ type:'session_timeline',data:{ provenance:{ source:'model',model_id:'local/qwen-3b',provider:'openai',role:'compactor' },summary:'모델 요약',sentences:Array(entries).fill('모델이 다듬은 한 줄') } });
+  assert(doc.querySelector('#timeline-provenance').dataset.source === 'structural', 'A non-local provider was presented as a local model summary');
+  socket().frame({ type:'session_timeline',data:{ provenance:{ source:'model',model_id:'local/qwen-3b',provider:'local',role:'compactor' },summary:'모델 요약',sentences:Array(entries - 1).fill('줄') } });
+  assert(doc.querySelector('#timeline-provenance').dataset.source === 'structural', 'A phrasing that does not match the entries was adopted');
+  socket().frame({ type:'session_timeline',data:{ provenance:{ source:'model',model_id:'local/qwen-3b',provider:'local',role:'compactor' },summary:'세션에서 4건의 쓰기를 정리했습니다.',sentences:Array(entries).fill('모델이 다듬은 한 줄') } });
+  const marker = doc.querySelector('#timeline-provenance');
+  assert(marker.textContent === '로컬 모델 요약 · local/qwen-3b', `Model phrasing must name its model id, saw ${marker.textContent}`);
+  assert(marker.dataset.source === 'model', 'Model provenance marker lost its source attribute');
+  assert(timelineRows(doc).every(row => row.querySelector('.tl-text').textContent === '모델이 다듬은 한 줄'), 'Model sentences did not replace structural rows');
+  assert(doc.querySelector('#timeline-summary').textContent === '세션에서 4건의 쓰기를 정리했습니다.', 'Model summary was not rendered');
+});
+
+await test('활동 타임라인 toggle and disclosure work from the keyboard and persist for the session', async ({ win,doc,socket }) => {
+  toolFrame(socket(),{ name:'edit',path:'src/keep-a.ts',toolCallId:'k1',details:{ path:'src/keep-a.ts' } });
+  toolFrame(socket(),{ name:'create_file',path:'src/keep-b.ts',toolCallId:'k2',details:{ path:'src/keep-b.ts',created:true } });
+  const body = doc.querySelector('#timeline-body');
+  const collapse = doc.querySelector('#timeline-collapse');
+  assert(collapse.getAttribute('aria-expanded') === 'true' && !body.hidden, 'Timeline starts expanded');
+  doc.querySelector('#timeline-grouped').focus();
+  const key = name => doc.querySelector('#timeline-modes').dispatchEvent(new win.KeyboardEvent('keydown',{ key:name,bubbles:true,cancelable:true }));
+  key('ArrowRight');
+  assert(doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') === 'true' && doc.querySelector('#timeline-grouped').getAttribute('aria-pressed') === 'false', 'ArrowRight did not switch the timeline view');
+  assert(doc.activeElement === doc.querySelector('#timeline-chrono'), 'Keyboard toggle did not move focus with the selection');
+  key('ArrowLeft');
+  assert(doc.querySelector('#timeline-grouped').getAttribute('aria-pressed') === 'true' && doc.activeElement === doc.querySelector('#timeline-grouped'), 'ArrowLeft did not switch back');
+  doc.querySelector('#timeline-chrono').click();
+  const beforeCount = win.testSockets.length;
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === beforeCount + 1 && doc.querySelector('#connection').dataset.state === 'ready', doc);
+  assert(doc.querySelector('#timeline-grouped').getAttribute('aria-pressed') === 'true', 'A new session inherited the previous view mode');
+  assert(timelineRows(doc).length === 0 && doc.querySelector('#timeline-empty').getClientRects().length > 0, 'New session shows the previous session rows');
+  const first = [...doc.querySelectorAll('#recent-list .recent-sub')].filter(row => !row.classList.contains('demo')).at(-1);
+  first.click();
+  await until(() => doc.querySelector('#timeline-chrono').getAttribute('aria-pressed') === 'true', doc);
+  assert(timelineRows(doc).length > 0, 'Returning to the session lost its timeline rows');
+  collapse.click();
+  assert(collapse.getAttribute('aria-expanded') === 'false' && body.hidden && !timelineRows(doc).some(row => row.getClientRects().length), 'Collapsing the card did not hide its rows');
+  toolFrame(socket(),{ name:'edit',path:'src/while-collapsed.ts',toolCallId:'tl-collapse',details:{ path:'src/while-collapsed.ts' } });
+  assert(body.hidden, 'A reported event expanded the collapsed card');
+  collapse.click();
+  assert(collapse.getAttribute('aria-expanded') === 'true' && !body.hidden && timelineRows(doc).length > 0, 'Reopening the card did not restore its rows');
+});
+
+await test('활동 타임라인 keeps the desktop geometry and leaves the composer fully visible', async ({ win,doc,socket }) => {
+  toolFrame(socket(),{ name:'create_file',path:'src/components/Labels.tsx',toolCallId:'g1',details:{ path:'src/components/Labels.tsx',created:true } });
+  toolFrame(socket(),{ name:'edit',path:'src/components/Preferences.tsx',toolCallId:'g2',details:{ path:'src/components/Preferences.tsx' } });
+  toolFrame(socket(),{ name:'write_file',path:'src/components/Legacy.tsx',toolCallId:'g3',details:{ path:'src/components/Legacy.tsx' } });
+  toolFrame(socket(),{ name:'delete_file',path:'src/components/OldLabels.tsx',toolCallId:'g4',details:{ path:'src/components/OldLabels.tsx' } });
+  for (const width of [1440,1240,1180]) {
+    win.frameElement.style.width = `${width}px`;
+    await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+    const card = doc.querySelector('#timeline').getBoundingClientRect();
+    const body = doc.querySelector('.center-body');
+    const composer = doc.querySelector('.composer-area').getBoundingClientRect();
+    const form = doc.querySelector('#composer').getBoundingClientRect();
+    const [side,center,inspector] = win.getComputedStyle(doc.querySelector('.app')).gridTemplateColumns.split(' ').map(x => Number.parseFloat(x));
+    const viewport = { left:0,top:0,right:win.innerWidth,bottom:win.innerHeight };
+    const inside = (r,box) => r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+    timelineHeights.push({ width,height:Math.round(card.height),composerVisible:inside(composer,viewport) && inside(form,viewport) });
+    assert(side === 260 && inspector === 364 && Math.abs(center - (width - 624)) <= 1, `Three-column geometry moved at ${width}: ${side}/${center}/${inspector}`);
+    assert(card.width > 0 && card.height > 0, `Timeline card collapsed at ${width}`);
+    assert(inside(card,body.getBoundingClientRect()) || body.scrollHeight > body.clientHeight, `Timeline card escaped the scrolling body at ${width}`);
+    assert(inside(composer,viewport) && inside(form,viewport) && doc.querySelector('#send').getBoundingClientRect().bottom <= viewport.bottom, `Composer left the viewport at ${width}`);
+  }
+});
+
+const gatewaySelectionFrame = { sequence:1,decided_at:'2026-02-14T03:04:05.000Z',capability:'chat',route:'zdr_cloud',model:{ id:'deepseek/deepseek-v4.1-flash-1017',upstream:'openrouter',source:'gateway',reason:'auto:zdr_declared' },reasoning:{ source:'gateway',reason:'auto:threshold_medium',grade:'medium',thinking_budget:4096 } };
+const modelLabel = doc => ({ model:doc.querySelector('#composer-auto-model').textContent,detail:doc.querySelector('#composer-auto-detail').textContent,detailHidden:doc.querySelector('#composer-auto-detail').hidden,source:doc.querySelector('#composer-auto').dataset.source ?? null });
+
+await test('A brand-new session with no input shows only 자동, never a placeholder model', async ({ win,doc,socket }) => {
+  const label = modelLabel(doc);
+  assert(label.model === '자동', `An undecided session does not read 자동: ${label.model}`);
+  assert(doc.querySelector('#composer-auto').textContent.trim() === '자동', `The label area carried more than 자동: ${doc.querySelector('#composer-auto').textContent}`);
+  assert(label.detailHidden && label.detail === '', 'The reasoning slot shows text before the gateway reported anything');
+  assert(label.source === null, 'The label claims a gateway source before any decision');
+  assert(!win.testSockets.flatMap(ws => ws.sent).some(x => /selection|model|thinking/.test(x.type)), 'The page asked for a selection itself');
+  assert(/[가-힣]/.test(doc.querySelector('#composer-auto').title) && doc.querySelector('#composer-auto').title.includes('게이트웨이'), 'The neutral label no longer explains who chooses');
+  assert(!/미정|예시|선택 중|불러오는 중/.test(doc.querySelector('#composer-auto').textContent + doc.querySelector('#composer-auto-detail').textContent), 'An invented placeholder replacement is rendered');
+});
+
+await test('A selection frame replaces 자동 with the concrete model and names the reasoning strength', async ({ win,doc,socket }) => {
+  socket().frame({ type:'selection',selection:gatewaySelectionFrame });
+  const label = modelLabel(doc);
+  assert(label.model === 'deepseek/deepseek-v4.1-flash-1017', `The selected model is not labelled: ${label.model}`);
+  assert(!label.detailHidden && label.detail === '추론 보통 · 생각 토큰 4096', `The reasoning strength is missing or invented: ${label.detail}`);
+  assert(label.source === 'gateway', 'The label does not mark the gateway as its source');
+  assert(doc.querySelector('#composer-auto').title.includes('deepseek/deepseek-v4.1-flash-1017') && doc.querySelector('#composer-auto').title.includes('openrouter'), `The label title omits the reported model or upstream: ${doc.querySelector('#composer-auto').title}`);
+  assert(/[가-힣]/.test(doc.querySelector('#composer-auto-detail').title), 'The reasoning slot has no Korean accessible description');
+  assert(!/자동/.test(doc.querySelector('#composer-auto').textContent), 'The fixed 자동 label survived a real selection');
+  assert(!/[$\d,]+원|절약|비용/.test(doc.querySelector('#composer-auto').textContent + doc.querySelector('#composer-auto-detail').textContent), 'The label claims a cost or a saving');
+  const form = doc.querySelector('#composer').getBoundingClientRect();
+  const indicator = doc.querySelector('#composer-auto').getBoundingClientRect();
+  const detailRect = doc.querySelector('#composer-auto-detail').getBoundingClientRect();
+  assert(indicator.width > 0 && indicator.right <= form.right + 1 && indicator.height <= 32, `The gateway label escaped the composer row: ${JSON.stringify({ width:indicator.width,right:indicator.right,formRight:form.right,height:indicator.height })}`);
+  assert(detailRect.left >= indicator.left - 1 && detailRect.right <= indicator.right + 1, 'The reasoning slot is not inside the model label');
+  assert(doc.querySelector('#send').getBoundingClientRect().right <= form.right + 1, 'A long model id pushed the send control out of the composer');
+  for (const width of [1180,1800]) {
+    win.frameElement.style.width = `${width}px`;
+    await new Promise(resolve => win.requestAnimationFrame(() => win.requestAnimationFrame(resolve)));
+    const narrow = doc.querySelector('#composer').getBoundingClientRect();
+    const box = doc.querySelector('#composer-auto').getBoundingClientRect();
+    const send = doc.querySelector('#send').getBoundingClientRect();
+    assert(box.width > 0 && box.right <= narrow.right + 1 && box.height <= 32, `The gateway label escaped the composer at ${width}px: ${JSON.stringify({ boxRight:box.right, formRight:narrow.right, height:box.height })}`);
+    assert(send.right <= narrow.right + 1 && send.width > 0, `The send control left the composer at ${width}px`);
+  }
+  socket().frame({ type:'selection',selection:{ ...gatewaySelectionFrame,reasoning:{ source:'gateway',reason:'auto:no_thinking_limit',grade:null,thinking_budget:null } } });
+  const bare = modelLabel(doc);
+  assert(bare.model === 'deepseek/deepseek-v4.1-flash-1017', 'A selection without reasoning lost the model label');
+  assert(bare.detailHidden && bare.detail === '', `An unreported grade was filled in: ${bare.detail}`);
+});
+
+await test('A failed or null selection read leaves 자동 with no error UI', async ({ win,doc,socket }) => {
+  for (const frame of [{ type:'selection',selection:null },{ type:'selection' },{ type:'selection',selection:{ sequence:2 } },{ type:'selection',selection:{ model:{},reasoning:{} } }]) {
+    socket().frame(frame);
+    const label = modelLabel(doc);
+    assert(label.model === '자동', `A null or malformed read replaced 자동: ${label.model}`);
+    assert(label.detailHidden && label.detail === '' && label.source === null, 'A null or malformed read left reasoning or a source behind');
+    assert(!doc.querySelector('#transcript .error-box') && !doc.querySelector('#transcript .refusal-box'), 'A failed selection read surfaced an error box');
+    assert(doc.querySelector('#send-reason').hidden, 'A failed selection read blocked the composer');
+    assert(doc.querySelector('#connection').dataset.state === 'ready' && !doc.querySelector('#send').disabled, 'A failed selection read changed the connection state');
+  }
+  doc.querySelector('#prompt').value = '선택 조회 실패 뒤 전송';
+  doc.querySelector('#composer').requestSubmit();
+  assert(socket().sent.some(x => x.type === 'prompt' && x.message === '선택 조회 실패 뒤 전송'), 'A failed selection read blocked the prompt round-trip');
+  assert(!win.testErrors.length, `A selection read threw: ${win.testErrors.join(' | ')}`);
+});
+
+await test('Selections stay per session and switching back restores each session label', async ({ win,doc,socket }) => {
+  doc.querySelector('#prompt').value = '세션 A 표시 확인';
+  doc.querySelector('#composer').requestSubmit();
+  const first = socket();
+  first.frame({ type:'selection',selection:{ ...gatewaySelectionFrame,model:{ ...gatewaySelectionFrame.model,id:'a2api/deepseek-chat-v3.1',upstream:'a2api' },reasoning:{ ...gatewaySelectionFrame.reasoning,grade:'high',thinking_budget:8192 } } });
+  assert(modelLabel(doc).model === 'a2api/deepseek-chat-v3.1' && modelLabel(doc).detail === '추론 높음 · 생각 토큰 8192', `The first session lost its own label: ${JSON.stringify(modelLabel(doc))}`);
+  const before = win.testSockets.length;
+  doc.querySelector('#new-session').click();
+  await until(() => win.testSockets.length === before + 1 && !doc.querySelector('#send').disabled, doc);
+  let fresh = modelLabel(doc);
+  assert(fresh.model === '자동' && fresh.detailHidden && fresh.source === null, `A new session inherited a selection: ${JSON.stringify(fresh)}`);
+  socket().frame({ type:'selection',selection:{ ...gatewaySelectionFrame,model:{ ...gatewaySelectionFrame.model,id:'mock/second-session-model' },reasoning:{ ...gatewaySelectionFrame.reasoning,grade:'low',thinking_budget:1024 } } });
+  assert(modelLabel(doc).model === 'mock/second-session-model', `The second session did not take its own label: ${modelLabel(doc).model}`);
+  const row = title => [...doc.querySelectorAll('#recent-list .recent-sub')].find(node => node.querySelector('.t').textContent === title);
+  row('세션 A 표시 확인').click();
+  await until(() => modelLabel(doc).model === 'a2api/deepseek-chat-v3.1', doc);
+  assert(modelLabel(doc).detail === '추론 높음 · 생각 토큰 8192', `Switching back lost the first session strength: ${modelLabel(doc).detail}`);
+  row('새 작업').click();
+  await until(() => modelLabel(doc).model === 'mock/second-session-model', doc);
+  assert(modelLabel(doc).detail === '추론 낮음 · 생각 토큰 1024', `Switching back lost the second session strength: ${modelLabel(doc).detail}`);
+  first.frame({ type:'selection',selection:null });
+  assert(modelLabel(doc).model === 'mock/second-session-model', 'A frame on another session changed the visible label');
+});
+
+await test('A failed diff read clears the previous task’s cards and says why', async ({ win,doc,change,socket }) => {
+  const payload = { taskId:'demo-task',files:[{ path:'src/a.ts',status:'modified',fileType:'M',additions:1,deletions:1,diff:'@@ -1,1 +1,1 @@\n-a\n+b' }],summary:{ totalAdditions:1,totalDeletions:1 } };
+  const original = win.fetch;
+  win.fetch = async (url,init) => {
+    const asked = new URL(String(url),doc.baseURI);
+    if (asked.pathname === '/api/dx/snapshot/diff') {
+      return asked.searchParams.get('taskId') === 'demo-task'
+        ? new Response(JSON.stringify(payload),{ status:200,headers:{ 'Content-Type':'application/json' } })
+        : new Response('{"error":"not found"}',{ status:404 });
+    }
+    return original(url,init);
+  };
+  doc.querySelector('#diff-task-id').value = 'demo-task';
+  doc.querySelector('#tab-diff').click();
+  await until(() => doc.querySelector('#diff-files .diff-file'),doc);
+  assert(doc.querySelector('#diff-files').textContent.includes('src/a.ts'), 'The seeded diff did not render');
+  doc.querySelector('#diff-task-id').value = 'typo-task';
+  doc.querySelector('#diff-load').click();
+  await until(() => doc.querySelector('#diff-summary').textContent.includes('HTTP 404'),doc);
+  assert(!doc.querySelector('#diff-files .diff-file'), 'The previous task’s file cards survived a failed read');
+  assert(doc.querySelector('#diff-files').textContent.includes('typo-task'), `The live region does not name the task that failed: ${doc.querySelector('#diff-files').textContent}`);
+  assert(doc.querySelector('#diff-rollback').disabled, 'Rollback stayed enabled for a diff that is no longer on screen');
+  win.fetch = original;
+});
+
+await test('The Enter that confirms an IME composition neither reads the diff nor reloads the preview', async ({ win,doc,change,socket }) => {
+  const asked = [];
+  const original = win.fetch;
+  win.fetch = async (url,init) => {
+    const target = new URL(String(url),doc.baseURI);
+    if (target.pathname === '/api/dx/snapshot/diff') {
+      asked.push(target.searchParams.get('taskId'));
+      return new Response(JSON.stringify({ taskId:'seed',files:[],summary:{ totalAdditions:0,totalDeletions:0 } }),{ status:200,headers:{ 'Content-Type':'application/json' } });
+    }
+    return original(url,init);
+  };
+  const field = doc.querySelector('#diff-task-id');
+  field.value = '한글';
+  const composing = new win.KeyboardEvent('keydown',{ key:'Enter',isComposing:true,bubbles:true,cancelable:true });
+  field.dispatchEvent(composing);
+  const safari = new win.KeyboardEvent('keydown',{ key:'Enter',bubbles:true,cancelable:true });
+  Object.defineProperty(safari,'keyCode',{ value:229 });
+  field.dispatchEvent(safari);
+  assert(composing.defaultPrevented && safari.defaultPrevented, 'Enter during composition was not prevented from submitting');
+  assert(asked.length === 0, `A composing Enter read the diff: ${asked.join(',')}`);
+  field.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Enter',bubbles:true,cancelable:true }));
+  await until(() => asked.length === 1,doc);
+  assert(asked[0] === '한글', `A committed Enter did not read the typed id: ${asked[0]}`);
+
+  const frame = doc.querySelector('#preview-frame');
+  const url = doc.querySelector('#preview-url');
+  url.value = '/preview/other.html';
+  url.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Enter',isComposing:true,bubbles:true,cancelable:true }));
+  assert(frame.getAttribute('src') === null, `A composing Enter reloaded the preview frame: ${frame.getAttribute('src')}`);
+  url.dispatchEvent(new win.KeyboardEvent('keydown',{ key:'Enter',bubbles:true,cancelable:true }));
+  assert(frame.getAttribute('src') === '/preview/other.html', `A committed Enter did not reload the preview: ${frame.getAttribute('src')}`);
+  win.fetch = original;
+});
+
+await test('The inspector tablist is one Tab stop that lands on the selected tab', async ({ win,doc,socket }) => {
+  const tabs = [...doc.querySelectorAll('#insp-tabs .insp-tab')];
+  assert(tabs.length === 6, `Inspector tab count changed: ${tabs.length}`);
+  const state = () => tabs.map(tab => `${tab.dataset.tab}:${tab.getAttribute('aria-selected')}:${tab.tabIndex}`);
+  assert(tabs.filter(tab => tab.tabIndex === 0).length === 1, `More than one tab is in the tab order: ${state()}`);
+  assert(tabs.find(tab => tab.tabIndex === 0).getAttribute('aria-selected') === 'true', `The initial Tab stop is not the selected tab: ${state()}`);
+  doc.querySelector('#tab-stats').click();
+  assert(doc.querySelector('#tab-stats').tabIndex === 0 && doc.querySelector('#tab-overview').tabIndex === -1, `The Tab stop did not follow the selection: ${state()}`);
+  assert(tabs.every(tab => doc.getElementById(tab.getAttribute('aria-controls')).hidden !== (tab.getAttribute('aria-selected') === 'true')), 'A panel and its tab disagree about which one is active');
+  doc.querySelector('#tab-memory').click();
+  doc.querySelector('#tab-memory').focus();
+  doc.querySelector('#insp-tabs').dispatchEvent(new win.KeyboardEvent('keydown',{ key:'ArrowRight',bubbles:true }));
+  const first = doc.querySelector('#tab-overview');
+  assert(first.tabIndex === 0 && doc.activeElement === first && doc.querySelector('#tab-memory').tabIndex === -1, `ArrowRight did not move the Tab stop to the wrapped tab: ${state()}`);
+});
+
+await test('Document types are one native radio group, not a tablist of panels', async ({ win,doc,change,socket }) => {
+  const group = doc.querySelector('#viz-doc-types');
+  assert(group && group.tagName === 'FIELDSET', 'The document-type pills are not a fieldset');
+  assert(!doc.querySelector('#viz-doc-types [role=tablist]') && !doc.querySelector('[data-doc-type][role=tab]'), 'The pills still claim the tab role although they swap no panel');
+  assert(group.querySelector('legend')?.textContent.trim() === '문서 유형', 'The radio group has no legend');
+  const inputs = [...group.querySelectorAll('input[type=radio]')];
+  assert(inputs.length === 4 && new Set(inputs.map(input => input.name)).size === 1, `Not one radio group: ${inputs.map(input => input.name).join(',')}`);
+  const labels = [...group.querySelectorAll('[data-doc-type] span')].map(node => node.textContent.trim());
+  assert(JSON.stringify(labels) === JSON.stringify(['작업 결과 보고서','선행 연구·기술 검토','시스템 아키텍처 명세서','경영진·심사위원 1장 요약']), `Document-type labels changed: ${labels.join(' / ')}`);
+  assert(inputs.filter(input => input.checked).length === 1 && inputs[0].checked, 'Exactly one document type is not selected initially');
+  socket().frame({ type:'message_start',message:{ role:'user',content:'문서 유형 확인' } });
+  doc.querySelector('#tab-visualize').click();
+  const study = group.querySelector('[data-doc-type=study] input');
+  study.click();
+  await until(() => study.checked,doc);
+  assert(study.checked && !inputs[0].checked, 'Checking a type did not move the selection');
+  const pill = type => group.querySelector(`[data-doc-type=${type}]`);
+  assert(pill('study').dataset.selected === 'true' && pill('report').dataset.selected === 'false', 'The pill highlight did not follow the checked radio');
+  assert(doc.querySelector('#viz-doc-status').textContent.includes('선행 연구·기술 검토'), `The generation parameter did not follow the radio: ${doc.querySelector('#viz-doc-status').textContent}`);
+});
+
+await test('The theme studio is a real modal: the page behind it is inert and focus returns to its trigger', async ({ win,doc,socket }) => {
+  const trigger = doc.querySelector('#theme-toggle');
+  const studio = doc.querySelector('#theme-studio');
+  assert(studio.tagName === 'DIALOG' && !studio.hasAttribute('aria-modal') && !studio.hasAttribute('role'), 'The studio is not a native modal dialog');
+  assert(!studio.open && !studio.hasAttribute('hidden'), 'The studio starts closed by its own state, not by a hidden attribute');
+  // A keyboard user (or a Chrome click) has the trigger focused when it activates.
+  trigger.focus();
+  trigger.click();
+  assert(studio.open && studio.matches(':modal') && trigger.getAttribute('aria-expanded') === 'true', 'The trigger did not open the studio as a modal');
+  const prompt = doc.querySelector('#prompt');
+  prompt.focus();
+  assert(doc.activeElement !== prompt, 'A background control took focus while the modal studio was open');
+  assert(studio.contains(doc.activeElement), `Focus escaped the modal studio: ${doc.activeElement?.id}`);
+  doc.querySelector('#theme-studio-close').click();
+  assert(!studio.open && trigger.getAttribute('aria-expanded') === 'false', 'Closing left the studio open or the trigger expanded');
+  assert(doc.activeElement === trigger, `Focus did not return to the theme trigger: ${doc.activeElement?.id}`);
+});
+
+await test('Choosing a theme preset or swatch keeps keyboard focus on the chosen control', async ({ win,doc }) => {
+  const studio = doc.querySelector('#theme-studio');
+  const presets = doc.querySelector('#studio-presets');
+  const swatches = doc.querySelector('#studio-swatches');
+  doc.querySelector('#theme-toggle').click();
+  const initialPreset = [...presets.children].findIndex(card => card.getAttribute('aria-checked') === 'true');
+  const initialSwatch = [...swatches.children].findIndex(swatch => swatch.dataset.selected === 'true');
+  try {
+    for (const [host,pick] of [[presets,1],[swatches,2]]) {
+      host.children[pick].focus();
+      // Enter/Space on a focused button arrives as this click; the list re-renders inside it.
+      host.children[pick].click();
+      assert(doc.activeElement === host.children[pick] && studio.contains(doc.activeElement), `#${host.id}: focus did not stay on the chosen control (${doc.activeElement?.tagName}#${doc.activeElement?.id})`);
+    }
+    const close = doc.querySelector('#theme-studio-close');
+    close.focus();
+    presets.children[0].click();
+    assert(doc.activeElement === close, 'Selecting a preset that did not have focus pulled focus into the list');
+  } finally {
+    presets.children[initialPreset]?.click();
+    swatches.children[initialSwatch]?.click();
+    if (studio.open) doc.querySelector('#theme-studio-close').click();
+  }
+});
+
+await test('Design mode inspects the focused control from the keyboard without hijacking Enter', async () => {
+  // A blob: document keeps this page's origin, as the real same-origin /preview/ page does,
+  // so the inspector's origin-checked postMessage contract is exercised unchanged.
+  const page = '<!doctype html><html lang="ko"><body><button id="probe">버튼</button> <button id="other">다른 버튼</button></body></html>';
+  const pageUrl = URL.createObjectURL(new Blob([page], { type:'text/html' }));
+  const frame = document.createElement('iframe');
+  frame.src = pageUrl;
+  document.querySelector('#fixture').append(frame);
+  try {
+    await new Promise(resolve => frame.addEventListener('load', resolve, { once:true }));
+    const idoc = frame.contentDocument, iwin = frame.contentWindow;
+    await new Promise((resolve, reject) => {
+      const script = idoc.createElement('script');
+      script.src = new URL('./preview-inspector.js', location.href).href;
+      script.addEventListener('load', resolve, { once:true });
+      script.addEventListener('error', () => reject(new Error('preview-inspector.js did not load')), { once:true });
+      idoc.documentElement.append(script);
+    });
+    const selected = [];
+    const listener = event => { if (event.data?.type === 'omp:element-selected') selected.push(event.data); };
+    window.addEventListener('message', listener);
+    iwin.postMessage({ type:'omp:design-mode',enabled:true },location.origin);
+    await new Promise(resolve => setTimeout(resolve,50));
+    const probe = idoc.getElementById('probe');
+    probe.focus();
+    assert(idoc.getElementById('omp-inspector-overlay').style.display === 'block', 'Keyboard focus did not draw the inspection highlight');
+    const activation = new iwin.KeyboardEvent('keydown',{ key:'Enter',bubbles:true,cancelable:true });
+    probe.dispatchEvent(activation);
+    await new Promise(resolve => setTimeout(resolve,50));
+    assert(!activation.defaultPrevented && selected.length === 0, 'A plain Enter was turned into an inspection instead of activating the control');
+    // The click Enter/Space produces on a button has no pointerdown before it.
+    const other = idoc.getElementById('other');
+    const activations = { probe:0,other:0 };
+    probe.addEventListener('click', () => activations.probe++);
+    other.addEventListener('click', () => activations.other++);
+    probe.click();
+    await new Promise(resolve => setTimeout(resolve,50));
+    assert(activations.probe === 1 && selected.length === 0, `A keyboard-style click was intercepted: ${JSON.stringify({ activations,selected })}`);
+    // The pointer then crosses another control; Alt+Enter must still inspect the focused one.
+    const box = other.getBoundingClientRect();
+    const at = { clientX:box.left + box.width / 2,clientY:box.top + box.height / 2,bubbles:true };
+    other.dispatchEvent(new iwin.PointerEvent('pointermove',at));
+    probe.dispatchEvent(new iwin.KeyboardEvent('keydown',{ key:'Enter',altKey:true,bubbles:true,cancelable:true }));
+    await new Promise(resolve => setTimeout(resolve,120));
+    assert(selected.length === 1 && selected[0].selector === '#probe' && selected[0].tag === 'button', `Alt+Enter did not inspect the focused control: ${JSON.stringify(selected)}`);
+    // A pointer press still inspects instead of activating.
+    other.dispatchEvent(new iwin.PointerEvent('pointerdown',at));
+    other.dispatchEvent(new iwin.MouseEvent('click',{ ...at,cancelable:true }));
+    await new Promise(resolve => setTimeout(resolve,120));
+    assert(selected.length === 2 && selected[1].selector === '#other' && activations.other === 0, `A pointer click did not inspect the pressed control: ${JSON.stringify({ activations,selected })}`);
+    window.removeEventListener('message', listener);
+  } finally {
+    frame.remove();
+    URL.revokeObjectURL(pageUrl);
+  }
+});
+
+await test('No fixture logged an error, threw in the frame or rejected a promise', async () => {
+  assert(consoleErrors.length === 0, `Fixture errors: ${consoleErrors.join(' | ')}`);
+});
+
+window.regressionResult = { tests:results.length,passed:results.filter(x => x.status === 'pass').length,failed:results.filter(x => x.status === 'fail').length,consoleErrors,results,layoutMeasurements,timelineHeights };
+document.querySelector('#results').textContent = JSON.stringify(window.regressionResult, null, 2);
+document.body.dataset.complete = 'true';
+</script></body></html>

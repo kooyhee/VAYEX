@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "users": {
+    "demo": {
+      "2026-11-05": {
+        "requests": 1,
+        "tokens": 12,
+        "unknown_usage": 0,
+        "reserved_requests": 0,
+        "reserved_tokens": 0,
+        "images": 0,
+        "video_submissions": 0,
+        "video_completions": 0
+      }
+    },
+    "student-1": {
+      "2026-11-06": {
+        "requests": 20,
+        "tokens": 240,
+        "unknown_usage": 0,
+        "reserved_requests": 0,
+        "reserved_tokens": 0,
+        "images": 0,
+        "video_submissions": 0,
+        "video_completions": 0
+      }
+    }
+  }
+}

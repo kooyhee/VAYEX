@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><style>
+html,body{margin:0;padding:0}
+.slide{position:relative;width:1920px;height:1080px;overflow:hidden;background:#F6F5F1;color:#121417;font-family:"Malgun Gothic","Noto Sans KR",sans-serif;word-break:keep-all;overflow-wrap:break-word}
+.dark{background:#12161B;color:#F2F4F5}
+.k{position:absolute;left:120px;top:56px;font-size:22px;font-weight:700;color:#5B6169}
+.dark .k{color:#8E9AA5}
+.t{position:absolute;left:120px;top:100px;width:1620px;font-size:50px;line-height:1.28;font-weight:700;text-wrap:balance}
+.f{position:absolute;left:120px;top:966px;width:1640px;font-size:24px;line-height:1.4;color:#5B6169}
+.dark .f{color:#8E9AA5}
+.pill{position:absolute;right:120px;top:34px;font-size:22px;font-weight:700;padding:8px 24px;border-radius:999px;border:2px solid #0F7A6C;color:#0F7A6C;white-space:nowrap;width:auto;min-width:0}
+.dark .pill{border-color:#35C2A7;color:#35C2A7}
+</style></head><body>
+<!-- BRIEF
+subject/audience/action: 공학작품경진대회 심사위원에게, VAYEX가 코딩 에이전트의 두 결정을 한 지점에 모은 로컬 우선 하네스이고 실제 제공자 호출로 수행한 2환경 실측에서 양쪽 12/12 통과와 성공 과제당 추정 비용 $0.2989 에서 $0.0166, 그 대가로 시간 24,361 ms 에서 46,205 ms 와 탐지기의 문서화된 잔여 형태를 함께 밝혔다는 것을, 발표자가 말로 설명하며 심사위원이 무엇이 실행되었고 무엇이 남았는지를 구분해 기억하게 한다
+concept: 문제와 실측을 어두운 블록으로 묶고, 제품·구조·한계는 종이색으로 넘긴다. 한 장에 한 주장, 숫자는 한 축만. 일정·부스 운영·영상 제작 스펙은 싣지 않는다. 16:9 발표 전용
+reading mode: presentation · argument mode: pyramid
+directions: A 문제·실측을 어두운 블록으로, 제품·구조·한계를 종이색으로 — 주제 경계가 색 경계다 (selected) · B 전면 종이색에 표만 — 안전하지만 발표 중 증거 구간이 구분되지 않는다 · why: 심사위원이 결과를 먼저 쥐고 구조로 넘어가야 하므로 색 전환을 섹션 경계에만 둔다
+style: editorial evidence block · palette: warm paper #F6F5F1 and near-black #12161B · accent: #0F7A6C · type: MODE presentation body 20pt table 14pt note 12pt · script: ko · pairing: weight · fonts: safe
+motif: 왼쪽 정렬 활자와 얇은 괘선, 강조는 한 색만, 숫자는 막대와 큰 활자 · rhythm: anchor, dense, dense, dense, dense, dense, dense, dense, dense, dense, dense, reference, reference, reference
+sources: output/benchmark-live-2env-official-report.md · README.md · app/privacy/detectors.mjs · app/privacy/vault.mjs · app/config.json · engine/registry.py · gateway/lib/decision-planner.mjs · gateway/lib/consent.mjs · output/demo/shotlist.md · <backup>/2026-11-17-deck-design/design.md · <backup>/2026-11-17-deck-facts/facts.md · <backup>/2026-11-17-deck-assets/assets.md
+facts: F1 통과 12/12 두 환경 각 그리고 과제 4/4 전부, 과제 4종 × 3회 — output/benchmark-live-2env-official-report.md §1 · F2 시간 중앙값 24,361 ms 그리고 46,205 ms — 같은 문서 §1 · F3 추정 비용 성공 과제당 $0.2989 그리고 $0.0166 — 같은 문서 §3 · F4 실행 창 2026-11-08T21:34:52Z 에서 2026-11-08T22:11:24Z — 같은 문서 머리 · F5 토큰 입력 9,240 출력 59,469 과 63,856 캐시 읽기 8,064 — 같은 문서 §2 · F6 라우팅 DeepSeek 10회 $0.0332, Gemini 2회 $0.0330, Claude 0회 — 같은 문서 §3 · F7 타임아웃 240000 ms 그리고 300000 ms — 같은 문서 §5 · F8 실패 0건 — 같은 문서 §4 · F9 산식 나눗셈 1,000,000 과 단가 표기 기준 백만 토큰 — 같은 문서 §3 산식 줄 · F10 비용 축 눈금 0, 0.10, 0.20, 0.30 USD 는 F3 값의 축 스케일 — 같은 문서 §3 · F11 시간 축 눈금 0, 25,000, 50,000 ms 는 F2 값의 축 스케일 — 같은 문서 §1 · F12 4조건 비교 미실행, Codex CLI 제공자 503 제외 — README.md 실측 한계 절 · F13 게이트 8개 지점과 422 거절 — README.md 프라이버시 절 · F14 가명 형태 [PERSON_1] 그리고 __PII_PERSON_1__ — app/privacy/vault.mjs:13 그리고 README.md 프라이버시 절 · F15 스캔 지연 p50 0.02 에서 0.03 ms p95 0.33 에서 0.58 ms 예산 5 ms — README.md 프라이버시 측정 절 · F16 재현율 48/48, 오탐 0건, 코퍼스 48건, 158개 파일, 37,000줄 — README.md 프라이버시 측정 절 · F17 findings 초점 16/16 — README.md 시험 lane 절 · F18 역할 17개 식별자 와 실 턴 6개, 레지스트리 researcher 대 실 경로 research — engine/registry.py:55-62 그리고 gateway/lib/decision-planner.mjs:36 · F19 잔여 9형태 분포 전송됨 8, 잔존 1, leak 1 원문 전송, 목록 21번까지, 3패턴 묶음 — app/privacy/detectors.mjs DOCUMENTED RESIDUALS residual 1–9 와 KNOWN LEAK · F20 잔여 예시 문자열 DB_PASS=correct horse battery, note for you, DB_PASS=hunter2, dbpass=Sup3rS3cret!x, API_KEY=aGVsbG8gd29ybGQgdGhpcyBpcyBhIHRleHQ=, API_KEY=Kq7R=t2X, DB_PASS=your_api_key_here, # rotated by hunter22, MYSQL_ROOT=root:rootpass, 8자 미만 — 같은 파일 residual 1 부터 9 · F21 기본 라우트 문서 zdr_cloud 설정 any_cloud, 동의 403 consent_required, x-consent — README.md 설정 절 그리고 app/config.json 그리고 gateway/lib/consent.mjs · F22 후보 461 MB 와 520 MB — README.md 한계 절 · F23 스텁 비교 입력 84 출력 60 비용 0.000264 USD cacheRead 0, 시간 309 ms 와 245 ms — README.md 한계 절 · F24 시험 lane 부하 민감성 실패 1 취소 1, 엔진 기준선 재사용 — README.md 시험 lane 절 · F25 정밀 비용 $1.19569680 그리고 $0.06620712, 성공 과제당 $0.29892420 그리고 $0.01655178 — 보고서 §3 · F26 단가 Claude $4.00 $20.00 $0.20 $5.00, DeepSeek off-peak $0.15 $0.003 $0.60, Gemini $0.75 $3.75 $0.075 — 보고서 머리 그리고 §3 · F27 모델명 Claude Opus 5.5, DeepSeek V4.1 Flash Eco, Gemini 3.8 Flash 그리고 stub-7b 라벨 — 보고서 §1 §3 그리고 output/demo/shotlist.md §1 · F28 결정 출처 3값 원격 결정 로컬 대체 원격 결정 건너뜀 그리고 보고 위치 네 곳 — README.md 폴백 보고 절 · F29 승인 선택지 4개 그리고 write 완료 — output/demo/shotlist.md §1 · F30 화면 표시 — 요청 1건 = 결과 1줄 — app/README.md 프라이버시 절 · F31 diff +3줄 / -2줄 과 헝크 @@ -1,6 +1,7 @@ — output/demo/shotlist.md §1 · F32 사용량 비용 필드 0 과 호출별 USD 미보고 — README.md 한계 절 · F33 출력 토큰 차이 4,387 (63,856 − 59,469) — F5 두 값의 차
+slide plan: 1 job: cover · move: 심사위원이 결론 두 값과 그 값의 성격을 먼저 쥔다 · composition: 왼쪽 정렬 활자만, 주장 한 줄과 수치 부제 한 줄 · carriers: 주장 한 줄, 수치 부제 한 줄, 대가 한 문장 · texture: 활자 · rhythm: anchor
+2 job: framing · relationship: 대비 · move: 두 결정이 흩어졌을 때와 한 지점에 모였을 때를 나란히 둔다 · composition: 두 카드와 화살표, 아래 결론 한 줄 · carriers: 두 카드, 화살표, 결론 한 줄 · texture: 도식 · rhythm: dense
+3 job: evidence · relationship: 실행 사실 · move: 4과제 × 3회 = 12/12 를 한 줄로 보고 측정하지 않은 것을 같은 무게로 본다 · composition: 왼쪽 큰 요약 활자와 두 환경 줄, 오른쪽 측정하지 않은 것 상자 · carriers: 요약 활자, 두 환경 줄, 명시 문장, 제외 상자 · texture: 활자 · rhythm: dense
+4 job: evidence · relationship: 비용 축 하나 · move: 성공 과제당 추정 비용 두 값을 같은 축에서 본다 · composition: 왼쪽 두 막대와 축, 오른쪽 토큰 표, 아래 추정 한 줄 · carriers: 막대 두 개, 축 눈금, 토큰 표, 추정 한 줄 · texture: 그림 · rhythm: dense
+5 job: evidence · relationship: 시간 축 하나 · move: 같은 실행의 대가로 늘어난 시간을 오른쪽에서 해설한다 · composition: 왼쪽 두 막대와 축, 오른쪽 세 문장, 아래 방향 띠 · carriers: 막대 두 개, 축 눈금, 세 문장, 방향 띠 · texture: 그림 · rhythm: dense
+6 job: product · relationship: 실물 · move: 승인된 write가 변경 검토 패널에 줄 단위로 남는 것을 본다 · composition: 왼쪽 두 문장, 오른쪽 변경 검토 패널 캡처 · carriers: 변경 검토 패널 캡처, 두 문장, 환경 태그 · texture: 캡처 · rhythm: dense
+7 job: structure · relationship: 흔적 · move: 모델 선택이 조용히 일어나지 않고 네 곳에 같은 값으로 남는다 · composition: 큰 상태줄 캡처와 캡션 한 줄, 아래 결정 출처 카드 세 장 · carriers: 상태줄 캡처, 캡션, 카드 세 장 · texture: 캡처 · rhythm: dense
+8 job: structure · relationship: 두 이름 집합 · move: 실 턴 역할 6개와 레지스트리 17개의 이름이 맞지 않음을 본다 · composition: 6역할 줄 목록과 불일치 문장, 아래 레거시 계층 문장 · carriers: 6역할 목록, 불일치 문장, 레거시 문장 · texture: 활자 · rhythm: dense
+9 job: scope · relationship: 범위 · move: 게이트가 무엇을 보는지 말하고 측정치는 코퍼스별로 한 줄만 붙인다 · composition: 세 열 흐름, 큰 배지 캡처와 캡션, 아래 측정 한 줄 · carriers: 여덟 지점, 게이트 열, 세 출구, 배지 캡처, 측정 한 줄 · texture: 도식 · rhythm: dense
+10 job: limit · relationship: 잔여 · move: 9형태를 세 실패 패턴으로 묶고 leak을 따로 세운다 · composition: 세 패턴 블록, 아래 붉은 leak 블록, 분포 한 줄 · carriers: 세 패턴 블록, leak 블록, 분포 한 줄 · texture: 활자 · rhythm: dense
+11 job: limit · relationship: 운영과 검증 · move: 관측되지 않은 것과 미측정인 것을 네 줄로 말한다 · composition: 네 줄 목록, 아래 경계 한 줄 · carriers: 네 줄, 경계 한 줄, 상태 어휘 각주 · texture: 활자 · rhythm: dense
+12 job: appendix · move: 정밀값을 물을 때 원자료 표를 그대로 보여 준다 · composition: 6행 값 표와 원자료 경로 · carriers: 정밀값 표, 원자료 경로 · texture: 표 · rhythm: reference
+13 job: appendix · move: 단가와 산식을 물을 때 출처를 그대로 보여 준다 · composition: 산식 상자, 단가 3행 표, 한 줄 주의 · carriers: 산식 상자, 단가 표 · texture: 표 · rhythm: reference
+14 job: appendix · move: 잔여 9형태를 항목별로 물을 때 원문 예시를 그대로 보여 준다 · composition: 10행 표 · carriers: 잔여 표 · texture: 표 · rhythm: reference
+15 job: appendix · move: 운영·검증 한계의 근거를 물을 때 항목·상태·근거를 그대로 보여 준다 · composition: 5행 3열 표 · carriers: 한계 표 · texture: 표 · rhythm: reference
+images: I1 slide 6 capture 변경 검토 패널 840 px 폭 · I2 slide 7 capture 상태줄 스트립 1080 px 폭 · I3 slide 9 capture 프라이버시 배지 800 px 폭 · 생성 이미지 없음
+-->
+
+<section class="slide dark">
+<div class="k">공학작품경진대회 출품작 · 로컬 통합 AI 코딩 하네스</div>
+<div style="position:absolute;left:120px;top:132px;font-size:32px;font-weight:700;color:#35C2A7">VAYEX</div>
+<div style="position:absolute;left:120px;top:192px;width:1640px;font-size:58px;line-height:1.26;font-weight:700;text-wrap:balance">두 경로 모두 12/12로 통과했고,<br>성공 과제당 추정 비용은 $0.2989과 $0.0166이었다</div>
+<div style="position:absolute;left:120px;top:400px;width:1640px;font-size:34px;line-height:1.45;color:#C9D2D8">과제 4종 × 3회 × 2환경 · 비용은 추정, 시간은 중앙값</div>
+<div style="position:absolute;left:120px;top:560px;width:1500px;font-size:38px;line-height:1.45">대가는 시간과 탐지기의 잔여 형태로 지불했다.</div>
+<div class="f">근거: output/benchmark-live-2env-official-report.md §1 §3 · 시간은 과제 1회 수행 기준 중앙값 · 비용은 토큰 × 공시 단가 추정</div>
+<aside class="notes">표지. 세 단어만 말로 붙인다 — 추정은 측정 토큰 × 공시 단가로 계산한 값이고 청구서가 아니며, 중앙값은 과제 1회 수행 기준이고, 실측 기록은 실제 제공자 호출로 수행해 스텁 캡처와 구분한 값이다. 이 발표는 본편 11장과 부록 4장으로 이어진다.</aside>
+</section>
+
+<section class="slide dark">
+<div class="k">문제 · 두 결정</div>
+<div class="t">코딩 에이전트의 사고는 코드 생성이 아니라 ‘어디로 보낼지’와 ‘무엇을 보낼지’ 두 결정에서 갈린다</div>
+<div style="position:absolute;left:120px;top:330px;width:740px;height:330px;background:#1F252B;border-radius:14px"></div>
+<div style="position:absolute;left:164px;top:366px;width:640px;font-size:30px;font-weight:700">흩어졌을 때</div>
+<div style="position:absolute;left:164px;top:426px;width:640px;font-size:30px;line-height:1.5;color:#DDE3E7">도구마다 같은 정책을 따로 구현한다.<br><br>같은 대화가 도구마다 다른 모델로 가고, 다른 처리 규칙을 거친다.</div>
+<div style="position:absolute;left:880px;top:462px;width:120px;font-size:64px;color:#35C2A7;text-align:center">→</div>
+<div style="position:absolute;left:1040px;top:330px;width:760px;height:330px;background:#16302C;border-radius:14px"></div>
+<div style="position:absolute;left:1084px;top:366px;width:660px;font-size:30px;font-weight:700">한 지점으로 모았을 때</div>
+<div style="position:absolute;left:1084px;top:426px;width:660px;font-size:30px;line-height:1.5;color:#CFE9E2">모델 선택과 폴백은 게이트웨이 한 곳에서 결정된다.<br><br>전송 전 판단은 하나의 게이트를 지난다.</div>
+<div style="position:absolute;left:120px;top:740px;width:1640px;font-size:34px;line-height:1.45">이 발표는 그 두 결정을 한 곳에 모은 구조와, 그 구조로 실제 실행한 실측을 다룬다.</div>
+<div class="f">그림: 구조 도식(제품 캡처 아님) · 근거: gateway 모델 선택 경로와 app/privacy 전송 단일 게이트 · 이 장에는 수치를 두지 않는다</div>
+</section>
+
+<section class="slide dark">
+<div class="k">실측 · 두 환경</div>
+<div class="pill" data-free="corner environment tag">[실측 기록]</div>
+<div class="t">실험은 가정이 아니라 실행이다 — 두 환경 모두 전 과제를 통과했고 실패는 0건이다</div>
+<div style="position:absolute;left:120px;top:268px;width:1010px;font-size:76px;font-weight:700;line-height:1.2">4개 과제 × 3회 = 12/12</div>
+<div style="position:absolute;left:120px;top:392px;width:1010px;font-size:32px;line-height:1.45;color:#C9D2D8">Claude · 게이트웨이 단일 모델 호출 — 과제 4/4가 3회 전부 통과</div>
+<div style="position:absolute;left:120px;top:482px;width:1010px;font-size:32px;line-height:1.45;color:#C9D2D8">VAYEX · 역할 라우팅 — 과제 4/4가 3회 전부 통과</div>
+<div style="position:absolute;left:120px;top:574px;width:1010px;font-size:38px;line-height:1.45">측정한 환경은 둘이다. 4조건 비교는 실행되지 않았다.</div>
+<div style="position:absolute;left:1200px;top:268px;width:600px;height:390px;background:#1A2026;border-radius:12px"></div>
+<div style="position:absolute;left:1244px;top:296px;width:520px;font-size:24px;font-weight:700;line-height:1.2;color:#E4A11B">측정하지 않은 것</div>
+<div style="position:absolute;left:1244px;top:354px;width:520px;font-size:25px;line-height:1.3;color:#C9D2D8">4조건 비교 — 미실행</div>
+<div style="position:absolute;left:1244px;top:424px;width:520px;font-size:25px;line-height:1.3;color:#C9D2D8">Codex CLI — 제공자 503</div>
+<div style="position:absolute;left:1244px;top:494px;width:520px;font-size:25px;line-height:1.3;color:#C9D2D8">DeepSeek 단일 호출 — 기준 아님</div>
+<div style="position:absolute;left:1244px;top:564px;width:520px;font-size:25px;line-height:1.3;color:#C9D2D8">Claude Code CLI — 미실행</div>
+<div style="position:absolute;left:120px;top:688px;width:1010px;font-size:26px;line-height:1.4;color:#8E9AA5">두 실행은 같은 날 한 창에서 수행됐다 — 실행 창 시각은 부록 A1에 있다.</div>
+<div class="f">같은 hidden test · per-run 타임아웃 240000 / 300000 ms · 출처: output/benchmark-live-2env-official-report.md §1 §4 §5</div>
+<aside class="notes">옛 4조건 매트릭스를 지우고 실행 기록으로 바꾼 장. 명시 문장을 빼지 않는다.</aside>
+</section>
+
+<section class="slide dark">
+<div class="k">실측 · 비용</div>
+<div class="pill" data-free="corner environment tag">[실측 기록]</div>
+<div class="t">성공 과제당 추정 비용은 $0.2989에서 $0.0166이다</div>
+<div style="position:absolute;left:120px;top:286px;width:900px;font-size:24px;color:#8E9AA5">성공 과제당 추정 비용 (USD)</div>
+<div style="position:absolute;left:120px;top:322px;width:880px;font-size:28px;color:#C9D2D8">Claude Opus 5.5 · 게이트웨이 단일 모델 호출</div>
+<div style="position:absolute;left:120px;top:440px;width:880px;font-size:28px;color:#C9D2D8">VAYEX · 역할 라우팅</div>
+<svg data-alt="비용 막대: Claude $0.2989 와 VAYEX $0.0166, 0 에서 0.30 USD 축" viewBox="0 0 880 210" style="position:absolute;left:120px;top:370px;width:880px;height:210px" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="880" height="42" fill="#232B33"/>
+<rect x="0" y="0" width="876.8" height="42" fill="#7C8894"/>
+<rect x="0" y="114" width="880" height="42" fill="#232B33"/>
+<rect x="0" y="114" width="48.7" height="42" fill="#35C2A7"/>
+<line x1="0" y1="186" x2="880" y2="186" stroke="#3A444E" stroke-width="2"/>
+<line x1="0" y1="186" x2="0" y2="196" stroke="#3A444E" stroke-width="2"/>
+<line x1="293.3" y1="186" x2="293.3" y2="196" stroke="#3A444E" stroke-width="2"/>
+<line x1="586.7" y1="186" x2="586.7" y2="196" stroke="#3A444E" stroke-width="2"/>
+<line x1="880" y1="186" x2="880" y2="196" stroke="#3A444E" stroke-width="2"/>
+</svg>
+<div style="position:absolute;left:1030px;top:372px;font-size:34px;font-weight:700">$0.2989</div>
+<div style="position:absolute;left:1030px;top:486px;font-size:34px;font-weight:700;color:#35C2A7">$0.0166</div>
+<div style="position:absolute;left:80px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">0</div>
+<div style="position:absolute;left:373px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">0.10</div>
+<div style="position:absolute;left:667px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">0.20</div>
+<div style="position:absolute;left:960px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">0.30</div><table style="position:absolute;left:1250px;top:290px;width:550px;border-collapse:collapse;font-size:26px">
+<tr><td style="padding:10px;border-bottom:1px solid #3A444E;color:#8E9AA5">토큰</td><td style="padding:10px;border-bottom:1px solid #3A444E;color:#8E9AA5;text-align:right">Claude</td><td style="padding:10px;border-bottom:1px solid #3A444E;color:#8E9AA5;text-align:right">VAYEX</td></tr>
+<tr><td style="padding:12px 10px;border-bottom:1px solid #232B33;color:#C9D2D8">입력</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">9,240</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">9,240</td></tr>
+<tr><td style="padding:12px 10px;border-bottom:1px solid #232B33;color:#C9D2D8">출력</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">59,469</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">63,856</td></tr>
+<tr><td style="padding:12px 10px;border-bottom:1px solid #232B33;color:#C9D2D8">캐시 읽기</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">8,064</td><td style="padding:12px 10px;border-bottom:1px solid #232B33;text-align:right">8,064</td></tr>
+</table>
+<div style="position:absolute;left:1250px;top:556px;width:550px;font-size:25px;line-height:1.45;color:#C9D2D8">입력 9,240과 캐시 읽기 8,064는 양쪽이 같다. 차이는 라우팅된 단가와 출력 4,387토큰 차이에서 온다.</div>
+<div style="position:absolute;left:120px;top:716px;width:1600px;font-size:40px;line-height:1.45">비용은 추정이다 — 측정 토큰 × 공시 단가로 계산했다.</div>
+<div class="f">산식 (캐시 미적중 input × input 단가 + 캐시 적중 × 적중 단가 + output × output 단가) ÷ 1,000,000 · 라우팅 분포 DeepSeek 10회 $0.0332 · Gemini 2회 $0.0330 · Claude 0회 · 총비용과 정밀값은 부록 A1</div>
+<aside class="notes">막대는 자산이 아니라 측정된 두 값에서 직접 그린 도형이다(C3). 비율은 슬라이드에 쓰지 않는다. 게이트웨이가 호출별 USD를 보고하지 않는다는 한계는 11장 운영·검증 한계에 있다.</aside>
+</section>
+
+<section class="slide dark">
+<div class="k">실측 · 시간</div>
+<div class="pill" data-free="corner environment tag">[실측 기록]</div>
+<div class="t">그 비용의 대가는 시간이다 — 과제 1회 중앙값이 24,361 ms에서 46,205 ms로 늘었다</div>
+<div style="position:absolute;left:120px;top:286px;width:900px;font-size:24px;color:#8E9AA5">과제 1회 수행 소요 시간 중앙값 (ms)</div>
+<div style="position:absolute;left:120px;top:322px;width:880px;font-size:28px;color:#C9D2D8">Claude Opus 5.5 · 게이트웨이 단일 모델 호출</div>
+<div style="position:absolute;left:120px;top:440px;width:880px;font-size:28px;color:#C9D2D8">VAYEX · 역할 라우팅</div>
+<svg data-alt="시간 막대: Claude 24,361 ms 와 VAYEX 46,205 ms, 0 에서 50,000 ms 축" viewBox="0 0 880 210" style="position:absolute;left:120px;top:370px;width:880px;height:210px" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="880" height="42" fill="#232B33"/>
+<rect x="0" y="0" width="428.7" height="42" fill="#7C8894"/>
+<rect x="0" y="114" width="880" height="42" fill="#232B33"/>
+<rect x="0" y="114" width="813.2" height="42" fill="#35C2A7"/>
+<line x1="0" y1="186" x2="880" y2="186" stroke="#3A444E" stroke-width="2"/>
+<line x1="0" y1="186" x2="0" y2="196" stroke="#3A444E" stroke-width="2"/>
+<line x1="440" y1="186" x2="440" y2="196" stroke="#3A444E" stroke-width="2"/>
+<line x1="880" y1="186" x2="880" y2="196" stroke="#3A444E" stroke-width="2"/>
+</svg>
+<div style="position:absolute;left:1030px;top:372px;font-size:34px;font-weight:700">24,361 ms</div>
+<div style="position:absolute;left:1030px;top:486px;font-size:34px;font-weight:700;color:#35C2A7">46,205 ms</div>
+<div style="position:absolute;left:80px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">0</div>
+<div style="position:absolute;left:520px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">25,000</div>
+<div style="position:absolute;left:960px;top:608px;width:80px;font-size:22px;color:#8E9AA5;text-align:center">50,000</div>
+<div style="position:absolute;left:1250px;top:290px;width:560px;font-size:24px;font-weight:700;color:#8E9AA5">이 차이를 어떻게 읽는가</div>
+<div style="position:absolute;left:1250px;top:344px;width:560px;font-size:28px;line-height:1.45;color:#C9D2D8">같은 과제·같은 hidden test에서 두 경로 모두 12/12, 과제 4/4가 3회 전부 통과했다.</div>
+<div style="position:absolute;left:1250px;top:506px;width:560px;font-size:28px;line-height:1.45;color:#C9D2D8">VAYEX는 역할 라우팅을 거치는 복합 경로이고, Claude는 게이트웨이 단일 모델 호출이다.</div>
+<div style="position:absolute;left:1250px;top:656px;width:560px;font-size:28px;line-height:1.45;color:#35C2A7">같은 프로그램의 두 설정이 아니다.</div>
+<div style="position:absolute;left:120px;top:736px;width:1600px;font-size:32px;line-height:1.4;border-left:6px solid #35C2A7;padding-left:24px">비용은 낮아졌고, 시간은 늘었다. 두 값은 같은 실행에서 나왔다.</div>
+<div class="f">시간은 과제 1회 수행 기준 중앙값(ms) · 두 환경은 같은 과제와 같은 hidden test를 썼으나 같은 프로그램이 아니다 · 시간 차이를 요인별로 분해한 측정은 없다</div>
+</section>
+
+<section class="slide">
+<div class="k">제품 · 실제 화면</div>
+<div class="pill" data-free="corner environment tag">[오프라인 스텁 · 추론 아님]</div>
+<div class="t">승인된 write는 줄 단위 diff로 남는다 — +3줄 / -2줄, 헝크 단위 대조</div>
+<div style="position:absolute;left:120px;top:300px;width:740px;font-size:32px;line-height:1.55">화면은 승인된 <span style="white-space:nowrap">write의</span> 결과를 줄 단위로 보여 준다.<br><br>패널 위에 파일 1개 변경됨 (+3줄 / -2줄), 바로 아래에 전체 되돌리기 버튼, 그 아래에 헝크 머리가 있다.</div>
+<div style="position:absolute;left:960px;top:196px;width:840px;font-size:24px;line-height:1.4;color:#5B6169">변경 검토 패널 — 이 diff는 fixture가 스크립트한 write 호출 결과이며 모델 추론 결과가 아니다</div>
+<img data-free="capture placed at measured width" src="demo/shots/deck_S4_diff_panel_crop_16x9.png" alt="제품의 변경 검토 패널: 파일 1개 변경됨 (+3줄 / -2줄), 전체 되돌리기 버튼, 헝크 머리 @@ -1,6 +1,7 @@" style="position:absolute;left:960px;top:300px;width:840px;height:624px">
+<div class="f">캡처: 변경 검토 패널 크롭 (demo assets #3) · 스텁 모델 상대 세션</div>
+<aside class="notes">승인 뒤에 남는 것이 대화가 아니라 줄 단위 결과라는 점만 짚는다. 화면의 모델 라벨은 스텁이므로 이 화면을 모델 추론 결과로 말하지 않는다.</aside>
+</section>
+
+<section class="slide">
+<div class="k">구조 · 결정이 남는 자리</div>
+<div class="pill" data-free="corner environment tag">[오프라인 스텁 · 추론 아님]</div>
+<div class="t">모델 선택과 폴백은 조용히 일어나지 않는다 — 화면·헤더·API 세 곳에 같은 사실이 남는다</div>
+<div style="position:absolute;left:120px;top:266px;width:1200px;font-size:24px;color:#5B6169">상태줄 — 모델 라벨은 게이트웨이가 고른 결과다</div>
+<img src="demo/shots/S3_status_bar_crop_16x9.png" alt="제품 상태줄 크롭: 오케스트레이터와 stub-7b 게이트웨이 선택 라벨" style="position:absolute;left:120px;top:306px;width:1080px;height:89px">
+<div style="position:absolute;left:120px;top:412px;width:1200px;font-size:26px;line-height:1.45;color:#3C4248">라벨이 stub-7b인 것은 이 세션이 오프라인 스텁을 상대했기 때문이다 — 실제 모델 추론 화면이 아니다.</div>
+<div style="position:absolute;left:120px;top:520px;width:520px;height:170px;background:#F6F5F1;border-radius:12px;border:2px solid #D8D5CC"></div>
+<div style="position:absolute;left:156px;top:552px;width:450px;font-size:28px;font-weight:700;line-height:1.2;color:#0F7A6C">원격 결정</div>
+<div style="position:absolute;left:156px;top:606px;width:450px;font-size:26px;line-height:1.3">원격 모델로 보냈다</div>
+<div style="position:absolute;left:700px;top:520px;width:520px;height:170px;background:#F6F5F1;border-radius:12px;border:2px solid #D8D5CC"></div>
+<div style="position:absolute;left:736px;top:552px;width:450px;font-size:28px;font-weight:700;line-height:1.2;color:#0F7A6C">로컬 대체</div>
+<div style="position:absolute;left:736px;top:606px;width:450px;font-size:26px;line-height:1.3">원격이 실패해 대체했다</div>
+<div style="position:absolute;left:1280px;top:520px;width:520px;height:170px;background:#F6F5F1;border-radius:12px;border:2px solid #D8D5CC"></div>
+<div style="position:absolute;left:1316px;top:552px;width:450px;font-size:28px;font-weight:700;line-height:1.2;color:#0F7A6C">원격 결정 건너뜀</div>
+<div style="position:absolute;left:1316px;top:606px;width:450px;font-size:26px;line-height:1.3">정책상 원격 호출을 안 했다</div>
+<div style="position:absolute;left:120px;top:740px;width:1620px;font-size:32px;line-height:1.5">세 값은 응답 본문과 x-gateway-decision-* 헤더, /v1/selection, 컴포저 칩에 같이 남는다. — 폴백 사유는 인증 거절과 도달 불가를 구분해 보고한다.</div>
+<div class="f">결정 출처 정의: README.md 폴백 보고 절 · 캡처의 모델 라벨은 stub-7b이며 실제 모델 추론이 아니다 · 이 화면은 덱 전체에서 이 장에만 쓴다</div>
+</section>
+
+<section class="slide">
+<div class="k">구조 · 역할</div>
+<div class="t">실 턴을 라우팅하는 역할은 6개다 — 레지스트리의 17개 식별자와 이름이 일치하지 않는다</div>
+<div style="position:absolute;left:120px;top:276px;width:900px;font-size:24px;font-weight:700;color:#5B6169">실 턴 경로 — 라우터가 쓰는 6개</div>
+<div style="position:absolute;left:120px;top:322px;width:1640px;font-size:40px;line-height:1.4">main · planner · research · frontend · backend · verifier</div>
+<div style="position:absolute;left:120px;top:432px;width:900px;font-size:26px;line-height:1.5;color:#3C4248">역할은 기능 분류이며 성능 등급도 동시 실행 수가 아니다.</div>
+<div style="position:absolute;left:120px;top:524px;width:1680px;border-top:1px solid #E2DFD6"></div>
+<div style="position:absolute;left:120px;top:560px;width:1640px;font-size:31px;line-height:1.55">레지스트리는 17개 식별자를 검증하지만, 그 이름은 실 경로와 맞지 않는다 — 레지스트리는 <b>researcher, frontend_worker, reviewer</b>를, 실 경로는 <b>research, frontend, verifier</b>를 쓴다.</div>
+<div style="position:absolute;left:120px;top:724px;width:1640px;font-size:27px;line-height:1.55;color:#5B6169">17개는 파이썬 레지스트리(engine/registry.py VALID_ROLES)의 식별자 수이고, 그 계층은 지금 실행 경로와 내부 연결이 없다 — 두 수를 하나로 합쳐 쓰지 않는다.</div>
+<div class="f">실 턴 역할 6개: gateway/lib/decision-planner.mjs ROLE_IDS · 17개: engine/registry.py VALID_ROLES · 이름 불일치: research/researcher, frontend/frontend_worker, verifier/reviewer · 레지스트리 계층 미연결: README.md</div>
+</section>
+
+<section class="slide">
+<div class="k">프라이버시 · 게이트가 보는 범위</div>
+<div style="position:absolute;left:120px;top:92px;width:1620px;font-size:46px;line-height:1.3;font-weight:700;text-wrap:balance">외부로 나가는 모든 텍스트가 하나의 게이트를 지나고, 확인된 자격증명은 전송 전에 422로 거절된다</div>
+<div style="position:absolute;left:120px;top:250px;width:560px;font-size:24px;font-weight:700;color:#5B6169">게이트를 지나는 여덟 지점</div>
+<div style="position:absolute;left:120px;top:298px;width:560px;font-size:28px;line-height:1.1">대화 본문 · 도구 실행 결과</div>
+<div style="position:absolute;left:120px;top:356px;width:560px;font-size:28px;line-height:1.1">첨부 · 이미지·영상 프롬프트</div>
+<div style="position:absolute;left:120px;top:414px;width:560px;font-size:28px;line-height:1.1">메모리 주입 · 메모리 저장</div>
+<div style="position:absolute;left:120px;top:472px;width:560px;font-size:28px;line-height:1.1">문서 내보내기 · 진단 로그</div>
+<div style="position:absolute;left:760px;top:250px;width:400px;font-size:24px;font-weight:700;color:#5B6169">하나의 게이트</div>
+<div style="position:absolute;left:760px;top:298px;width:400px;font-size:28px;line-height:1.1">정규식 · 체크섬</div>
+<div style="position:absolute;left:760px;top:356px;width:400px;font-size:28px;line-height:1.1">엔트로피 · 토큰 효율</div>
+<div style="position:absolute;left:760px;top:414px;width:400px;font-size:28px;line-height:1.1">전송 직전 재검증</div>
+<div style="position:absolute;left:1260px;top:250px;width:540px;font-size:24px;font-weight:700;color:#5B6169">세 가지 출구</div>
+<div style="position:absolute;left:1260px;top:298px;width:540px;font-size:28px;line-height:1.1">통과 — 그대로 전송</div>
+<div style="position:absolute;left:1260px;top:356px;width:540px;font-size:28px;line-height:1.1">가명 전송 — [PERSON_1] 형태</div>
+<div style="position:absolute;left:1260px;top:414px;width:540px;font-size:28px;line-height:1.1">422 거절 — 확인된 자격증명</div>
+<div style="position:absolute;left:120px;top:566px;width:800px;font-size:22px;font-weight:700;color:#5B6169">화면 표시 — 스텁 세션 · 추론 아님</div>
+<img src="demo/shots/S5_privacy_line_crop_16x9.png" alt="제품의 프라이버시 배지 크롭: 개인정보 보호, 전화번호 1건, 가명화, 요청 전송됨" style="position:absolute;left:120px;top:604px;width:800px;height:121px">
+<div style="position:absolute;left:980px;top:596px;width:820px;font-size:27px;line-height:1.5;color:#2B3036">가명 형태는 본문 <b>[PERSON_1]</b>, 코드 식별자 자리 <b>__PII_PERSON_1__</b> 두 가지다.</div>
+<div style="position:absolute;left:120px;top:766px;width:1680px;border-top:2px solid #D8D5CC"></div>
+<div style="position:absolute;left:120px;top:800px;width:1680px;font-size:29px;line-height:1.5">변형 코퍼스(중복 제거) 48건 — 재현율 48/48 · 저장소 코퍼스 158개 파일 약 37,000줄 — 오탐 0건<br>p95 스캔 0.33–0.58 ms, 예산 5 ms</div>
+<div class="f">측정은 재현율과 오탐이 서로 다른 코퍼스에서 나왔다 — 두 수를 한 코퍼스의 성적으로 읽지 않는다 · 배지 캡처는 스텁 세션의 화면 표시 · findings 초점 16/16 · 이 장은 무엇을 보는가만 말하고 무엇을 놓치는가는 다음 장이 말한다</div>
+<aside class="notes">배지 캡처는 화면 표시이고 아래 측정 줄은 실측 기록이다 — 두 층을 선으로 갈랐다. 재현율 48/48은 변형 코퍼스, 오탐 0건은 저장소 코퍼스다. 다른 코퍼스로 일반화하지 않는다.</aside>
+</section>
+
+<section class="slide">
+<div class="k">프라이버시 · 잔여</div>
+<div style="position:absolute;left:120px;top:88px;width:1640px;font-size:46px;line-height:1.3;font-weight:700;text-wrap:balance">탐지기는 문서화된 9가지 형태를 통과시키고, shield 범위에서는 값이 원문 그대로 나간다</div>
+<div style="position:absolute;left:120px;top:250px;width:1640px;font-size:26px;font-weight:700;color:#B23B2E">결과 분포 — 전송됨 8 · 잔존 1 · 원문 전송 1</div>
+<div style="position:absolute;left:120px;top:310px;width:520px;height:250px;background:#EDEBE4;border-radius:12px"></div>
+<div style="position:absolute;left:152px;top:336px;width:456px;font-size:26px;font-weight:700;line-height:1.2">① 비밀처럼 보이지 않는 값</div>
+<div style="position:absolute;left:152px;top:396px;width:456px;font-size:25px;line-height:1.45;color:#3C4248">공백이 있거나 8자 미만이거나 구분자 없이 붙은 키 — 5형태 모두 전송된다.</div>
+<div style="position:absolute;left:700px;top:310px;width:520px;height:250px;background:#EDEBE4;border-radius:12px"></div>
+<div style="position:absolute;left:732px;top:336px;width:456px;font-size:26px;font-weight:700;line-height:1.2">② 문서로 읽히는 값</div>
+<div style="position:absolute;left:732px;top:396px;width:456px;font-size:25px;line-height:1.45;color:#3C4248">산문 같은 값, 자리표시자, base64가 텍스트로 풀리는 값 — 3형태가 전송된다.</div>
+<div style="position:absolute;left:1280px;top:310px;width:520px;height:250px;background:#EDEBE4;border-radius:12px"></div>
+<div style="position:absolute;left:1312px;top:336px;width:456px;font-size:26px;font-weight:700;line-height:1.2">③ 마스크 밖에 남는 부분</div>
+<div style="position:absolute;left:1312px;top:396px;width:456px;font-size:25px;line-height:1.45;color:#3C4248">찾은 값 뒤 주석 줄은 가림에서 빠진다 — 1형태가 잔존한다.</div>
+<div style="position:absolute;left:120px;top:610px;width:1680px;height:170px;background:#FBEDE9;border-radius:12px"></div>
+<div style="position:absolute;left:152px;top:632px;width:1600px;font-size:28px;font-weight:700;line-height:1.2;color:#B23B2E">shield 범위 leak — 기존 결함, 미수정 (9형태에 포함되지 않는 별도 1건)</div>
+<div style="position:absolute;left:152px;top:694px;width:1600px;font-size:26px;line-height:1.45;color:#8C3226">shield된 값이 원문으로 나가고 요청은 sent가 된다. shield가 값을 덮는 경우와 값의 일부만 덮는 경우 모두 있다 — UUID를 password 키에 준 경우가 그 예입니다.</div>
+<div style="position:absolute;left:120px;top:820px;width:1640px;font-size:26px;line-height:1.45;color:#3C4248">목록은 21번까지 이어지며, 이 장은 그중 9형태와 leak 한 건만 말한다.</div>
+<div class="f">출처: app/privacy/detectors.mjs DOCUMENTED RESIDUALS residual 1–9 와 KNOWN LEAK · 항목별 원문 예시는 부록 A3 · “그 밖에 아무것도 새지 않는다”는 주장이 아니다</div>
+<aside class="notes">패턴 ①은 residual 1·3·4·6·9, ②는 2·5·7, ③은 8이다. 항목별 예시 문자열은 부록 A3에 있다.</aside>
+</section>
+
+<section class="slide">
+<div class="k">한계 · 운영과 검증</div>
+<div class="t">과금은 관측되지 않았고, 백그라운드 SLM은 미측정이며, 스텁 비교는 두 프로필이 같은 값을 냈다</div>
+<div style="position:absolute;left:120px;top:268px;width:1680px;border-top:2px solid #8E9AA5"></div>
+<div style="position:absolute;left:120px;top:296px;width:380px;font-size:24px;font-weight:700;color:#5B6169">과금 미관측</div>
+<div style="position:absolute;left:560px;top:290px;width:1240px;font-size:33px;line-height:1.45">게이트웨이는 호출별 USD를 보고하지 않는다 — 그래서 이 덱의 비용은 청구서가 아니라 추정이다.</div>
+<div style="position:absolute;left:120px;top:404px;width:1680px;border-top:1px solid #E2DFD6"></div>
+<div style="position:absolute;left:120px;top:432px;width:380px;font-size:24px;font-weight:700;color:#5B6169">SLM 미측정</div>
+<div style="position:absolute;left:560px;top:426px;width:1240px;font-size:33px;line-height:1.45">백그라운드 SLM 두 후보는 설치되지 않았고, 그 자리는 지금 규칙 기반 폴백이 채운다.</div>
+<div style="position:absolute;left:120px;top:540px;width:1680px;border-top:1px solid #E2DFD6"></div>
+<div style="position:absolute;left:120px;top:568px;width:380px;font-size:24px;font-weight:700;color:#5B6169">스텁 동일값</div>
+<div style="position:absolute;left:560px;top:562px;width:1240px;font-size:33px;line-height:1.45">스텁 비교는 두 프로필이 같은 토큰·같은 비용을 냈다 — 그 비교로 최적화 효과를 말할 수 없다.</div>
+<div style="position:absolute;left:120px;top:676px;width:1680px;border-top:1px solid #E2DFD6"></div>
+<div style="position:absolute;left:120px;top:704px;width:380px;font-size:24px;font-weight:700;color:#5B6169">문서·설정 불일치</div>
+<div style="position:absolute;left:560px;top:698px;width:1240px;font-size:33px;line-height:1.45">문서는 zdr_cloud를 기본으로 적지만 설정 파일의 값은 any_cloud다 — 기본값은 문서가 아니라 설정을 따른다.</div>
+<div style="position:absolute;left:120px;top:828px;width:1680px;border-top:1px solid #E2DFD6"></div>
+<div style="position:absolute;left:120px;top:848px;width:1680px;font-size:28px;line-height:1.4;color:#3C4248">이 네 가지가 이 발표의 주장을 쓸 수 있는 범위의 경계다. 항목별 근거는 부록 A4에 있다.</div>
+<div class="f">상태 어휘는 이 덱 전체에서 한 벌만 쓴다 — 구현 완료(실경로 연동) / 부분 구현 / 후보 선언 · 미측정 / 설계 · 미검증 / 문서·설정 불일치</div>
+<aside class="notes">네 줄을 그대로 말한다. 비용은 추정이라는 점, SLM은 후보일 뿐이라는 점, 스텁 비교는 효과를 못 보여 준다는 점, 정책 기본값은 문서와 설정이 다르다는 점. 숫자를 묻는 질문은 부록 A4로 넘긴다.</aside>
+</section>
+
+<section class="slide">
+<div class="k">부록 A1 · 원자료</div>
+<div class="t">원자료와 정밀값은 여기에 있다</div>
+<table style="position:absolute;left:120px;top:286px;width:1680px;border-collapse:collapse;font-size:28px;line-height:1.35">
+<tr><td style="width:440px;padding:12px 16px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">항목</td><td style="padding:12px 16px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">Claude · 게이트웨이 단일 모델 호출</td><td style="padding:12px 16px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">VAYEX · 역할 라우팅</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">총비용 (USD)</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">$1.19569680</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">$0.06620712</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">성공 과제당 (USD)</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">$0.29892420</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">$0.01655178</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">입력 / 출력 / 캐시 읽기</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">9,240 / 59,469 / 8,064</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">9,240 / 63,856 / 8,064</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">실행 / 통과</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">12 / 12</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">12 / 12</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">per-run 타임아웃</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">240000 ms</td><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">300000 ms</td></tr>
+<tr><td style="padding:12px 16px;border-bottom:1px solid #E2DFD6">실행 창</td><td colspan="2" style="padding:12px 16px;border-bottom:1px solid #E2DFD6">2026-11-08T21:34:52.653Z ~ 2026-11-08T22:11:24.595Z</td></tr>
+</table>
+<div style="position:absolute;left:120px;top:838px;width:1680px;font-size:26px;line-height:1.5;color:#2B3036">원자료: output/benchmark-live-2env-official-result.json<br>보고서: output/benchmark-live-2env-official-report.md §1 §2 §3 §5</div>
+<div class="f">정밀값은 원자료 표기 그대로다 · 본편에는 부록 이외에 정밀값을 두지 않았다</div>
+</section>
+
+<section class="slide">
+<div class="k">부록 A2 · 단가</div>
+<div class="t">비용 산식과 단가 출처</div>
+<div style="position:absolute;left:120px;top:272px;width:1600px;padding:26px 32px;background:#EDEBE4;border-radius:12px;font-size:30px;line-height:1.45">(캐시 미적중 input × input 단가 + 캐시 적중 × 적중 단가 + output × output 단가) ÷ 1,000,000</div>
+<table style="position:absolute;left:120px;top:452px;width:1680px;border-collapse:collapse;font-size:26px">
+<tr><td style="width:560px;padding:10px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">모델</td><td style="padding:10px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">입력</td><td style="padding:10px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">출력</td><td style="padding:10px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">캐시 읽기</td><td style="padding:10px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">캐시 쓰기</td></tr>
+<tr><td style="padding:14px;border-bottom:1px solid #E2DFD6">Claude Opus 5.5 · 공시가</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$4.00</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$20.00</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.20</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$5.00</td></tr>
+<tr><td style="padding:14px;border-bottom:1px solid #E2DFD6">DeepSeek V4.1 Flash Eco · off-peak</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.15</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.60</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.003</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">미보고</td></tr>
+<tr><td style="padding:14px;border-bottom:1px solid #E2DFD6">Gemini 3.8 Flash · 표준</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.75</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$3.75</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">$0.075</td><td style="padding:14px;border-bottom:1px solid #E2DFD6">미보고</td></tr>
+</table>
+<div style="position:absolute;left:120px;top:740px;width:1640px;font-size:30px;line-height:1.5">캐시 쓰기는 보고되지 않아 비용에 반영하지 않았다. 단가는 백만 토큰당 USD다.</div>
+<div class="f">출처: output/benchmark-live-2env-official-report.md 머리와 §3 · 공시 단가는 실행 시점 값이다</div>
+</section>
+
+<section class="slide">
+<div class="k">부록 A3 · 잔여 원문</div>
+<div class="t">탐지기가 통과시키는 아홉 형태의 원문 예시</div>
+<table style="position:absolute;left:120px;top:264px;width:1680px;border-collapse:collapse;font-size:27px;line-height:1.3">
+<tr><td style="width:60px;padding:8px 12px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">#</td><td style="width:470px;padding:8px 12px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">통과시키는 형태</td><td style="padding:8px 12px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">예시 — 원문 그대로</td><td style="width:170px;padding:8px 12px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">결과</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">1</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">공백 포함 무따옴표 값</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">DB_PASS=correct horse battery</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">2</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">산문으로 읽히는 따옴표 값</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">note for you</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">3</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">8자 미만 값</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">DB_PASS=hunter2</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">4</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">구분자 없이 붙은 키</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">dbpass=Sup3rS3cret!x</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">5</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">base64가 인쇄 가능 텍스트</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">API_KEY=aGVsbG8gd29ybGQgdGhpcyBpcyBhIHRleHQ=</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">6</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">값 안의 =</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">API_KEY=Kq7R=t2X</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">7</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">자리표시자 + 명사 꼬리</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">DB_PASS=your_api_key_here</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">8</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">finding 뒤 주석 줄</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace"># rotated by hunter22</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-weight:700">잔존</td></tr>
+<tr><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;color:#5B6169">9</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">중립 키</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6;font-family:"Courier New",monospace">MYSQL_ROOT=root:rootpass</td><td style="padding:13px 12px;border-bottom:1px solid #E2DFD6">전송됨</td></tr>
+<tr><td style="padding:14px 12px;background:#FBEDE9;font-weight:700;color:#B23B2E">L</td><td colspan="2" style="padding:14px 12px;background:#FBEDE9;font-weight:700;color:#B23B2E">shield 범위 leak — 기존 결함, 미수정. shield된 값이 원문으로 나가고 요청은 sent가 된다.</td><td style="padding:14px 12px;background:#FBEDE9;font-weight:700;color:#B23B2E">원문 전송</td></tr>
+</table>
+<div class="f">출처: app/privacy/detectors.mjs DOCUMENTED RESIDUALS residual 1–9와 KNOWN LEAK · 목록은 21번까지 이어진다 · 이 표는 본편 10장의 근거다</div>
+</section>
+
+<section class="slide">
+<div class="k">부록 A4 · 한계 근거</div>
+<div class="t">운영·검증 한계의 항목별 근거</div>
+<table style="position:absolute;left:120px;top:262px;width:1680px;border-collapse:collapse;font-size:25px;line-height:1.36">
+<tr><td style="width:300px;padding:9px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">항목</td><td style="width:290px;padding:9px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">상태</td><td style="padding:9px 14px;border-bottom:2px solid #D8D5CC;font-weight:700;color:#5B6169">근거</td></tr>
+<tr><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">원격 워커 과금</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6;color:#B23B2E">설계 · 미검증</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">게이트웨이는 호출별 USD를 보고하지 않는다. worker 세션과 combo 계열 세션의 cost 필드는 0이다 — 그래서 이 덱의 비용은 청구서가 아니라 추정이다.</td></tr>
+<tr><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">백그라운드 SLM 후보</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6;color:#B23B2E">후보 선언 · 미측정</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">Qwen2.5-0.5B 461 MB, Qwen3.5-0.8B 520 MB — 미설치. 그 자리는 규칙 기반 폴백이 채운다.</td></tr>
+<tr><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">오프라인 스텁 비교</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">부분 구현</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">baseline과 optimized가 같은 토큰(입력 84 / 출력 60), 같은 비용(0.000264 USD).</td></tr>
+<tr><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">기본 라우트</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6;color:#B23B2E">문서·설정 불일치</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">문서는 zdr_cloud를 기본으로 적고, 설정 파일의 값은 any_cloud다. ZDR 프리셋은 선언만 되어 있고 기본값이 아니다.</td></tr>
+<tr><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">시험 lane의 부하 민감성</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">부분 구현</td><td style="padding:11px 14px;border-bottom:1px solid #E2DFD6">같은 날 이른 실행에서 실패 1 · 취소 1이 났다. 엔진 기준선 값은 이전 실행 재사용이다.</td></tr>
+</table>
+<div class="f">상태 어휘는 본편 11장과 같은 한 벌을 쓴다 — 구현 완료(실경로 연동) / 부분 구현 / 후보 선언 · 미측정 / 설계 · 미검증 / 문서·설정 불일치 · 출처: README.md 한계 절 · app/config.json · engine/registry.py</div>
+</section>
+
+</body></html>

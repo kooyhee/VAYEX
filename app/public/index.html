@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ko" data-theme="daylight">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>VAYEX · 로컬 AI 코딩 하네스</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="app-backdrop" aria-hidden="true">
+    <svg class="sea-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" focusable="false">
+      <defs>
+        <linearGradient id="sea-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#061826"/><stop offset=".62" stop-color="#0b2c40"/><stop offset="1" stop-color="#12485e"/></linearGradient>
+        <radialGradient id="sea-glow" cx=".5" cy=".22" r=".72"><stop offset="0" stop-color="#67d4f5" stop-opacity=".32"/><stop offset="1" stop-color="#67d4f5" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="1600" height="900" fill="url(#sea-sky)"/>
+      <rect width="1600" height="900" fill="url(#sea-glow)"/>
+      <path class="sea-wave w1" d="M-60 560C180 500 300 620 520 580s320-100 560-40 360 120 620 70v330H-60Z" fill="#0d3448" opacity=".9"/>
+      <path class="sea-wave w2" d="M-80 650C160 600 320 700 560 660s340-90 580-30 330 110 600 60v240H-80Z" fill="#0a2a3c" opacity=".95"/>
+      <path class="sea-wave w3" d="M-40 750C200 700 360 790 620 740s380-80 620-20 300 90 480 60v160H-40Z" fill="#071e2c"/>
+      <path class="sea-line" d="M0 840c160-26 280 22 440 0s280-40 440-8 300 26 480 8 220-22 300-6" fill="none" stroke="#9ce7ff" stroke-opacity=".22" stroke-width="2"/>
+    </svg>
+  </div>
+  <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="ic-panel" viewBox="0 0 24 24"><rect x="3.25" y="4.25" width="17.5" height="15.5" rx="2.5"/><path d="M9.5 4.6v14.8"/></symbol>
+    <symbol id="ic-folder" viewBox="0 0 24 24"><path d="M3.25 7.4A1.9 1.9 0 0 1 5.15 5.5h3.9l1.9 2h6.9a1.9 1.9 0 0 1 1.9 1.9v7.2a1.9 1.9 0 0 1-1.9 1.9h-12.7a1.9 1.9 0 0 1-1.9-1.9Z"/></symbol>
+    <symbol id="ic-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+    <symbol id="ic-chev-d" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+    <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m15.6 15.6 4.1 4.1"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5.2v13.6M5.2 12h13.6"/></symbol>
+    <symbol id="ic-new" viewBox="0 0 24 24"><path d="M4.2 19.8h3.6L18 9.6a2.4 2.4 0 0 0-3.4-3.4L4.2 16.2Z"/><path d="m13.9 7 3.3 3.3"/></symbol>
+    <symbol id="ic-square-plus" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3"/><path d="M12 8.4v7.2M8.4 12h7.2"/></symbol>
+    <symbol id="ic-memory" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 3.4v3M12 17.6v3M3.4 12h3M17.6 12h3M5.9 5.9l2.1 2.1M16 16l2.1 2.1M18.1 5.9 16 8M8 16l-2.1 2.1"/></symbol>
+    <symbol id="ic-pr" viewBox="0 0 24 24"><circle cx="6.4" cy="6.2" r="2.1"/><circle cx="6.4" cy="17.8" r="2.1"/><circle cx="17.6" cy="17.8" r="2.1"/><path d="M6.4 8.3v7.4M8.5 6.2h4.7a3 3 0 0 1 3 3v6.5"/></symbol>
+    <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5.2" width="17" height="15.3" rx="2.4"/><path d="M8.2 3.2v4M15.8 3.2v4M3.7 10.2h16.6"/><path d="M7.4 13.8h2.2M7.4 17.6h2.2M13.9 13.8h2.2"/></symbol>
+    <symbol id="ic-more" viewBox="0 0 24 24"><path d="M5.6 12h.02M12 12h.02M18.4 12h.02"/></symbol>
+    <symbol id="ic-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M3.9 12h16.2M12 3.8a12.6 12.6 0 0 1 0 16.4 12.6 12.6 0 0 1 0-16.4"/></symbol>
+    <symbol id="ic-code" viewBox="0 0 24 24"><path d="m9 8.2-3.8 3.8L9 15.8M15 8.2l3.8 3.8L15 15.8"/></symbol>
+    <symbol id="ic-work" viewBox="0 0 24 24"><rect x="3.2" y="7.4" width="17.6" height="12.4" rx="2.2"/><path d="M8.9 7.4V6.1a2 2 0 0 1 2-2h2.2a2 2 0 0 1 2 2v1.3"/></symbol>
+    <symbol id="ic-list" viewBox="0 0 24 24"><path d="M8.4 6.8h11.4M8.4 12h11.4M8.4 17.2h11.4M4.4 6.8h.02M4.4 12h.02M4.4 17.2h.02"/></symbol>
+    <symbol id="ic-graph" viewBox="0 0 24 24"><circle cx="7" cy="6.6" r="2"/><circle cx="7" cy="17.4" r="2"/><circle cx="17.2" cy="12" r="2"/><path d="m8.8 7.4 6.5 3.7M8.8 16.6l6.5-3.7"/></symbol>
+    <symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M4 16.2a8 8 0 1 1 16 0"/><path d="m12 16.2 3.9-4.9"/><circle cx="12" cy="16.4" r="1.3"/></symbol>
+    <symbol id="ic-arrow-up" viewBox="0 0 24 24"><path d="M12 19.2V5.2M6.2 11 12 5.2l5.8 5.8"/></symbol>
+    <symbol id="ic-stop" viewBox="0 0 24 24"><rect x="6.8" y="6.8" width="10.4" height="10.4" rx="2.2"/></symbol>
+    <symbol id="ic-file" viewBox="0 0 24 24"><path d="M6.2 3.6h7.1l4.5 4.5v12.3a.9.9 0 0 1-.9.9H6.2a.9.9 0 0 1-.9-.9V4.5a.9.9 0 0 1 .9-.9Z"/><path d="M13.1 3.7v4.6h4.6"/></symbol>
+    <symbol id="ic-timer" viewBox="0 0 24 24"><circle cx="12" cy="13.3" r="7.3"/><path d="M12 13.3V9.6M9.4 3.2h5.2"/></symbol>
+    <symbol id="ic-branch" viewBox="0 0 24 24"><circle cx="7" cy="6" r="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="8.6" r="2"/><path d="M7 8.1v7.8M9 6.6c4.4 0 6 0 6 2"/></symbol>
+    <symbol id="ic-robot" viewBox="0 0 24 24"><rect x="4.2" y="8.2" width="15.6" height="11.2" rx="3"/><path d="M12 3.6v4.6M9.2 13h.02M14.8 13h.02M9.6 16.4h4.8"/></symbol>
+    <symbol id="ic-server" viewBox="0 0 24 24"><rect x="3.4" y="4.4" width="17.2" height="6.2" rx="2"/><rect x="3.4" y="13.4" width="17.2" height="6.2" rx="2"/><path d="M7 7.5h.02M7 16.5h.02"/></symbol>
+    <symbol id="ic-context" viewBox="0 0 24 24"><path d="M4.4 15.6a7.7 7.7 0 1 1 15.2 0"/><circle cx="12" cy="15.8" r="1.2"/><path d="m12 15.8 2.6-3.4"/></symbol>
+    <symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 8.2h9.4M17.2 8.2h2.8M4 15.8h3.4M11.2 15.8h8.8"/><circle cx="15.4" cy="8.2" r="2"/><circle cx="9.4" cy="15.8" r="2"/></symbol>
+    <symbol id="ic-x" viewBox="0 0 24 24"><path d="m6.4 6.4 11.2 11.2M17.6 6.4 6.4 17.6"/></symbol>
+    <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="4.8" y="10.2" width="14.4" height="9.6" rx="2.4"/><path d="M8.4 10.2V7.8a3.6 3.6 0 0 1 7.2 0v2.4"/></symbol>
+    <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.6"/><path d="M12 3.4v2.2M12 18.4v2.2M3.4 12h2.2M18.4 12h2.2M6 6l1.6 1.6M16.4 16.4 1.6 1.6M18 6l-1.6 1.6M7.6 16.4 6 6"/></symbol>
+    <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M19.4 14.6a7.9 7.9 0 0 1-10-10 8.4 8.4 0 1 0 10 10Z"/></symbol>
+    <symbol id="ic-diff" viewBox="0 0 24 24"><path d="M5.4 4.6h8.2l5 5v9.8H5.4Z"/><path d="M13.4 4.7v5h5"/><path d="M9.4 12.4h5.2M9.4 15.6h3.4"/></symbol>
+    <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M3.4 12S6.8 5.8 12 5.8 20.6 12 20.6 12 17.2 18.2 12 18.2 3.4 12 3.4 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24"><path d="m5.4 12.6 4.4 4.4 8.8-9.4"/></symbol>
+    <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M7.4 8.6H4.2V5.4"/><path d="M4.6 8.6a8 8 0 1 1 1.4 8.2"/></symbol>
+    <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M18.6 9.2A7.4 7.4 0 1 0 19 14"/><path d="M19.4 4.8v4.6h-4.6"/></symbol>
+    <symbol id="ic-cursor" viewBox="0 0 24 24"><path d="m7 4.6 11 7.2-5 1.2-2.2 4.8Z"/></symbol>
+    <symbol id="ic-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+    <symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 3.6a8.4 8.4 0 1 0 0 16.8h1.7a2 2 0 0 0 0-4h-.9a1.7 1.7 0 0 1 0-3.4h3.4A4.2 4.2 0 0 0 20.4 9 8.4 8.4 0 0 0 12 3.6Z"/><circle cx="7.9" cy="8.6" r=".9"/><circle cx="11.5" cy="6.8" r=".9"/><circle cx="15" cy="9.2" r=".9"/></symbol>
+    <symbol id="ic-expand" viewBox="0 0 24 24"><path d="M9 4.5H4.5V9M15 4.5h4.5V9M9 19.5H4.5V15M15 19.5h4.5V15"/></symbol>
+    <symbol id="ic-collapse" viewBox="0 0 24 24"><path d="M4.5 9H9V4.5M19.5 9H15V4.5M4.5 15H9v4.5M19.5 15H15v4.5"/></symbol>
+    <symbol id="ic-maximize" viewBox="0 0 24 24"><rect x="4.2" y="4.2" width="15.6" height="15.6" rx="2.4"/><path d="M9.2 4.4v4.8H4.4M14.8 14.8v4.8h4.8M14.8 9.2h4.8v4.8M9.2 14.8H4.4v-4.8"/></symbol>
+    <symbol id="ic-book" viewBox="0 0 24 24"><path d="M12 6.4C10.6 5 8.6 4.6 4.4 4.6v12.8c4.2 0 6.2.4 7.6 1.8 1.4-1.4 3.4-1.8 7.6-1.8V4.6c-4.2 0-6.2.4-7.6 1.8Z"/><path d="M12 6.4v12.8"/></symbol>
+    <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M4.2 19.6h15.6"/><path d="M6.2 19.2v-5.4M11.4 19.2V9.4M16.6 19.2V5"/></symbol>
+    <symbol id="ic-download" viewBox="0 0 24 24"><path d="M12 4.6v9.8M7.6 10.2 12 14.6l4.4-4.4M4.8 19.4h14.4"/></symbol>
+    <symbol id="ic-spark" viewBox="0 0 24 24"><path d="m11.4 4 1.5 4.2L17 9.7l-4.1 1.5-1.5 4.2-1.5-4.2L5.8 9.7l4.1-1.5Z"/><path d="m18.4 15.2.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#prompt">입력창으로 바로 가기</a>
+
+  <div class="app" id="app">
+    <!-- Narrow-viewport drawers only: the light-dismiss surface behind an open panel.
+         Wide layouts never render it (display:none outside the narrow media query). -->
+    <button type="button" class="drawer-scrim" id="scrim" aria-label="패널 닫기" tabindex="-1"></button>
+    <aside class="sidebar" id="sidebar" aria-label="작업 목록과 메뉴">
+      <div class="col-head sidebar-head">
+        <div class="workspace-brand brand" title="VAYEX · 로컬 AI 코딩 하네스">
+          <span class="brand-copy"><span class="brand-name">VAYEX</span></span>
+        </div>
+        <div class="head-tools">
+          <button type="button" class="icon-btn drawer-close" id="sidebar-close" aria-label="작업 목록 패널 닫기"><svg class="ic"><use href="#ic-x"/></svg></button>
+          <button type="button" class="icon-btn" id="sidebar-search" aria-label="대화에서 찾기"><svg class="ic"><use href="#ic-search"/></svg></button>
+          <button type="button" class="icon-btn" id="sidebar-new" aria-label="새 작업 열기"><svg class="ic"><use href="#ic-square-plus"/></svg></button>
+        </div>
+      </div>
+
+      <nav class="menu" aria-label="주 메뉴">
+        <button type="button" class="menu-row active" id="new-session"><svg class="ic"><use href="#ic-new"/></svg><span>새 작업</span><svg class="ic trail"><use href="#ic-square-plus"/></svg></button>
+        <button type="button" class="menu-row" id="menu-search"><svg class="ic"><use href="#ic-search"/></svg><span>검색</span></button>
+        <button type="button" class="menu-row" id="menu-agents"><svg class="ic"><use href="#ic-work"/></svg><span>에이전트 목록</span></button>
+        <button type="button" class="menu-row" id="menu-memory" disabled title="이 브리지는 메모리 조회를 지원하지 않습니다."><svg class="ic"><use href="#ic-memory"/></svg><span>메모리</span></button>
+        <button type="button" class="menu-row" id="menu-more"><svg class="ic"><use href="#ic-more"/></svg><span>더 보기</span></button>
+      </nav>
+
+      <div class="recent-head"><span class="recent-label">최근 작업</span><button type="button" class="link-btn" id="recent-select" disabled title="작업을 한꺼번에 고르는 기능은 데스크톱 앱에만 있습니다.">선택</button></div>
+      <div class="recent-list" id="recent-list"></div>
+
+      <div class="sidebar-foot">
+        <div class="foot-tools">
+          <span class="foot-state" id="harness-state">로컬 하네스</span>
+          <span class="lang-chip" id="lang-chip" title="화면 언어는 한국어입니다"><svg class="ic"><use href="#ic-globe"/></svg>한국어</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="split" id="split-sidebar" role="separator" aria-orientation="vertical" aria-label="작업 목록 너비 조절" aria-valuemin="200" aria-valuemax="420" aria-valuenow="260" tabindex="0" title="끌어서 작업 목록 너비를 조절합니다"></div>
+
+    <main class="center" id="center">
+      <header class="col-head center-head">
+        <div class="crumb">
+          <button type="button" class="crumb-project" id="project-chip-head" aria-label="프로젝트"><svg class="ic"><use href="#ic-folder"/></svg><span id="head-project">로컬 하네스</span><svg class="ic caret"><use href="#ic-chev-r"/></svg></button>
+          <h1 id="head-title">새 작업</h1>
+          <span class="stage-chip" id="head-stage" data-state="waiting" title="지금 단계">시작 전</span>
+          <span class="run-chip" id="head-run" data-state="waiting" role="status"><i class="dot" aria-hidden="true"></i><span id="head-run-label">대기</span></span>
+          <span class="plan-chip" id="head-plan" hidden title="게이트웨이 플랜 모드"><span id="head-plan-label">직접 실행</span></span>
+          <span class="status-pill" id="connection" role="status" data-state="checking"><i class="dot" aria-hidden="true"></i><span id="connection-label">연결 확인 중</span></span>
+        </div>
+        <div class="head-right">
+          <button type="button" class="consent-toggle badge-only" id="consent-toggle" aria-pressed="false" title="클라우드 전송 동의를 켜거나 끕니다.">
+            <svg class="ic"><use href="#ic-lock"/></svg>
+            <span class="consent-label" id="consent-label">클라우드 차단</span>
+            <span class="sr-only" id="consent-sub">로컬 실행</span>
+          </button>
+          <button type="button" class="icon-btn labeled" id="theme-toggle" aria-haspopup="dialog" aria-expanded="false" aria-label="테마 스튜디오 열기" title="테마 스튜디오"><svg class="ic"><use href="#ic-palette"/></svg><span id="theme-label">데이라이트</span><svg class="ic caret"><use href="#ic-chev-d"/></svg></button>
+          <button type="button" class="icon-btn" id="head-more" aria-label="작업 메뉴" aria-expanded="false"><svg class="ic"><use href="#ic-more"/></svg></button>
+          <div class="layout-group" role="group" aria-label="패널 여닫기">
+            <button type="button" class="icon-btn" id="toggle-sidebar" aria-pressed="true" aria-label="작업 목록 패널 여닫기"><svg class="ic"><use href="#ic-panel"/></svg></button>
+            <span class="layout-count" id="session-count">1</span>
+            <button type="button" class="icon-btn" id="toggle-inspector" aria-pressed="true" aria-label="작업 정보 패널 여닫기"><svg class="ic"><use href="#ic-sliders"/></svg></button>
+          </div>
+        </div>
+      </header>
+
+      <div class="center-body">
+        <div class="thread" id="thread">
+          <div class="chips" id="thread-chips">
+            <button type="button" class="chip chip-project" id="thread-project"><span id="chip-project">로컬 하네스</span></button>
+            <button type="button" class="icon-btn tiny" id="chip-more" aria-label="프로젝트 정보"><svg class="ic"><use href="#ic-more"/></svg></button>
+            <button type="button" class="icon-btn tiny" id="chip-add" aria-label="파일 첨부" disabled title="이 브리지는 파일 첨부를 지원하지 않습니다."><svg class="ic"><use href="#ic-plus"/></svg></button>
+            <button type="button" class="icon-btn tiny" id="chip-timer" aria-label="응답 시간" disabled title="응답에 걸린 시간은 위쪽에 표시합니다."><svg class="ic"><use href="#ic-timer"/></svg></button>
+            <button type="button" class="icon-btn tiny" id="chip-branch" aria-label="브랜치 목록" disabled title="브랜치 목록은 이 브리지에서 볼 수 없습니다."><svg class="ic"><use href="#ic-branch"/></svg></button>
+          </div>
+          <div class="search-bar" id="search-bar" hidden>
+            <svg class="ic"><use href="#ic-search"/></svg>
+            <input id="search-input" type="search" placeholder="대화에서 찾기" aria-label="검색어">
+            <button type="button" class="icon-btn tiny" id="search-close" aria-label="검색 닫기"><svg class="ic"><use href="#ic-x"/></svg></button>
+          </div>
+          <div class="transcript" id="transcript" role="log" aria-label="대화 기록"></div>
+        </div>
+      </div>
+
+      <section class="agents-card timeline-card journal-card" id="timeline" aria-label="AI 작업 일지">
+        <div class="agents-head journal-head">
+          <button type="button" class="agents-toggle" id="timeline-collapse" aria-expanded="true"><svg class="ic caret"><use href="#ic-chev-d"/></svg><span class="agents-title"><svg class="ic"><use href="#ic-timer"/></svg>AI 작업 일지</span></button>
+          <span class="tl-elapsed" id="timeline-elapsed" hidden>작업 중</span>
+          <span class="tl-verify" id="timeline-verify" data-state="unknown">검증 기록 없음</span>
+          <span class="tl-prov" id="timeline-provenance" data-source="structural" hidden></span>
+          <span class="tl-count" id="activity-count" title="이 작업에서 요약한 일지 수">일지 0줄</span>
+          <div class="seg small" id="timeline-modes" role="group" aria-label="일지 보기">
+            <button type="button" class="seg-btn" id="timeline-grouped" aria-pressed="true" aria-label="목적 중심 일지로 보기"><svg class="ic"><use href="#ic-list"/></svg><span>일지</span></button>
+            <button type="button" class="seg-btn" id="timeline-chrono" aria-pressed="false" aria-label="원본 사건 기록으로 보기"><svg class="ic"><use href="#ic-timer"/></svg><span>원본</span></button>
+          </div>
+        </div>
+        <div class="agents-body tl-body" id="timeline-body">
+          <ul class="journal-list" id="journal-rows" role="list" aria-label="AI가 한 일을 목적과 결과로 요약한 일지"></ul>
+          <ul class="act-rows" id="activity-rows" role="list" aria-label="원본 사건 기록" hidden></ul>
+          <p class="act-empty" id="activity-empty">기록된 활동 없음</p>
+          <p class="act-empty" id="timeline-empty">이 세션에는 아직 보고된 파일 작업이 없습니다. 추가·수정·삭제는 보고된 근거가 있을 때만 분류해 남깁니다.</p>
+          <details class="tl-detail" id="journal-detail">
+            <summary class="tl-detail-summary"><svg class="ic"><use href="#ic-file"/></svg><span>원본 기록 · 파일 변경 목록</span><span class="tl-count" id="timeline-count" title="도구가 보고한 파일 작업 수">0건</span></summary>
+            <div class="tl-files" id="tl-files">
+              <p class="tl-summary" id="timeline-summary">기록된 파일 작업 없음</p>
+              <p class="tl-counts" id="timeline-counts" aria-label="종류별 건수"></p>
+              <div class="tl-groups" id="timeline-groups" role="list"></div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section id="approvals" class="approvals" hidden aria-label="코어가 보낸 요청" aria-live="polite">
+        <article class="gate" id="gate" role="alert" aria-labelledby="gate-title">
+          <p class="gate-count" id="gate-count" hidden>1 / 1</p>
+          <h2 class="gate-title" id="gate-title" tabindex="-1">승인이 필요합니다</h2>
+          <p class="gate-target" id="gate-target" hidden></p>
+          <div class="gate-preview" id="gate-preview" hidden></div>
+          <p class="gate-note" id="gate-note" hidden></p>
+          <div class="gate-actions">
+            <button type="button" class="btn primary approve" id="approval-approve">승인</button>
+            <button type="button" class="btn reject deny" id="approval-deny">거절</button>
+          </div>
+          <details class="gate-scope" id="gate-scope" hidden>
+            <summary>승인 범위</summary>
+            <div class="gate-radios" id="gate-radios" role="radiogroup" aria-label="승인 범위"></div>
+          </details>
+          <p class="gate-folder mono" id="gate-folder" hidden></p>
+          <div class="gate-confirm" id="gate-confirm" hidden>
+            <p id="gate-confirm-text">이 폴더의 모든 write를 앞으로 승인합니다</p>
+            <div class="gate-actions">
+              <button type="button" class="btn primary approve" id="gate-confirm-yes">계속</button>
+              <button type="button" class="btn reject deny" id="gate-confirm-no">취소</button>
+            </div>
+          </div>
+          <details class="gate-more" id="gate-more" hidden>
+            <summary>자세히</summary>
+            <pre id="gate-raw"></pre>
+          </details>
+        </article>
+      </section>
+
+      <div class="composer-area">
+        <form id="composer" class="composer" autocomplete="off">
+          <label class="sr-only" for="prompt">요청 내용</label>
+          <textarea id="prompt" rows="2" placeholder="요청을 입력하세요" required></textarea>
+          <p id="send-reason" class="send-reason" role="status" hidden></p>
+          <div class="composer-row">
+            <button type="button" class="icon-btn round" id="composer-add" aria-label="파일 첨부" title="이 브리지는 파일 첨부를 지원하지 않습니다." disabled><svg class="ic"><use href="#ic-plus"/></svg></button>
+            <div class="controls">
+              <span class="auto-indicator" id="composer-auto" title="모델과 추론 등급은 게이트웨이가 고릅니다. 이 페이지에서는 고를 수 없습니다."><span class="auto-role" id="composer-auto-role" hidden></span><span class="auto-model" id="composer-auto-model">자동</span><span class="auto-decision" id="composer-auto-decision" hidden></span><span class="auto-detail" id="composer-auto-detail" hidden></span></span>
+            </div>
+            <div class="send-group">
+              <button type="button" class="icon-btn round" id="abort" aria-label="실행 멈추기" disabled><svg class="ic"><use href="#ic-stop"/></svg></button>
+              <button type="submit" class="icon-btn round send" id="send" aria-label="보내기" disabled><svg class="ic"><use href="#ic-arrow-up"/></svg></button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <footer class="status-bar composer-foot" id="status-bar" aria-label="세션 상태">
+        <div class="status-left foot-left">
+          <span class="foot-stats" id="foot-stats" role="group" aria-label="이번 세션 측정값">
+            <span class="foot-stat tokens" id="foot-tokens" data-report="none" title="이번 세션 누적 토큰"><b id="stat-tokens">0</b><span>토큰</span></span>
+            <span class="status-sep" aria-hidden="true">·</span>
+            <span class="foot-stat" id="foot-speed" data-report="none" title="최근 메시지에서 측정한 초당 토큰 수"><b id="stat-speed">0</b><span>tok/s</span></span>
+            <span class="status-sep" aria-hidden="true">·</span>
+            <span class="foot-stat cache" id="foot-cache" data-report="none" title="캐시에서 읽은 토큰 ÷ 프롬프트 토큰"><span>캐시 히트</span><b id="stat-cache">0.0%</b></span>
+          </span>
+        </div>
+        <div class="status-right foot-right">
+          <span class="foot-context" id="foot-right" title="보고된 컨텍스트 사용량">토큰 미보고</span>
+          <span class="status-divider" aria-hidden="true">|</span>
+          <button type="button" class="status-model" id="foot-model" data-report="none" aria-haspopup="menu" aria-expanded="false" title="게이트웨이가 고른 세션 모델"><b id="stat-model">VAYEX</b><span class="status-model-tag">Auto</span><svg class="ic caret"><use href="#ic-chev-d"/></svg></button>
+          <svg class="status-spinner" id="foot-spinner" viewBox="0 0 20 20" aria-hidden="true"><circle class="spinner-track" cx="10" cy="10" r="7.4"/><circle class="spinner-arc" cx="10" cy="10" r="7.4" stroke-dasharray="9 37" transform="rotate(-90 10 10)"/></svg>
+        </div>
+      </footer>
+    </main>
+
+    <div class="split" id="split-inspector" role="separator" aria-orientation="vertical" aria-label="정보 패널 너비 조절" aria-valuemin="300" aria-valuemax="560" aria-valuenow="364" tabindex="0" title="끌어서 정보 패널 너비를 조절합니다"></div>
+
+    <aside class="inspector" id="inspector" aria-label="작업 정보 패널">
+      <header class="col-head inspector-head">
+        <div class="insp-head-title">
+          <h2>작업 정보</h2>
+          <span class="insp-mode-chip" id="insp-mode-label">표준</span>
+        </div>
+        <div class="insp-head-tools">
+          <button type="button" class="icon-btn labeled xs" id="insp-chat" aria-label="대화로 이동" title="대화 입력창으로 이동"><svg class="ic"><use href="#ic-arrow-up"/></svg><span>대화</span></button>
+          <button type="button" class="icon-btn" id="insp-collapse" aria-label="정보 패널 접기" title="정보 패널 접기"><svg class="ic"><use href="#ic-chev-r"/></svg></button>
+          <button type="button" class="icon-btn" id="insp-expand" aria-label="정보 패널 확장" aria-pressed="false" title="정보 패널 확장"><svg class="ic"><use href="#ic-expand"/></svg></button>
+          <button type="button" class="icon-btn" id="insp-fullscreen" aria-label="정보 패널 전체 화면" aria-pressed="false" title="정보 패널 전체 화면 표시"><svg class="ic"><use href="#ic-maximize"/></svg></button>
+        </div>
+      </header>
+      <div class="insp-tabs" id="insp-tabs" role="tablist" aria-label="정보 패널 탭">
+        <button type="button" class="insp-tab" role="tab" id="tab-overview" data-tab="overview" aria-controls="pane-overview" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-overview"><svg class="ic"><use href="#ic-list"/></svg><span>개요</span></button>
+        <button type="button" class="insp-tab" role="tab" id="tab-agents" data-tab="agents" aria-controls="pane-agents" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-agents"><svg class="ic"><use href="#ic-work"/></svg><span>에이전트</span></button>
+        <button type="button" class="insp-tab" role="tab" id="tab-visualize" data-tab="visualize" aria-controls="pane-visualize" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-visualize"><svg class="ic"><use href="#ic-book"/></svg><span>문서 시각화</span></button>
+        <button type="button" class="insp-tab" role="tab" id="tab-stats" data-tab="stats" aria-controls="pane-stats" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-stats"><svg class="ic"><use href="#ic-chart"/></svg><span>통계</span></button>
+        <button type="button" class="insp-tab" role="tab" id="tab-preview" data-tab="preview" aria-controls="pane-preview" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-preview"><svg class="ic"><use href="#ic-eye"/></svg><span>미리보기</span></button>
+        <button type="button" class="insp-tab" role="tab" id="tab-diff" data-tab="diff" aria-controls="pane-diff" aria-selected="false" tabindex="-1" aria-describedby="hint-tab-diff"><svg class="ic"><use href="#ic-diff"/></svg><span>변경 검토</span></button>
+        <button type="button" class="insp-tab active" role="tab" id="tab-memory" data-tab="memory" aria-controls="pane-memory" aria-selected="true" tabindex="0" aria-describedby="hint-tab-memory"><svg class="ic"><use href="#ic-memory"/></svg><span>장기 기억</span></button>
+      </div>
+      <p class="insp-hint" id="insp-hint">AI가 저장한 규칙과 세션 기억.</p>
+      <div class="inspector-scroll" id="pane-overview" role="tabpanel" aria-labelledby="tab-overview" hidden>
+        <section class="panel" id="card-quick">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-sliders"/></svg>바로 가기</span></div>
+          <div class="quick-actions">
+            <button type="button" class="btn small" data-goto="chat">대화로</button>
+            <button type="button" class="btn small" data-goto="visualize">문서 만들기</button>
+            <button type="button" class="btn small" data-goto="stats">통계 보기</button>
+            <button type="button" class="btn small" data-goto="preview">미리보기</button>
+            <button type="button" class="btn small" data-goto="diff">변경 검토</button>
+            <button type="button" class="btn small" data-goto="memory">장기 기억</button>
+          </div>
+          <p class="consent-badge" id="consent-note" data-state="local">클라우드 차단 · 로컬 실행</p>
+        </section>
+        <section class="panel" id="card-context">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-context"/></svg>컨텍스트</span></div>
+          <div class="ctx-summary"><span><strong id="ctx-percent">—</strong></span><span><span class="ctx-total" id="ctx-total">미확인</span></span></div>
+          <div class="ctx-bar" id="ctx-bar" role="img" aria-label="컨텍스트 사용량"></div>
+        </section>
+
+        <section class="panel" id="card-workspace">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-folder"/></svg>작업 공간</span></div>
+          <dl class="kv">
+            <div><dt>폴더</dt><dd class="mono" id="ws-folder" title="브리지는 작업 폴더 경로를 보고하지 않습니다.">보고 없음</dd></div>
+            <div><dt>브랜치</dt><dd class="mono" id="ws-branch" title="브리지는 현재 브랜치를 보고하지 않습니다.">보고 없음</dd></div>
+            <div><dt>사용 모델</dt><dd id="ws-model">게이트웨이가 고름</dd></div>
+          </dl>
+          <div hidden>
+            <select id="route" aria-label="연결 경로"><option value="zdr_cloud">클라우드 · 저장 안 함</option><option value="any_cloud">클라우드 · 일반</option><option value="local_only">내 기기 루프백</option></select>
+            <p id="model-name"></p>
+            <p id="model-status"></p>
+            <input id="cloud-consent" type="checkbox" checked>
+            <p id="route-privacy"></p>
+          </div>
+        </section>
+
+        <section class="panel" id="card-changes" hidden>
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-file"/></svg>변경 내역</span><button type="button" class="link-btn" id="changes-review">변경 검토 ›</button></div>
+          <p class="panel-sub" id="changes-summary">바뀐 파일 없음</p>
+        </section>
+
+        <section class="panel" id="card-running">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-branch"/></svg>실행 중인 작업</span><button type="button" class="link-btn" id="running-manage" disabled title="하위 에이전트는 이 페이지에서 제어할 수 없습니다.">관리</button></div>
+          <p class="panel-sub"><span id="running-count">없음</span></p>
+          <ul class="run-list" id="running-rows"></ul>
+        </section>
+
+        <section class="panel" id="card-mcp">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-server"/></svg>MCP 서버</span><button type="button" class="link-btn" id="mcp-manage" disabled title="MCP 서버는 이 페이지에서 켜고 끌 수 없습니다.">관리</button></div>
+          <ul class="mcp-list" id="mcp-rows"></ul>
+        </section>
+
+        <section class="panel" id="card-bridge">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-lock"/></svg>브리지 연결</span><span class="panel-tag" id="bridge-tag">미확인</span></div>
+          <dl class="kv">
+            <div><dt>세션 ID</dt><dd class="mono" id="bridge-session">—</dd></div>
+            <div><dt>프로토콜</dt><dd class="mono" id="bridge-protocol">v2</dd></div>
+            <div><dt>전송 동의</dt><dd id="bridge-consent">동의함</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <div class="inspector-scroll" id="pane-agents" role="tabpanel" aria-labelledby="tab-agents" hidden>
+        <section class="agents-card" id="agents" aria-label="에이전트 현황">
+          <div class="agents-head">
+            <button type="button" class="agents-toggle" id="agents-collapse" aria-expanded="true"><svg class="ic caret"><use href="#ic-chev-d"/></svg><span class="agents-title"><svg class="ic"><use href="#ic-work"/></svg>에이전트<span class="agents-count" id="agents-count" title="하위 에이전트 없음">없음</span></span></button>
+            <div class="seg small" role="group" aria-label="에이전트 보기">
+              <button type="button" class="seg-btn" id="agents-list" aria-pressed="true"><svg class="ic"><use href="#ic-list"/></svg><span>목록</span></button>
+              <button type="button" class="seg-btn" id="agents-graph" aria-pressed="false"><svg class="ic"><use href="#ic-graph"/></svg><span>관계도</span></button>
+            </div>
+          </div>
+          <div class="agents-body" id="agents-body">
+            <div class="task-summary" id="task-summary">
+              <div class="ts-main"><span class="ts-name" id="task-name">작업 없음</span><span class="ts-state" id="task-state" data-state="waiting">대기</span></div>
+              <p class="ts-meta" id="task-meta">측정값 없음</p>
+              <p class="ts-verify" id="task-verify" data-state="unknown">검증 결과 없음</p>
+            </div>
+            <div class="lane-track" id="lane-track" aria-label="병렬 실행 레인" hidden></div>
+            <div class="agent-list" id="agent-list"></div>
+            <div class="agent-graph" id="agent-graph" hidden></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="inspector-scroll" id="pane-diff" role="tabpanel" aria-labelledby="tab-diff" hidden>
+        <section class="panel" id="card-session-changes">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-file"/></svg>이 세션의 변경 · 추가/수정/삭제</span></div>
+          <p class="panel-sub" id="changes-count">바뀐 파일 없음</p>
+          <ul class="file-list" id="changes-rows"></ul>
+        </section>
+        <section class="panel diff-panel">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-diff"/></svg>Diff 검토</span>
+            <span class="panel-tag" id="diff-source">DX 스냅샷</span>
+          </div>
+          <div class="diff-taskbar">
+            <label class="sr-only" for="diff-task-id">작업 ID</label>
+            <input id="diff-task-id" class="mono" type="text" autocomplete="off" spellcheck="false" placeholder="작업 ID">
+            <button type="button" class="btn small" id="diff-load">불러오기</button>
+          </div>
+          <p class="panel-sub" id="diff-summary">스냅샷 diff를 아직 불러오지 않았습니다.</p>
+          <div class="diff-toolbar">
+            <button type="button" class="btn small reject" id="diff-rollback" disabled><svg class="ic"><use href="#ic-undo"/></svg>전체 되돌리기</button>
+          </div>
+          <div class="diff-files" id="diff-files" aria-live="polite">
+            <p class="agent-empty">아직 불러온 diff가 없습니다. 작업 ID로 DX 백엔드의 스냅샷을 확인하세요.</p>
+          </div>
+          <form class="review-box" id="review-form" autocomplete="off">
+            <label for="review-note">검토 의견 · 변경 요청</label>
+            <textarea id="review-note" rows="2" placeholder="예: 여백을 조금 늘리고 안내 문구를 다듬어 주세요"></textarea>
+            <div class="review-actions">
+              <span class="review-hint" id="review-hint" role="status">의견을 보내면 입력창에 이어 붙입니다.</span>
+              <button type="submit" class="btn small primary" id="review-send">요청에 반영</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <div class="inspector-scroll" id="pane-preview" role="tabpanel" aria-labelledby="tab-preview" hidden>
+        <section class="panel preview-panel">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-eye"/></svg>실시간 미리보기</span>
+            <span class="panel-tag" id="preview-tag">미연결</span>
+          </div>
+          <div class="preview-bar">
+            <label class="sr-only" for="preview-url">미리보기 경로</label>
+            <input id="preview-url" class="mono" type="text" value="/preview/index.html" autocomplete="off" spellcheck="false">
+            <button type="button" class="icon-btn tiny" id="preview-reload" aria-label="미리보기 새로고침"><svg class="ic"><use href="#ic-refresh"/></svg></button>
+          </div>
+          <div class="preview-actions">
+            <button type="button" class="btn small" id="design-toggle" aria-pressed="false"><svg class="ic"><use href="#ic-cursor"/></svg><span id="design-label">디자인 모드 (요소 선택)</span></button>
+            <button type="button" class="link-btn" id="design-clear">선택 해제</button>
+          </div>
+          <div class="preview-stage" id="preview-stage">
+            <iframe id="preview-frame" title="프로젝트 실시간 미리보기"></iframe>
+          </div>
+          <p class="preview-note" id="preview-note">경로를 열면 그 화면이 표시됩니다. 디자인 모드를 켜고 요소를 클릭하거나, Tab으로 요소에 초점을 옮긴 뒤 Alt+Enter를 누르면 선택한 요소의 선택자와 속성이 입력창에 채워집니다.</p>
+          <div class="inspect-result" id="inspect-result" hidden>
+            <dl class="kv">
+              <div><dt>요소</dt><dd class="mono" id="inspect-selector">—</dd></div>
+              <div><dt>태그</dt><dd class="mono" id="inspect-tag">—</dd></div>
+              <div><dt>문구</dt><dd id="inspect-text">—</dd></div>
+            </dl>
+            <div class="inspect-styles" id="inspect-styles"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="inspector-scroll viz-doc-pane" id="pane-visualize" role="tabpanel" aria-labelledby="tab-visualize" hidden>
+        <section class="panel doc-panel" id="card-viz-doc">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-book"/></svg>세션 문서 생성</span>
+            <span class="panel-tag" id="viz-report-tag">HTML · PDF</span>
+          </div>
+          <p class="panel-sub">세션 기록으로 결과 문서를 만듭니다.</p>
+          <!-- Guides `forms` (2–5 mutually exclusive options are native radio buttons) and
+               `tabs` (this changes a generation parameter; it swaps no panel): one radio
+               group with four labels, each pill being the label of its own radio. -->
+          <fieldset class="doc-type-pills" id="viz-doc-types">
+            <legend class="sr-only">문서 유형</legend>
+            <label class="doc-type" data-doc-type="report"><input type="radio" name="doc-type" value="report" checked aria-describedby="hint-doc-report"><svg class="ic"><use href="#ic-file"/></svg><span>작업 결과 보고서</span></label>
+            <label class="doc-type" data-doc-type="study"><input type="radio" name="doc-type" value="study" aria-describedby="hint-doc-study"><svg class="ic"><use href="#ic-book"/></svg><span>선행 연구·기술 검토</span></label>
+            <label class="doc-type" data-doc-type="spec"><input type="radio" name="doc-type" value="spec" aria-describedby="hint-doc-spec"><svg class="ic"><use href="#ic-list"/></svg><span>시스템 아키텍처 명세서</span></label>
+            <label class="doc-type" data-doc-type="summary"><input type="radio" name="doc-type" value="summary" aria-describedby="hint-doc-summary"><svg class="ic"><use href="#ic-spark"/></svg><span>경영진·심사위원 1장 요약</span></label>
+          </fieldset>
+          <div class="doc-actions">
+            <button type="button" class="btn small primary" id="viz-doc-generate"><svg class="ic"><use href="#ic-spark"/></svg>문서 생성</button>
+            <button type="button" class="btn small" id="viz-doc-fullscreen" disabled><svg class="ic"><use href="#ic-maximize"/></svg>전체 화면 보기</button>
+            <button type="button" class="btn small" id="viz-doc-open" disabled><svg class="ic"><use href="#ic-eye"/></svg>새 탭에서 열기</button>
+            <button type="button" class="btn small" id="viz-doc-save" disabled><svg class="ic"><use href="#ic-download"/></svg>HTML 저장</button>
+            <button type="button" class="btn small" id="viz-doc-pdf" disabled><svg class="ic"><use href="#ic-download"/></svg>PDF 내보내기</button>
+          </div>
+          <div class="viz-doc-stage" id="viz-doc-stage">
+            <div class="viz-doc-empty" id="viz-doc-empty">
+              <svg class="ic"><use href="#ic-book"/></svg>
+              <strong id="viz-doc-empty-title">작업 기록 없음</strong>
+              <span id="viz-doc-empty-note">세션 작업 기록이 없습니다. 작업이 수행된 후 문서가 생성됩니다.</span>
+            </div>
+            <iframe id="viz-doc-frame" title="세션 결과 문서 미리보기" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
+          </div>
+          <p class="viz-note" id="viz-doc-status" role="status">문서 유형을 고르고 ‘문서 생성’을 누르면 이 자리에 미리보기가 열립니다.</p>
+        </section>
+        <section class="panel doc-list-panel">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-file"/></svg>보존된 세션 문서</span>
+            <span class="panel-tag" id="viz-doc-count">0개</span>
+          </div>
+          <ul class="doc-list" id="viz-doc-list"><li class="agent-empty">아직 생성한 문서가 없습니다.</li></ul>
+        </section>
+      </div>
+
+      <div class="inspector-scroll viz-stats-pane" id="pane-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
+        <section class="panel viz-panel">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-graph"/></svg>작업 관계도</span>
+            <button type="button" class="link-btn" id="viz-refresh">새로고침</button>
+          </div>
+          <div class="viz-stage" id="viz-graph" aria-label="메인 에이전트와 하위 에이전트 관계 그래프"></div>
+          <p class="viz-empty" id="viz-graph-empty" hidden>아직 보고된 작업 관계가 없습니다.</p>
+        </section>
+        <section class="panel viz-panel">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-gauge"/></svg>비용·토큰</span><span class="panel-tag" id="viz-cost-tag">로컬 보고</span></div>
+          <div class="viz-stage" id="viz-cost" aria-label="작업별 토큰과 비용 막대 차트"></div>
+          <p class="viz-note" id="viz-cost-note">토큰과 비용은 브리지가 보고한 값만 씁니다.</p>
+        </section>
+        <section class="panel viz-panel">
+          <div class="panel-head"><span class="panel-title"><svg class="ic"><use href="#ic-memory"/></svg>메모리 구성</span></div>
+          <div class="viz-stage" id="viz-memory" aria-label="메모리 상태와 종류별 구성"></div>
+          <p class="viz-note" id="viz-memory-note">메모리 API가 보고한 값만 씁니다.</p>
+        </section>
+      </div>
+
+      <div class="inspector-scroll" id="pane-memory" role="tabpanel" aria-labelledby="tab-memory">
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title"><svg class="ic"><use href="#ic-memory"/></svg>장기 메모리 현황</span>
+            <button type="button" class="link-btn" id="memory-refresh">새로고침</button>
+          </div>
+          <p class="panel-sub" id="memory-summary">메모리 계층 상태를 아직 확인하지 않았습니다.</p>
+          <dl class="kv">
+            <div><dt>활성</dt><dd id="memory-active">—</dd></div>
+            <div><dt>대체됨</dt><dd id="memory-superseded">—</dd></div>
+            <div><dt>격리</dt><dd id="memory-quarantined">—</dd></div>
+            <div><dt>임베딩</dt><dd id="memory-embedding" class="mono">—</dd></div>
+          </dl>
+          <ul class="file-list" id="memory-rows"><li class="agent-empty">아직 불러오지 않았습니다.</li></ul>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Guides `interest-triggered-tooltips` and `position-aware-tooltips`: every hint is
+       its own native `popover="hint"` element whose text is the described-by target of
+       its trigger, so the tooltip is a visual layer and no accessible name changes.
+       They live outside the panels because a container query makes the inspector a
+       containing block for fixed-position descendants. -->
+  <div class="hint-copy">
+    <div class="hint-tip" id="hint-tab-overview" popover="hint" role="tooltip">지금 상태와 바뀐 파일 요약</div>
+    <div class="hint-tip" id="hint-tab-agents" popover="hint" role="tooltip">메인 작업과 하위 에이전트 실행 현황</div>
+    <div class="hint-tip" id="hint-tab-visualize" popover="hint" role="tooltip">세션 기록으로 결과 문서를 만들고 미리보고 내보냅니다</div>
+    <div class="hint-tip" id="hint-tab-stats" popover="hint" role="tooltip">에이전트 관계, 토큰·비용, 장기 기억 구성 차트</div>
+    <div class="hint-tip" id="hint-tab-preview" popover="hint" role="tooltip">학생 부스 화면을 실제로 열어 보고 요소를 고릅니다</div>
+    <div class="hint-tip" id="hint-tab-diff" popover="hint" role="tooltip">AI가 바꾼 코드를 줄 단위로 비교하고 되돌립니다</div>
+    <div class="hint-tip" id="hint-tab-memory" popover="hint" role="tooltip">AI가 기억으로 남긴 내용을 확인합니다</div>
+    <div class="hint-tip" id="hint-doc-report" popover="hint" role="tooltip">이번 세션에서 무엇을 하려 했고, 어떻게 진행했으며, 무엇이 남았는지 순서대로 정리한 문서입니다.</div>
+    <div class="hint-tip" id="hint-doc-study" popover="hint" role="tooltip">이번 작업이 기대는 기술과 대안을 검토한 기록입니다. 각 단계가 어떤 근거로 채택되었는지 정리했습니다.</div>
+    <div class="hint-tip" id="hint-doc-spec" popover="hint" role="tooltip">구성 요소, 실행 경로, 로컬 모델 역할 분담을 명세 형태로 정리했습니다. 관찰된 사실만 적었습니다.</div>
+    <div class="hint-tip" id="hint-doc-summary" popover="hint" role="tooltip">한 장으로 읽는 요약입니다. 결론과 검증 결과를 앞에 두고 근거는 뒤에 붙였습니다.</div>
+  </div>
+
+  <!-- Guides `dialog` and `accessibility`: a native <dialog> opened with showModal().
+       The browser puts it in the top layer, makes the page behind it inert and owns
+       Escape and focus return, so no role="dialog", aria-modal, focus trap or inert
+       toggling is declared here. Closed is the dialog's own state, not [hidden]. -->
+  <dialog class="studio-backdrop" id="theme-studio" aria-labelledby="studio-title">
+    <section class="studio">
+      <header class="studio-head">
+        <div class="studio-head-copy">
+          <h2 id="studio-title">테마 스튜디오</h2>
+          <p>배경과 표면을 따로 조율합니다. 읽기 표면은 고대비를 유지합니다.</p>
+        </div>
+        <button type="button" class="icon-btn" id="theme-studio-close" aria-label="테마 스튜디오 닫기"><svg class="ic"><use href="#ic-x"/></svg></button>
+      </header>
+      <div class="studio-body">
+        <div class="studio-section">
+          <span class="studio-section-label">테마 프리셋</span>
+          <div class="studio-presets" id="studio-presets" role="radiogroup" aria-label="테마 프리셋"></div>
+        </div>
+        <div class="studio-section studio-custom">
+          <span class="studio-section-label">세부 조정</span>
+          <div class="studio-field">
+            <span class="studio-field-label">강조 색</span>
+            <div class="studio-swatches" id="studio-swatches"></div>
+            <div class="studio-accent-row">
+              <input type="color" id="studio-accent" aria-label="강조 색 직접 선택" value="#8ab4ff">
+              <span class="studio-mono" id="studio-accent-value">#8ab4ff</span>
+            </div>
+          </div>
+          <label class="studio-field" for="studio-intensity">
+            <span class="studio-field-label">배경 그라데이션·일러스트 농도 <b id="studio-intensity-label">70%</b></span>
+            <input type="range" id="studio-intensity" min="0" max="100" step="1" value="70">
+          </label>
+          <label class="studio-field" for="studio-alpha">
+            <span class="studio-field-label">패널 표면 불투명도 <b id="studio-alpha-label">92%</b></span>
+            <input type="range" id="studio-alpha" min="75" max="100" step="1" value="92">
+          </label>
+          <label class="studio-switch" for="studio-motion">
+            <input type="checkbox" id="studio-motion" checked>
+            <span class="studio-switch-track" aria-hidden="true"></span>
+            <span>배경 미세 애니메이션 <em>모션 감소를 원하면 끄세요</em></span>
+          </label>
+        </div>
+      </div>
+      <footer class="studio-foot">
+        <span class="studio-note" id="studio-note">변경은 즉시 적용되고 이 기기에 저장됩니다.</span>
+        <button type="button" class="btn small" id="studio-reset">기본값으로</button>
+      </footer>
+    </section>
+  </div>
+</body>
+</html>

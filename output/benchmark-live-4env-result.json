@@ -1,0 +1,4935 @@
+{
+  "measurement": "live",
+  "lane": "live_4env",
+  "evidence": "live_measured",
+  "generatedAt": "2026-11-08T12:59:43.297Z",
+  "startedAt": "2026-11-08T11:45:34.285Z",
+  "elapsedSeconds": 4440.3,
+  "command": "node scripts/benchmark-live-4env.mjs -n 3 --resume --out=output/benchmark-live-4env-result.json --md-out=output/benchmark-live-4env-report.md",
+  "repetitions": 3,
+  "totalSlots": 48,
+  "recordedRuns": 48,
+  "completedRuns": 48,
+  "aborted": false,
+  "abortReason": null,
+  "stopRule": {
+    "transportRetriesPerRun": 1,
+    "retryPauseMs": 2000,
+    "perRunTimeoutMs": {
+      "codex-cli": 240000,
+      "claude-opus-5-5": 180000,
+      "deepseek-v4.1-flash-1017": 180000,
+      "vayex-harness": 300000
+    },
+    "abortAfterConsecutiveTransportFailures": 5,
+    "note": "503/네트워크 수준 실패는 2초 간격 1회 재시도 후 실패로 기록하며, 지표를 추정하거나 채우지 않는다."
+  },
+  "remote": {
+    "gatewayBaseUrl": "https://[REDACTED_GATEWAY_HOST]/v1",
+    "sshHost": "[REDACTED_GATEWAY_IP]",
+    "codexCli": "codex-cli 0.150.1 (원격 C:\\Users\\[REDACTED_USER]\\AppData\\Roaming\\npm\\codex.cmd)",
+    "claudeCli": "원격 미설치 → Claude 환경은 단일 모델 호출로 측정",
+    "priceEvidence": "원격 ~/.opencodex/config.json 의 provider authMode 및 modelProfile 을 근거로 판정. 공식 1M 토큰 단가표가 존재하지 않는 모델은 비용을 추정하지 않고 \"미공개(구독/무과금 티어)\"로 표기한다."
+  },
+  "costView": {
+    "separatedColumns": true,
+    "columns": [
+      {
+        "id": "measured_tokens",
+        "label": "측정 토큰량 (live usage)",
+        "assumption": "없음 — 응답 usage 실측값"
+      },
+      {
+        "id": "published_price_cost",
+        "label": "공시 단가 비용",
+        "assumption": "공개 1M 토큰 단가표가 있는 모델에만 산출. 없으면 \"미공개(구독/무과금 티어)\"로 표기하며 추정값을 넣지 않는다."
+      },
+      {
+        "id": "subscription_equivalent_cost",
+        "label": "구독 등가 비용(가정)",
+        "assumption": "구독/무과금 쿼터 라우트 가정 → 단일 호출 한계 현금 비용 $0.000000. 실제 청구서 근거가 아니므로 가정 열로 분리."
+      }
+    ],
+    "allPublishedPriceUnavailable": true
+  },
+  "environments": {
+    "codex-cli": {
+      "id": "codex-cli",
+      "name": "Codex CLI (원격 codex exec, 미측정 — 원격 제공자 유지보수/용량 초과)",
+      "kind": "cli_agent",
+      "status": "unmeasured_blocked_by_provider",
+      "statusReason": "원격 제공자(gpt-6.1-sol) 유지보수 창 및 서버 용량 초과(503 server_is_overloaded, native-main profile maintenance)로 전 슬롯 시도 불가. 0% 성공률이 아닌 미측정 상태로 기록함.",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "원격 C:\\Users\\[REDACTED_USER] 에 설치된 codex-cli 0.150.1 + opencodex OpenResponses provider. model=gpt-6.1-sol, model_reasoning_effort=high",
+      "note": "로컬 ChatGPT 계정 직접 호출로는 model_not_found(400)가 반환되어, 실제 라우트인 opencodex provider 경유로 실행한다.",
+      "billingMode": "subscription",
+      "billingEvidence": "providers.openai.authMode=\"forward\", baseUrl=\"https://chatgpt.com/backend-api/codex\" (ChatGPT 구독 계정 라우팅)",
+      "publishedRates": null,
+      "publishedPriceLabel": "미공개(구독/무과금 티어)",
+      "publishedPriceReason": "config 의 openai provider 는 authMode=forward(구독 계정 포워딩)이며 공개 1M 토큰 단가표가 없다.",
+      "subscriptionEquivalentNote": "가정: 정액 구독 할당량 내 실행으로 단일 호출의 한계 현금 비용은 $0.000000 (정액료는 호출 단위로 배분하지 않음).",
+      "subscriptionMultiplier": 0,
+      "runTimeoutMs": 240000
+    },
+    "claude-opus-5-5": {
+      "id": "claude-opus-5-5",
+      "name": "Claude Opus 5.5, 원격 게이트웨이 경유 단일 모델 호출 (Claude CLI 미설치)",
+      "kind": "single_model_gateway_call",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=anthropic/claude-opus-5-5, reasoning_effort=medium, TLS 443 암호화)",
+      "note": "Claude Opus 5.5, 원격 게이트웨이 경유 단일 모델 호출 (Claude CLI 미설치)",
+      "billingMode": "subscription_oauth",
+      "billingEvidence": "providers.anthropic.authMode=\"oauth\" → Claude 구독 OAuth 경로, 종량 현금 과금 없음",
+      "publishedRates": null,
+      "publishedPriceLabel": "미공개(구독/무과금 티어)",
+      "publishedPriceReason": "OAuth 구독 경로 모델로 공개 종량 단가표가 원격 config 에 존재하지 않는다.",
+      "subscriptionEquivalentNote": "가정: Claude 구독 OAuth 할당량 내 실행으로 단일 호출의 한계 현금 비용은 $0.000000.",
+      "subscriptionMultiplier": 0,
+      "runTimeoutMs": 180000
+    },
+    "deepseek-v4.1-flash-1017": {
+      "id": "deepseek-v4.1-flash-1017",
+      "name": "DeepSeek V4.1 Flash 1017 (최소비용 기준 모델)",
+      "kind": "single_model_gateway_call",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=thehive/deepseek-ai/deepseek-v4.1-flash-1017, reasoning_effort=high, TLS 443 암호화)",
+      "note": "최소비용 기준 모델 (thehive API key 경로, API Key 모드, 단가 비공개).",
+      "billingMode": "metered_api_key_no_public_card",
+      "billingEvidence": "providers.thehive.authMode=\"key\" (API 키 경로) / 단가 정보는 config에 없음 → 종량 청구 가능하나 단가표 미공개",
+      "publishedRates": null,
+      "publishedPriceLabel": "미공개(구독/무과금 티어)",
+      "publishedPriceReason": "thehive provider 는 API 키 경로이나 공개 1M 토큰 단가표가 없고 config 에 단가 항목이 없다.",
+      "subscriptionEquivalentNote": "가정: 단가표가 없으므로 달러 등가 비용을 산출하지 않는다(미공개). 측정된 것은 토큰량뿐이다.",
+      "subscriptionMultiplier": null,
+      "runTimeoutMs": 180000
+    },
+    "vayex-harness": {
+      "id": "vayex-harness",
+      "name": "VAYEX 하네스 (역할 라우팅: combo/main)",
+      "kind": "harness_role_routing",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=combo/main, effort 미지정, TLS 443 암호화 → 게이트웨이 jev 결정모델 nace/drex-max-v1.1 가 모델·effort 선택)",
+      "note": "VAYEX 하네스의 상류 엔드포인트가 기동되지 않아 같은 프로토콜(역할 요청 → combo/*)으로 측정했으며, 이 경로를 그대로 표기한다.",
+      "billingMode": "role_routing_quota",
+      "billingEvidence": "combo/main targets 는 openai(codex 구독)·combo(claude 구독/무과금)·google-antigravity(구독) 등 구독·무과금 경로만 사용하며 decisionProvider=\"nace\"(drex-max-v1.1, API key, 단가 비공개)",
+      "publishedRates": null,
+      "publishedPriceLabel": "미공개(구독/무과금 티어)",
+      "publishedPriceReason": "라우팅 대상 모델들의 단가표가 공개되어 있지 않다(구독/무과금 티어 + drex-max-v1.1 단가 미공개).",
+      "subscriptionEquivalentNote": "가정: 구독/무과금 경로 라우팅으로 단일 호출의 한계 현금 비용은 $0.000000.",
+      "subscriptionMultiplier": 0,
+      "runTimeoutMs": 300000
+    }
+  },
+  "environmentSummaries": {
+    "codex-cli": {
+      "envId": "codex-cli",
+      "name": "Codex CLI (원격 codex exec, 미측정 — 원격 제공자 유지보수/용량 초과)",
+      "kind": "cli_agent",
+      "status": "unmeasured_blocked_by_provider",
+      "statusReason": "원격 제공자(gpt-6.1-sol) 유지보수 창 및 서버 용량 초과(Selected model is at capacity)로 전 슬롯 시도 불가. 0% 성공률이 아닌 미측정 상태로 기록함.",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "route": "원격 codex-cli 0.150.1 + opencodex OpenResponses provider. model=gpt-6.1-sol, model_reasoning_effort=high",
+      "runs": 12,
+      "successes": null,
+      "overallSuccessRate": null,
+      "overallSuccessRatePercent": "미측정(측정 불가)",
+      "fullyPassingTasks": null,
+      "totalTasks": 4,
+      "latency": {
+        "wallMsPerSuccessfulRun": null,
+        "wallMsAllRuns": {
+          "median": 19976,
+          "mean": 20294.6667,
+          "min": 19608,
+          "max": 23235,
+          "stdDev": 928.0263
+        },
+        "durationMsAllRuns": {
+          "median": 46295.5,
+          "mean": 46823.5,
+          "min": 45548,
+          "max": 52110,
+          "stdDev": 1681.1999
+        },
+        "ttftMsPerSuccessfulRun": null
+      },
+      "tokens": null,
+      "costs": {
+        "publishedPriceLabel": "미측정(측정 불가)",
+        "publishedPriceReason": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+        "publishedRates": {
+          "input": 0.2,
+          "output": 1,
+          "cacheRead": 0.01,
+          "cacheWrite": 0.25
+        },
+        "publishedPriceCostUsd": null,
+        "costPerSuccessfulTaskUsd": null,
+        "subscriptionEquivalentUsd": null,
+        "subscriptionEquivalentLabel": "구독 쿼터 한계 유출 $0.00 (가정)",
+        "subscriptionEquivalentNote": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+      },
+      "failureReasons": [
+        "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+      ]
+    },
+    "claude-opus-5-5": {
+      "envId": "claude-opus-5-5",
+      "name": "Claude Opus 5.5, 원격 게이트웨이 경유 단일 모델 호출 (Claude CLI 미설치)",
+      "kind": "single_model_gateway_call",
+      "status": "measured",
+      "statusReason": null,
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=anthropic/claude-opus-5-5, reasoning_effort=medium, TLS 443 암호화)",
+      "runs": 12,
+      "successes": 9,
+      "overallSuccessRate": 0.75,
+      "overallSuccessRatePercent": "75.0%",
+      "fullyPassingTasks": 3,
+      "totalTasks": 4,
+      "latency": {
+        "wallMsPerSuccessfulRun": 9965,
+        "wallMsAllRuns": {
+          "median": 15767.5,
+          "mean": 19793.5833,
+          "min": 2320,
+          "max": 46721,
+          "stdDev": 15472.4285
+        },
+        "durationMsAllRuns": {
+          "median": 15772.5,
+          "mean": 19866.6667,
+          "min": 2322,
+          "max": 46994,
+          "stdDev": 15576.0707
+        },
+        "ttftMsPerSuccessfulRun": null
+      },
+      "tokens": {
+        "measuredRuns": 12,
+        "promptTotal": 12651,
+        "completionTotal": 28853,
+        "cachedTotal": 12603,
+        "total": 41504,
+        "perSuccessfulRunMedian": 2043,
+        "perSuccessfulRunMean": 3344
+      },
+      "costs": {
+        "publishedPriceLabel": "computed",
+        "publishedPriceReason": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+        "publishedRates": {
+          "input": 0.08,
+          "output": 0.4,
+          "cacheRead": 0.004,
+          "cacheWrite": 0.16
+        },
+        "publishedPriceCostUsd": 0.01159545,
+        "costPerSuccessfulTaskUsd": 0.00386515,
+        "subscriptionEquivalentUsd": null,
+        "subscriptionEquivalentLabel": "구독 쿼터 한계 유출 $0.00 (가정)",
+        "subscriptionEquivalentNote": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+      },
+      "failureReasons": [
+        "3/5 hidden tests failed: Renders title and value correctly; Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+        "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+      ]
+    },
+    "deepseek-v4.1-flash-1017": {
+      "envId": "deepseek-v4.1-flash-1017",
+      "name": "DeepSeek V4.1 Flash 1017 (최소비용 기준 모델)",
+      "kind": "single_model_gateway_call",
+      "status": "measured",
+      "statusReason": null,
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=thehive/deepseek-ai/deepseek-v4.1-flash-1017, reasoning_effort=high, TLS 443 암호화)",
+      "runs": 12,
+      "successes": 9,
+      "overallSuccessRate": 0.75,
+      "overallSuccessRatePercent": "75.0%",
+      "fullyPassingTasks": 3,
+      "totalTasks": 4,
+      "latency": {
+        "wallMsPerSuccessfulRun": 38589,
+        "wallMsAllRuns": {
+          "median": 73678.5,
+          "mean": 69855.0833,
+          "min": 3624,
+          "max": 158204,
+          "stdDev": 50659.4054
+        },
+        "durationMsAllRuns": {
+          "median": 73682.5,
+          "mean": 69927.3333,
+          "min": 3626,
+          "max": 158483,
+          "stdDev": 50739.6828
+        },
+        "ttftMsPerSuccessfulRun": null
+      },
+      "tokens": {
+        "measuredRuns": 12,
+        "promptTotal": 5133,
+        "completionTotal": 138122,
+        "cachedTotal": 768,
+        "total": 143255,
+        "perSuccessfulRunMedian": 6046,
+        "perSuccessfulRunMean": 10596.8
+      },
+      "costs": {
+        "publishedPriceLabel": "computed",
+        "publishedPriceReason": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+        "publishedRates": {
+          "input": 0.0081,
+          "output": 0.0323,
+          "cacheRead": 0.00016,
+          "cacheWrite": 0
+        },
+        "publishedPriceCostUsd": 0.00449682,
+        "costPerSuccessfulTaskUsd": 0.00149894,
+        "subscriptionEquivalentUsd": null,
+        "subscriptionEquivalentLabel": "구독 쿼터 한계 유출 $0.00 (가정)",
+        "subscriptionEquivalentNote": "종량 과제 청구 기준"
+      },
+      "failureReasons": [
+        "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+        "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)"
+      ]
+    },
+    "vayex-harness": {
+      "envId": "vayex-harness",
+      "name": "VAYEX 하네스 (역할 라우팅: combo/main)",
+      "kind": "harness_role_routing",
+      "status": "measured",
+      "statusReason": null,
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "route": "POST https://[REDACTED_GATEWAY_HOST]/v1/chat/completions (model=combo/main, effort 미지정, TLS 443 암호화 → 게이트웨이 jev 결정모델 drex-max-v1.1 가 모델·effort 선택)",
+      "runs": 12,
+      "successes": 7,
+      "overallSuccessRate": 0.5833,
+      "overallSuccessRatePercent": "58.3%",
+      "fullyPassingTasks": 2,
+      "totalTasks": 4,
+      "latency": {
+        "wallMsPerSuccessfulRun": 55353,
+        "wallMsAllRuns": {
+          "median": 67435.5,
+          "mean": 73239.5833,
+          "min": 4949,
+          "max": 169807,
+          "stdDev": 57327.8097
+        },
+        "durationMsAllRuns": {
+          "median": 67579.5,
+          "mean": 103645.75,
+          "min": 4951,
+          "max": 306114,
+          "stdDev": 100911.5024
+        },
+        "ttftMsPerSuccessfulRun": {
+          "median": 1874,
+          "mean": 1940.2857,
+          "min": 1578,
+          "max": 2450,
+          "stdDev": 255.9803
+        }
+      },
+      "tokens": {
+        "measuredRuns": 12,
+        "promptTotal": 8584,
+        "completionTotal": 88483,
+        "cachedTotal": 7158,
+        "total": 97067,
+        "perSuccessfulRunMedian": 5971,
+        "perSuccessfulRunMean": 6016.9
+      },
+      "costs": {
+        "publishedPriceLabel": "computed",
+        "publishedPriceReason": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+        "publishedRates": {
+          "input": 0.03,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        },
+        "publishedPriceCostUsd": 0.00004278,
+        "costPerSuccessfulTaskUsd": 0.00002139,
+        "subscriptionEquivalentUsd": null,
+        "subscriptionEquivalentLabel": "구독 쿼터 한계 유출 $0.00 (가정)",
+        "subscriptionEquivalentNote": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+      },
+      "failureReasons": [
+        "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)",
+        "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+        "3/5 hidden tests failed: Cancelled tasks clean up timers immediately; Listener count does not increase per retry attempt; High concurrency 500 tasks stress test leaves 0 dangling listeners and timers"
+      ]
+    }
+  },
+  "perEnvSuccess": {
+    "codex-cli": "미측정(측정 불가)",
+    "claude-opus-5-5": "9/12",
+    "deepseek-v4.1-flash-1017": "9/12",
+    "vayex-harness": "7/12"
+  },
+  "taskAggregates": [
+    {
+      "envId": "codex-cli",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetitions": 3,
+      "successes": null,
+      "successRate": null,
+      "passRate": null,
+      "wallMs": {
+        "median": 20054,
+        "mean": 20185,
+        "min": 19965,
+        "max": 20536,
+        "stdDev": 250.8399
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": null,
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 2,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 3,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        }
+      ]
+    },
+    {
+      "envId": "codex-cli",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetitions": 3,
+      "successes": null,
+      "successRate": null,
+      "passRate": null,
+      "wallMs": {
+        "median": 19698,
+        "mean": 19751,
+        "min": 19608,
+        "max": 19947,
+        "stdDev": 143.3806
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": null,
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 2,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 3,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        }
+      ]
+    },
+    {
+      "envId": "codex-cli",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetitions": 3,
+      "successes": null,
+      "successRate": null,
+      "passRate": null,
+      "wallMs": {
+        "median": 20429,
+        "mean": 21347.3333,
+        "min": 20378,
+        "max": 23235,
+        "stdDev": 1334.9443
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": null,
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 2,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 3,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        }
+      ]
+    },
+    {
+      "envId": "codex-cli",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetitions": 3,
+      "successes": null,
+      "successRate": null,
+      "passRate": null,
+      "wallMs": {
+        "median": 19850,
+        "mean": 19895.3333,
+        "min": 19849,
+        "max": 19987,
+        "stdDev": 64.8194
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": null,
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 2,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        },
+        {
+          "repetition": 3,
+          "reason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model."
+        }
+      ]
+    },
+    {
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 2460,
+        "mean": 2603.6667,
+        "min": 2320,
+        "max": 3031,
+        "stdDev": 307.5281
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 1135,
+        "mean": 1162,
+        "min": 1135,
+        "max": 1216,
+        "stdDev": 38.1838
+      },
+      "failures": []
+    },
+    {
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetitions": 3,
+      "successes": 0,
+      "successRate": 0,
+      "passRate": 0.4667,
+      "wallMs": {
+        "median": 24409,
+        "mean": 23250.3333,
+        "min": 20357,
+        "max": 24985,
+        "stdDev": 2059.3652
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 3834,
+        "mean": 3802.6667,
+        "min": 3377,
+        "max": 4197,
+        "stdDev": 335.496
+      },
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "3/5 hidden tests failed: Renders title and value correctly; Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+        },
+        {
+          "repetition": 2,
+          "reason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+        },
+        {
+          "repetition": 3,
+          "reason": "3/5 hidden tests failed: Renders title and value correctly; Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+        }
+      ]
+    },
+    {
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 9965,
+        "mean": 10164,
+        "min": 9349,
+        "max": 11178,
+        "stdDev": 759.8294
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 2043,
+        "mean": 2047.6667,
+        "min": 1996,
+        "max": 2104,
+        "stdDev": 44.2141
+      },
+      "failures": []
+    },
+    {
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 42076,
+        "mean": 43156.3333,
+        "min": 40672,
+        "max": 46721,
+        "stdDev": 2584.9488
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 6680,
+        "mean": 6822.3333,
+        "min": 6559,
+        "max": 7228,
+        "stdDev": 291.072
+      },
+      "failures": []
+    },
+    {
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 4072,
+        "mean": 4997.6667,
+        "min": 3624,
+        "max": 7297,
+        "stdDev": 1636.1288
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 665,
+        "mean": 650.3333,
+        "min": 618,
+        "max": 668,
+        "stdDev": 22.8959
+      },
+      "failures": []
+    },
+    {
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetitions": 3,
+      "successes": 0,
+      "successRate": 0,
+      "passRate": 0.7333,
+      "wallMs": {
+        "median": 96791,
+        "mean": 97544.3333,
+        "min": 79671,
+        "max": 116171,
+        "stdDev": 14910.5809
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 15330,
+        "mean": 15961.3333,
+        "min": 13318,
+        "max": 19236,
+        "stdDev": 2456.911
+      },
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+        },
+        {
+          "repetition": 2,
+          "reason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)"
+        },
+        {
+          "repetition": 3,
+          "reason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)"
+        }
+      ]
+    },
+    {
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 38589,
+        "mean": 47913,
+        "min": 37464,
+        "max": 67686,
+        "stdDev": 13989.1637
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 6046,
+        "mean": 7479,
+        "min": 5739,
+        "max": 10652,
+        "stdDev": 2247.1477
+      },
+      "failures": []
+    },
+    {
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 140861,
+        "mean": 128965.3333,
+        "min": 87831,
+        "max": 158204,
+        "stdDev": 29935.7083
+      },
+      "ttftMs": {
+        "median": 0,
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdDev": 0
+      },
+      "tokens": {
+        "median": 24830,
+        "mean": 23661,
+        "min": 17251,
+        "max": 28902,
+        "stdDev": 4827.7925
+      },
+      "failures": []
+    },
+    {
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 5617,
+        "mean": 6392,
+        "min": 4949,
+        "max": 8610,
+        "stdDev": 1591.8959
+      },
+      "ttftMs": {
+        "median": 2114,
+        "mean": 2168,
+        "min": 1940,
+        "max": 2450,
+        "stdDev": 211.679
+      },
+      "tokens": {
+        "median": 908,
+        "mean": 966.6667,
+        "min": 804,
+        "max": 1188,
+        "stdDev": 162.1632
+      },
+      "failures": []
+    },
+    {
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetitions": 3,
+      "successes": 0,
+      "successRate": 0,
+      "passRate": 0.7333,
+      "wallMs": {
+        "median": 124106,
+        "mean": 134064.6667,
+        "min": 108281,
+        "max": 169807,
+        "stdDev": 26086.3112
+      },
+      "ttftMs": {
+        "median": 1999,
+        "mean": 1998.3333,
+        "min": 1912,
+        "max": 2084,
+        "stdDev": 70.2203
+      },
+      "tokens": {
+        "median": 14003,
+        "mean": 14651,
+        "min": 12219,
+        "max": 17731,
+        "stdDev": 2296.4413
+      },
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)"
+        },
+        {
+          "repetition": 2,
+          "reason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support"
+        },
+        {
+          "repetition": 3,
+          "reason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)"
+        }
+      ]
+    },
+    {
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetitions": 3,
+      "successes": 3,
+      "successRate": 1,
+      "passRate": 1,
+      "wallMs": {
+        "median": 70381,
+        "mean": 74637,
+        "min": 55353,
+        "max": 98177,
+        "stdDev": 17739.9529
+      },
+      "ttftMs": {
+        "median": 1831,
+        "mean": 1833.3333,
+        "min": 1795,
+        "max": 1874,
+        "stdDev": 32.2938
+      },
+      "tokens": {
+        "median": 7716,
+        "mean": 7893.3333,
+        "min": 5971,
+        "max": 9993,
+        "stdDev": 1646.7557
+      },
+      "failures": []
+    },
+    {
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetitions": 3,
+      "successes": 1,
+      "successRate": 0.3333,
+      "passRate": 0.6,
+      "wallMs": {
+        "median": 64490,
+        "mean": 77864.6667,
+        "min": 8390,
+        "max": 160714,
+        "stdDev": 62901.0415
+      },
+      "ttftMs": {
+        "median": 1805,
+        "mean": 22611.6667,
+        "min": 1578,
+        "max": 64452,
+        "stdDev": 29585.7286
+      },
+      "tokens": {
+        "median": 9298,
+        "mean": 8844.6667,
+        "min": 1698,
+        "max": 15538,
+        "stdDev": 5659.2422
+      },
+      "failures": [
+        {
+          "repetition": 1,
+          "reason": "3/5 hidden tests failed: Cancelled tasks clean up timers immediately; Listener count does not increase per retry attempt; High concurrency 500 tasks stress test leaves 0 dangling listeners and timers"
+        },
+        {
+          "repetition": 3,
+          "reason": "3/5 hidden tests failed: Cancelled tasks clean up timers immediately; Listener count does not increase per retry attempt; High concurrency 500 tasks stress test leaves 0 dangling listeners and timers"
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "runId": "live_task-a-single-line-fix_codex-cli_rep1",
+      "envId": "codex-cli",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:45:34.285Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 20054,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 45968,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_codex-cli_rep2",
+      "envId": "codex-cli",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:46:20.256Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19965,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46091,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_codex-cli_rep3",
+      "envId": "codex-cli",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:47:06.349Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 20536,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46742,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_codex-cli_rep1",
+      "envId": "codex-cli",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:47:53.093Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19608,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46440,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_codex-cli_rep2",
+      "envId": "codex-cli",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:48:39.535Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19698,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46855,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_codex-cli_rep3",
+      "envId": "codex-cli",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:49:26.391Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19947,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46022,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_codex-cli_rep1",
+      "envId": "codex-cli",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:50:12.414Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 20429,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46567,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_codex-cli_rep2",
+      "envId": "codex-cli",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:50:58.983Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 23235,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 52110,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_codex-cli_rep3",
+      "envId": "codex-cli",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:51:51.094Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 20378,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 47623,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_codex-cli_rep1",
+      "envId": "codex-cli",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:52:38.718Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19849,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 45548,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_codex-cli_rep2",
+      "envId": "codex-cli",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:53:24.268Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19850,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 45765,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_codex-cli_rep3",
+      "envId": "codex-cli",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "codex_exec",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "resolveModel": "gpt-6.1-sol",
+      "startedAt": "2026-11-08T11:54:10.035Z",
+      "success": false,
+      "failureReason": "Selected model is at capacity. Please try a different model. | Selected model is at capacity. Please try a different model.",
+      "failureKind": "transport_error",
+      "passRate": null,
+      "testResults": [],
+      "wallMs": 19987,
+      "ttftMs": null,
+      "tokens": null,
+      "usageSource": "usage not reported by transport",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0,
+          "total": 0,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": null,
+          "label": "미측정(측정 불가)",
+          "rates": {
+            "input": 0.2,
+            "output": 1,
+            "cacheRead": 0.01,
+            "cacheWrite": 0.25
+          },
+          "assumption": "완료된 실행이 없어 단가표가 있어도 비용을 산출하지 않는다.",
+          "evidence": "사용자 제공 단가표: gpt-6.1-sol (input $0.20, output $1.00, cacheRead $0.01, cacheWrite $0.25 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 정액 구독 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 46151,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:54:56.188Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 2460,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 909,
+        "completion": 226,
+        "cached": 905,
+        "reasoning": 0,
+        "total": 1135,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 909,
+          "completion": 226,
+          "cached": 905,
+          "total": 1135,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00009434,
+          "label": "$0.000094",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 2463,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:54:58.653Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 2320,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 909,
+        "completion": 226,
+        "cached": 905,
+        "reasoning": 0,
+        "total": 1135,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 909,
+          "completion": 226,
+          "cached": 905,
+          "total": 1135,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00009434,
+          "label": "$0.000094",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 2322,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:55:00.977Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 3031,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 909,
+        "completion": 307,
+        "cached": 905,
+        "reasoning": 54,
+        "total": 1216,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 909,
+          "completion": 307,
+          "cached": 905,
+          "total": 1216,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00012674,
+          "label": "$0.000127",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 3034,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:55:04.012Z",
+      "success": false,
+      "failureReason": "3/5 hidden tests failed: Renders title and value correctly; Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.4,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": false,
+          "reason": "rendered markup is missing \"84.2%\""
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": false,
+          "reason": "dark-mode render is missing theme-dark/dark-mode class"
+        }
+      ],
+      "wallMs": 24985,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 870,
+        "completion": 3327,
+        "cached": 866,
+        "reasoning": 390,
+        "total": 4197,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 870,
+          "completion": 3327,
+          "cached": 866,
+          "total": 4197,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00133458,
+          "label": "$0.001335",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 25001,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:55:29.015Z",
+      "success": false,
+      "failureReason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.6,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": false,
+          "reason": "dark-mode render is missing theme-dark/dark-mode class"
+        }
+      ],
+      "wallMs": 20357,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 870,
+        "completion": 2507,
+        "cached": 866,
+        "reasoning": 164,
+        "total": 3377,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 870,
+          "completion": 2507,
+          "cached": 866,
+          "total": 3377,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00100658,
+          "label": "$0.001007",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 20362,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:55:49.379Z",
+      "success": false,
+      "failureReason": "3/5 hidden tests failed: Renders title and value correctly; Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.4,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": false,
+          "reason": "rendered markup is missing \"84.2%\""
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": false,
+          "reason": "dark-mode render is missing theme-dark/dark-mode class"
+        }
+      ],
+      "wallMs": 24409,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 870,
+        "completion": 2964,
+        "cached": 866,
+        "reasoning": 218,
+        "total": 3834,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 870,
+          "completion": 2964,
+          "cached": 866,
+          "total": 3834,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00118938,
+          "label": "$0.001189",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 24412,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:56:13.794Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 11178,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1036,
+        "completion": 1068,
+        "cached": 1032,
+        "reasoning": 417,
+        "total": 2104,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1036,
+          "completion": 1068,
+          "cached": 1032,
+          "total": 2104,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00043165,
+          "label": "$0.000432",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 11183,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:56:24.979Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 9965,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1036,
+        "completion": 960,
+        "cached": 1032,
+        "reasoning": 352,
+        "total": 1996,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1036,
+          "completion": 960,
+          "cached": 1032,
+          "total": 1996,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00038845,
+          "label": "$0.000388",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 9970,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:56:34.951Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 9349,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1036,
+        "completion": 1007,
+        "cached": 1032,
+        "reasoning": 356,
+        "total": 2043,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1036,
+          "completion": 1007,
+          "cached": 1032,
+          "total": 2043,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00040725,
+          "label": "$0.000407",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 9353,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_claude-opus-5-5_rep1",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:56:44.306Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 42076,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1402,
+        "completion": 5278,
+        "cached": 1398,
+        "reasoning": 1568,
+        "total": 6680,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1402,
+          "completion": 5278,
+          "cached": 1398,
+          "total": 6680,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00211711,
+          "label": "$0.002117",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 42357,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_claude-opus-5-5_rep2",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:57:26.665Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 46721,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1402,
+        "completion": 5826,
+        "cached": 1398,
+        "reasoning": 1970,
+        "total": 7228,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1402,
+          "completion": 5826,
+          "cached": 1398,
+          "total": 7228,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00233631,
+          "label": "$0.002336",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 46994,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_claude-opus-5-5_rep3",
+      "envId": "claude-opus-5-5",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "anthropic/claude-opus-5-5",
+      "reasoningEffort": "medium",
+      "resolveModel": "anthropic/claude-opus-5-5",
+      "startedAt": "2026-11-08T11:58:13.662Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 40672,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 1402,
+        "completion": 5157,
+        "cached": 1398,
+        "reasoning": 1474,
+        "total": 6559,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1402,
+          "completion": 5157,
+          "cached": 1398,
+          "total": 6559,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00206871,
+          "label": "$0.002069",
+          "rates": {
+            "input": 0.08,
+            "output": 0.4,
+            "cacheRead": 0.004,
+            "cacheWrite": 0.16
+          },
+          "assumption": "사용자 제공 claude-opus-5-5 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: claude-opus-5-5 (input $0.08, output $0.40, cacheRead $0.004, cacheWrite $0.16 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: Claude 구독 OAuth 할당량 내 실행 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 40949,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_deepseek-v4.1-flash-1017_rep1",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T11:58:54.613Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 4072,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 330,
+        "completion": 338,
+        "cached": 0,
+        "reasoning": 197,
+        "total": 668,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 330,
+          "completion": 338,
+          "cached": 0,
+          "total": 668,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00001359,
+          "label": "$0.000014",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 4075,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_deepseek-v4.1-flash-1017_rep2",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T11:58:58.690Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 3624,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 330,
+        "completion": 335,
+        "cached": 0,
+        "reasoning": 177,
+        "total": 665,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 330,
+          "completion": 335,
+          "cached": 0,
+          "total": 665,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00001349,
+          "label": "$0.000013",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 3626,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_deepseek-v4.1-flash-1017_rep3",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T11:59:02.318Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 7297,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 330,
+        "completion": 288,
+        "cached": 0,
+        "reasoning": 145,
+        "total": 618,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 330,
+          "completion": 288,
+          "cached": 0,
+          "total": 618,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00001198,
+          "label": "$0.000012",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 7300,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_deepseek-v4.1-flash-1017_rep1",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T11:59:09.620Z",
+      "success": false,
+      "failureReason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.6,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": false,
+          "reason": "dark-mode render is missing theme-dark/dark-mode class"
+        }
+      ],
+      "wallMs": 79671,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 317,
+        "completion": 13001,
+        "cached": 0,
+        "reasoning": 10889,
+        "total": 13318,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 317,
+          "completion": 13001,
+          "cached": 0,
+          "total": 13318,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.0004225,
+          "label": "$0.000423",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 79675,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_deepseek-v4.1-flash-1017_rep2",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:00:29.297Z",
+      "success": false,
+      "failureReason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.8,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 96791,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 317,
+        "completion": 15013,
+        "cached": 0,
+        "reasoning": 12774,
+        "total": 15330,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 317,
+          "completion": 15013,
+          "cached": 0,
+          "total": 15330,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00048749,
+          "label": "$0.000487",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 96795,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-b-frontend-component_deepseek-v4.1-flash-1017_rep3",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:02:06.095Z",
+      "success": false,
+      "failureReason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.8,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 116171,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 317,
+        "completion": 18919,
+        "cached": 256,
+        "reasoning": 16234,
+        "total": 19236,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 317,
+          "completion": 18919,
+          "cached": 256,
+          "total": 19236,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00061162,
+          "label": "$0.000612",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 116174,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_deepseek-v4.1-flash-1017_rep1",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:04:02.272Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 37464,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 418,
+        "completion": 5321,
+        "cached": 0,
+        "reasoning": 4987,
+        "total": 5739,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 418,
+          "completion": 5321,
+          "cached": 0,
+          "total": 5739,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00017525,
+          "label": "$0.000175",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 37470,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_deepseek-v4.1-flash-1017_rep2",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:04:39.745Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 67686,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 418,
+        "completion": 10234,
+        "cached": 0,
+        "reasoning": 9734,
+        "total": 10652,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 418,
+          "completion": 10234,
+          "cached": 0,
+          "total": 10652,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00033394,
+          "label": "$0.000334",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 67690,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_deepseek-v4.1-flash-1017_rep3",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:05:47.438Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 38589,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 418,
+        "completion": 5628,
+        "cached": 0,
+        "reasoning": 5132,
+        "total": 6046,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 418,
+          "completion": 5628,
+          "cached": 0,
+          "total": 6046,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00018517,
+          "label": "$0.000185",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 38593,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_deepseek-v4.1-flash-1017_rep1",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:06:26.034Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 140861,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 646,
+        "completion": 24184,
+        "cached": 512,
+        "reasoning": 22708,
+        "total": 24830,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 646,
+          "completion": 24184,
+          "cached": 512,
+          "total": 24830,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00078231,
+          "label": "$0.000782",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 141138,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_deepseek-v4.1-flash-1017_rep2",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:08:47.175Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 87831,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 646,
+        "completion": 16605,
+        "cached": 0,
+        "reasoning": 15042,
+        "total": 17251,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 646,
+          "completion": 16605,
+          "cached": 0,
+          "total": 17251,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00054157,
+          "label": "$0.000542",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 88109,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_deepseek-v4.1-flash-1017_rep3",
+      "envId": "deepseek-v4.1-flash-1017",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "reasoningEffort": "high",
+      "resolveModel": "thehive/deepseek-ai/deepseek-v4.1-flash-1017",
+      "startedAt": "2026-11-08T12:10:15.287Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 158204,
+      "ttftMs": null,
+      "tokens": {
+        "prompt": 646,
+        "completion": 28256,
+        "cached": 0,
+        "reasoning": 25696,
+        "total": 28902,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 646,
+          "completion": 28256,
+          "cached": 0,
+          "total": 28902,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.0009179,
+          "label": "$0.000918",
+          "rates": {
+            "input": 0.0081,
+            "output": 0.0323,
+            "cacheRead": 0.00016,
+            "cacheWrite": 0
+          },
+          "assumption": "사용자 제공 deepseek-v4.1-flash-1017 단가표 기반 산출",
+          "evidence": "사용자 제공 단가표: deepseek-v4.1-flash-1017 (input $0.0081, output $0.0323, cacheRead $0.00016 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "종량 과제 청구 기준"
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 158483,
+      "ttftProvenance": "unobserved"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:12:53.773Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 5617,
+      "ttftMs": 2114,
+      "tokens": {
+        "prompt": 575,
+        "completion": 333,
+        "cached": 512,
+        "reasoning": 192,
+        "total": 908,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 575,
+          "completion": 333,
+          "cached": 512,
+          "total": 908,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00000189,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 5620,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:12:59.395Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 4949,
+      "ttftMs": 2450,
+      "tokens": {
+        "prompt": 575,
+        "completion": 229,
+        "cached": 512,
+        "reasoning": 62,
+        "total": 804,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 575,
+          "completion": 229,
+          "cached": 512,
+          "total": 804,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00000189,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 4951,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-a-single-line-fix_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-a-single-line-fix",
+      "taskName": "Simple Single-line Fix (Pagination Boundary)",
+      "taskCategory": "a",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:13:04.349Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Zero totalItems should return 0 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exact multiple (50 items, 10 per page) should return 5 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Partial page (51 items, 10 per page) should return 6 pages",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Single item should return 1 page",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Negative totalItems should return 0 or throw gracefully",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Invalid pageSize should throw error",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 8610,
+      "ttftMs": 1940,
+      "tokens": {
+        "prompt": 575,
+        "completion": 613,
+        "cached": 512,
+        "reasoning": 472,
+        "total": 1188,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 575,
+          "completion": 613,
+          "cached": 512,
+          "total": 1188,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00000189,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/pagination.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 8611,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-b-frontend-component_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:13:12.963Z",
+      "success": false,
+      "failureReason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.8,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 169807,
+      "ttftMs": 1912,
+      "tokens": {
+        "prompt": 562,
+        "completion": 17169,
+        "cached": 512,
+        "reasoning": 14363,
+        "total": 17731,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 562,
+          "completion": 17169,
+          "cached": 512,
+          "total": 17731,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.0000015,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 169809,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-b-frontend-component_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:16:02.775Z",
+      "success": false,
+      "failureReason": "2/5 hidden tests failed: Applies correct status badge classes (success, warning, error); Dark mode theme class support",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.6,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": false,
+          "reason": "dark-mode render is missing theme-dark/dark-mode class"
+        }
+      ],
+      "wallMs": 124106,
+      "ttftMs": 1999,
+      "tokens": {
+        "prompt": 562,
+        "completion": 13441,
+        "cached": 512,
+        "reasoning": 11233,
+        "total": 14003,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 562,
+          "completion": 13441,
+          "cached": 512,
+          "total": 14003,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.0000015,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 306114,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-b-frontend-component_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-b-frontend-component",
+      "taskName": "Frontend Component & Responsive Styling",
+      "taskCategory": "b",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:21:08.892Z",
+      "success": false,
+      "failureReason": "1/5 hidden tests failed: Applies correct status badge classes (success, warning, error)",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.8,
+      "testResults": [
+        {
+          "name": "Renders title and value correctly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Applies correct status badge classes (success, warning, error)",
+          "passed": false,
+          "reason": "status=\"success\" markup is missing class badge-success"
+        },
+        {
+          "name": "Includes accessible button toggle with aria-expanded attribute",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "CSS defines responsive rules for max-width 768px",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Dark mode theme class support",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 108281,
+      "ttftMs": 2084,
+      "tokens": {
+        "prompt": 562,
+        "completion": 11657,
+        "cached": 512,
+        "reasoning": 9244,
+        "total": 12219,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 562,
+          "completion": 11657,
+          "cached": 512,
+          "total": 12219,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.0000015,
+          "label": "$0.000002",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/components/MetricCard.js",
+        "src/styles/metric-card.css"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 108285,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:22:57.179Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 98177,
+      "ttftMs": 1874,
+      "tokens": {
+        "prompt": 663,
+        "completion": 9330,
+        "cached": 640,
+        "reasoning": 8776,
+        "total": 9993,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 663,
+          "completion": 9330,
+          "cached": 640,
+          "total": 9993,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 6.9e-7,
+          "label": "$0.000001",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 2,
+      "transportRetries": 1,
+      "durationMs": 280184,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:27:37.366Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 55353,
+      "ttftMs": 1795,
+      "tokens": {
+        "prompt": 663,
+        "completion": 5308,
+        "cached": 640,
+        "reasoning": 4632,
+        "total": 5971,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 663,
+          "completion": 5308,
+          "cached": 640,
+          "total": 5971,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 6.9e-7,
+          "label": "$0.000001",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js",
+        "src/store.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 55360,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-c-multifile-refactor_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-c-multifile-refactor",
+      "taskName": "Multi-file Architecture Refactoring",
+      "taskCategory": "c",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:28:32.730Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "New src/verifier.js exists and exports TokenVerifier",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Valid token resolves user object",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Expired token returns null and does not leak session",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Backward compatibility: src/auth.js verifyAuthHeader still works",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "All unit & integration suites pass with zero regressions",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 70381,
+      "ttftMs": 1831,
+      "tokens": {
+        "prompt": 663,
+        "completion": 7053,
+        "cached": 640,
+        "reasoning": 6503,
+        "total": 7716,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 663,
+          "completion": 7053,
+          "cached": 640,
+          "total": 7716,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 6.9e-7,
+          "label": "$0.000001",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/server.js",
+        "src/auth.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 70386,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_vayex-harness_rep1",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 1,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:55:48.856Z",
+      "success": false,
+      "failureReason": "3/5 hidden tests failed: Cancelled tasks clean up timers immediately; Listener count does not increase per retry attempt; High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.4,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": false,
+          "reason": "activeTimers still holds 1 timer(s) after cancel"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": false,
+          "reason": "cancel listeners grew from 0 to 8 across 4 tasks with retries"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": false,
+          "reason": "500 'cancel' listeners dangling after stress test"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 64490,
+      "ttftMs": 64452,
+      "tokens": {
+        "prompt": 1402,
+        "completion": 7896,
+        "cached": 1398,
+        "reasoning": 3252,
+        "total": 9298,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 1402,
+          "completion": 7896,
+          "cached": 1398,
+          "total": 9298,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 1.2e-7,
+          "label": "$0.000000",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 64773,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_vayex-harness_rep2",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 2,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:56:53.633Z",
+      "success": true,
+      "failureReason": null,
+      "failureKind": null,
+      "passRate": 1,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 160714,
+      "ttftMs": 1578,
+      "tokens": {
+        "prompt": 891,
+        "completion": 14647,
+        "cached": 0,
+        "reasoning": 13125,
+        "total": 15538,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 891,
+          "completion": 14647,
+          "cached": 0,
+          "total": 15538,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00002673,
+          "label": "$0.000027",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [
+        "src/queue/retry-manager.js"
+      ],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 160989,
+      "ttftProvenance": "stream_first_delta"
+    },
+    {
+      "runId": "live_task-d-complex-debugging_vayex-harness_rep3",
+      "envId": "vayex-harness",
+      "taskId": "task-d-complex-debugging",
+      "taskName": "Complex Debugging & Concurrency Regression Fix",
+      "taskCategory": "d",
+      "repetition": 3,
+      "measurement": "live",
+      "transport": "gateway_chat",
+      "model": "combo/main",
+      "reasoningEffort": null,
+      "resolveModel": "combo/main",
+      "startedAt": "2026-11-08T12:59:34.626Z",
+      "success": false,
+      "failureReason": "3/5 hidden tests failed: Cancelled tasks clean up timers immediately; Listener count does not increase per retry attempt; High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+      "failureKind": "hidden_test_failure",
+      "passRate": 0.4,
+      "testResults": [
+        {
+          "name": "Cancelled tasks clean up timers immediately",
+          "passed": false,
+          "reason": "activeTimers still holds 1 timer(s) after cancel"
+        },
+        {
+          "name": "Listener count does not increase per retry attempt",
+          "passed": false,
+          "reason": "cancel listeners grew from 0 to 8 across 4 tasks with retries"
+        },
+        {
+          "name": "Concurrent dispatch of same taskId dedupes cleanly",
+          "passed": true,
+          "reason": "assertion passed"
+        },
+        {
+          "name": "High concurrency 500 tasks stress test leaves 0 dangling listeners and timers",
+          "passed": false,
+          "reason": "500 'cancel' listeners dangling after stress test"
+        },
+        {
+          "name": "Exhausted retries emit single terminal failure event",
+          "passed": true,
+          "reason": "assertion passed"
+        }
+      ],
+      "wallMs": 8390,
+      "ttftMs": 1805,
+      "tokens": {
+        "prompt": 891,
+        "completion": 807,
+        "cached": 768,
+        "reasoning": 50,
+        "total": 1698,
+        "source": "response usage (SSE final chunk)"
+      },
+      "usageSource": "response usage (SSE final chunk)",
+      "costs": {
+        "measuredTokens": {
+          "prompt": 891,
+          "completion": 807,
+          "cached": 768,
+          "total": 1698,
+          "label": "measured (response usage, 실측)"
+        },
+        "publishedPriceCost": {
+          "usd": 0.00000369,
+          "label": "$0.000004",
+          "rates": {
+            "input": 0.03,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "assumption": "원격 결정 모델 drex-max-v1.1 단가(input $0.03, output $0.00) 기반 산출",
+          "evidence": "사용자 제공 단가표: drex-max-v1.1 (input $0.03, output $0.00 per 1M tokens)"
+        },
+        "subscriptionEquivalentCost": {
+          "usd": null,
+          "label": "구독 쿼터 한계 유출 $0.00 (가정)",
+          "assumption": "가정: 구독/무과금 경로 라우팅 시 단일 호출 한계 현금 유출액 $0.00."
+        }
+      },
+      "changedFiles": [],
+      "attempts": 1,
+      "transportRetries": 0,
+      "durationMs": 8667,
+      "ttftProvenance": "stream_first_delta"
+    }
+  ],
+  "completedAt": "2026-11-08T12:59:34.626Z",
+  "timespanSeconds": 4440.3,
+  "sumPerSlotWallSeconds": 2198.2,
+  "sumTotalDurationSeconds": 2883.2,
+  "timingProvenance": {
+    "timespanSecondsNote": "최초 슬롯 시작부터 최종 슬롯 시작까지의 타임스탬프 스팬 (실측)",
+    "sumPerSlotWallSecondsNote": "모든 슬롯의 최종 시도 wallMs 합산 (재시도 대기시간 제외, 2,198.2s)",
+    "sumTotalDurationSecondsNote": "모든 슬롯의 전체 시도 및 재시도 소요시간 durationMs 합산 (2,883.2s)"
+  },
+  "rateCardAssumption": {
+    "currency": "USD",
+    "per": "1M tokens",
+    "note": "사용자 제공 단가표를 그대로 적용한 가정. VAYEX 하네스는 drex-max-v1.1 결정 모델 단가로 계상(원격 워커 미관측).",
+    "rates": {
+      "claude-opus-5-5": {
+        "input": 0.08,
+        "output": 0.4,
+        "cacheRead": 0.004,
+        "cacheWrite": 0.16
+      },
+      "gpt-6.1-sol": {
+        "input": 0.2,
+        "output": 1,
+        "cacheRead": 0.01,
+        "cacheWrite": 0.25
+      },
+      "deepseek-v4.1-flash-1017": {
+        "input": 0.0081,
+        "output": 0.0323,
+        "cacheRead": 0.00016,
+        "cacheWrite": 0
+      },
+      "drex-max-v1.1": {
+        "input": 0.03,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "resultSetLabel": "최초 명세 그대로(as-shipped)",
+  "promptMode": "as_shipped"
+}

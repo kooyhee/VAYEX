@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>2026 공학작품경진대회 작품개발보고서 — 바엑스 (VAYEX) · 로컬 통합 AI 코딩 하네스</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:210mm 297mm;margin:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{
+  background:#ffffff;color:#0f172a;
+  font-family:"Pretendard","Noto Sans KR","Malgun Gothic","맑은 고딕","Segoe UI",sans-serif;
+  word-break:keep-all;overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+.page{
+  width:210mm;height:297mm;padding:13mm 16mm 11mm;background:#fff;
+  position:relative;overflow:hidden;page-break-after:always;break-after:page;
+}
+.page:last-of-type{page-break-after:auto;break-after:auto}
+@media screen{
+  body{background:#e6e9ec;padding:20px 0}
+  .page{margin:0 auto 20px;box-shadow:0 3px 18px rgba(15,23,42,.18)}
+}
+
+/* ---------- header / footer ---------- */
+.page-header{height:18mm;border-bottom:1.6px solid #0f172a;margin-bottom:3.4mm;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:2mm}
+.category{font-size:7.4pt;font-weight:700;color:#64748b;letter-spacing:.08em;margin-bottom:1mm}
+.title-row{display:flex;justify-content:space-between;align-items:baseline;gap:4mm}
+.title-row h1{font-size:13.6pt;font-weight:800;line-height:1.2;letter-spacing:-.01em}
+.doc-id{font-size:7.4pt;color:#64748b;font-weight:600;white-space:nowrap}
+.page-footer{position:absolute;left:16mm;right:16mm;bottom:5.5mm;border-top:.6px solid #cbd5e1;padding-top:1.2mm;display:flex;justify-content:space-between;font-size:6.9pt;color:#64748b;z-index:10;background:#fff}
+.page-content{height:251mm;display:flex;flex-direction:column}
+
+/* ---------- primitives ---------- */
+.section-lead{font-size:8.4pt;line-height:1.45;color:#334155;background:#f8fafc;border-left:3px solid #0f172a;padding:2mm 3mm;margin-bottom:2.8mm}
+.sub-title{font-size:9.6pt;font-weight:800;color:#0f172a;margin-bottom:1.9mm;display:flex;align-items:center}
+.sub-title::before{content:"";width:3.5px;height:11px;background:#0f172a;margin-right:2mm;display:inline-block}
+.takeaway{background:#f1f5f9;border-left:3.5px solid #0f172a;padding:2mm 3mm;font-size:7.9pt;line-height:1.4;color:#1e293b;margin-top:auto}
+.takeaway strong{color:#0f172a}
+code{font-family:"Cascadia Code","Consolas","Courier New",monospace;font-size:.9em;background:#f1f5f9;border:.5px solid #e2e8f0;border-radius:2px;padding:0 2.5px;color:#0f172a}
+
+.badge{display:inline-block;padding:1.2px 5px;font-size:6.8pt;font-weight:700;border-radius:2.5px;white-space:nowrap;line-height:1.4}
+.badge-verified{background:#0f172a;color:#fff}
+.badge-partial{background:#475569;color:#fff}
+.badge-unverified{background:#fef3c7;color:#92400e;border:.5px solid #fde68a}
+.badge-abandoned{background:#fee2e2;color:#991b1b;border:.5px solid #fecaca}
+.badge-design{background:#eff6ff;color:#1e40af;border:.5px solid #bfdbfe}
+.badge-param{background:#f1f5f9;color:#475569;border:.5px solid #cbd5e1}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:7.6pt;margin-bottom:2.2mm}
+table.data-table th{background:#f1f5f9;border-top:1.4px solid #0f172a;border-bottom:1.1px solid #0f172a;padding:1.4mm 2mm;text-align:left;font-weight:700;color:#0f172a}
+table.data-table td{padding:1.1mm 2mm;border-bottom:.5px solid #e2e8f0;color:#334155;vertical-align:top;line-height:1.31}
+table.data-table tr:nth-child(even) td{background:#f8fafc}
+
+/* ---------- cover ---------- */
+.cover-badge-row{display:flex;justify-content:space-between;align-items:center;padding-bottom:2.6mm;border-bottom:.7px solid #e2e8f0;margin-bottom:6mm}
+.cover-org{font-size:8.8pt;font-weight:700;color:#475569}
+.cover-badge{background:#0f172a;color:#fff;padding:2px 7px;font-size:7.4pt;font-weight:700;border-radius:2.5px}
+.cover-eyebrow{font-size:8.8pt;font-weight:700;color:#64748b;margin-bottom:1.4mm}
+.cover-title{font-size:26pt;font-weight:900;line-height:1.1;letter-spacing:-.5px;margin-bottom:1.6mm}
+.cover-slogan{font-size:10.5pt;font-weight:700;color:#0f172a;letter-spacing:-.01em;margin-bottom:1.6mm}
+.cover-subtitle{font-size:9.6pt;font-weight:600;color:#475569;letter-spacing:.01em}
+.cover-summary-card{background:#f8fafc;border:1.4px solid #0f172a;border-radius:4px;padding:2.8mm 3.4mm;margin-top:4.2mm}
+.summary-label{font-size:7.6pt;font-weight:800;letter-spacing:.09em;margin-bottom:1.4mm;color:#0f172a}
+.summary-text{font-size:8.5pt;line-height:1.5;color:#1e293b}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm 3.4mm;border:.7px solid #cbd5e1;border-radius:4px;padding:3mm 3.6mm;margin-top:4mm}
+.meta-key{display:block;font-size:7pt;font-weight:700;color:#64748b;margin-bottom:.4mm}
+.meta-val{display:block;font-size:8pt;font-weight:600;line-height:1.35}
+.cover-rule-box{border:1.4px solid #94a3b8;border-radius:4px;padding:3mm 3.6mm;margin-top:auto}
+.rule-box-header{font-size:8.6pt;padding-bottom:1.2mm;border-bottom:.6px solid #e2e8f0;margin-bottom:1.6mm}
+.rule-intro{font-size:7.9pt;line-height:1.45;color:#334155;margin-bottom:2.2mm}
+.rule-badge-item{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:2mm;background:#f8fafc;border-radius:2.5px;padding:1.1mm 2.2mm;margin-bottom:1.2mm}
+.rule-desc{font-size:7.5pt;color:#475569;line-height:1.35}
+
+/* ---------- page 2 ---------- */
+.pain-points-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm;margin-bottom:1.4mm}
+.pain-card{border:.7px solid #cbd5e1;border-radius:4px;padding:2.2mm 2.8mm}
+.pain-header{display:flex;align-items:baseline;gap:1.8mm;margin-bottom:.8mm}
+.pain-num{font-size:10.4pt;font-weight:900;color:#94a3b8;line-height:1}
+.pain-header h4{font-size:8.6pt;font-weight:800}
+.pain-desc{font-size:7.5pt;line-height:1.36;color:#334155}
+.zero-config-box{display:grid;grid-template-columns:1fr 1fr;gap:1.8mm}
+.zero-config-item{background:#f8fafc;border:.6px solid #e2e8f0;border-radius:3px;padding:1.8mm 2.4mm}
+.zc-title{font-size:8pt;font-weight:800;margin-bottom:.6mm}
+.zc-body{font-size:7.3pt;line-height:1.34;color:#475569}
+
+/* ---------- page 3 ---------- */
+.info-callout-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm;margin-bottom:1.6mm}
+.callout-card{background:#f8fafc;border:.6px solid #cbd5e1;border-radius:3px;padding:1.8mm 2.4mm;font-size:7.5pt;line-height:1.36;color:#334155}
+
+/* ---------- page 4 ---------- */
+.arch-notice-box{background:#f8fafc;border-left:3.5px solid #0f172a;padding:1.8mm 2.8mm;font-size:7.9pt;line-height:1.42;color:#1e293b;margin-bottom:2.2mm}
+.svg-diagram-container{border:.7px solid #cbd5e1;border-radius:4px;padding:1.6mm;margin-bottom:2mm}
+.abandoned-card{background:#fff5f5;border:.7px solid #fecaca;border-radius:4px;padding:2mm 2.8mm}
+.abandoned-header{display:flex;align-items:center;gap:2mm;font-size:8.2pt;color:#991b1b;margin-bottom:.9mm}
+.abandoned-text{font-size:7.5pt;line-height:1.36;color:#7f1d1d;margin-bottom:1.4mm}
+.abandoned-reasons-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.8mm;background:#fff;border:.6px solid #fee2e2;border-radius:3px;padding:1.6mm 2mm;font-size:6.9pt;line-height:1.32;color:#450a0a}
+
+/* ---------- page 5 ---------- */
+.two-col-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm;margin-bottom:1.6mm}
+.col-card{border:.7px solid #cbd5e1;border-radius:4px;padding:2.2mm 2.6mm}
+.col-card h4{font-size:8.8pt;font-weight:800;margin-bottom:1.4mm}
+.col-card p{font-size:7.8pt;color:#334155;line-height:1.4}
+.mini-note{margin-top:1.4mm;padding:1.5mm 2mm;background:#f8fafc;border:.5px solid #e2e8f0;font-size:7.3pt;line-height:1.35;color:#475569}
+.mini-warn{margin-top:1.4mm;padding:1.5mm 2mm;background:#fff1f2;border:.5px solid #fecdd3;font-size:7.3pt;line-height:1.35;color:#9f1239}
+.audit-trail-box{background:#f8fafc;border:.7px solid #cbd5e1;border-radius:4px;padding:2mm 2.8mm}
+.statusbar-mock{display:flex;justify-content:space-between;align-items:center;background:#1f1f1f;color:#e5e7eb;border:.7px solid #0f172a;border-radius:3px;padding:1mm 2.6mm;font-size:7.2pt;margin-bottom:1.4mm}
+table.data-table.ui-table{font-size:7.1pt;margin-bottom:1.1mm}
+table.data-table.ui-table td{padding:.75mm 1.8mm;line-height:1.24}
+table.data-table.ui-table th{padding:1.0mm 1.8mm}
+table.compact-table td{padding:.85mm 1.8mm;line-height:1.25}
+table.compact-table th{padding:1.1mm 1.8mm}
+.statusbar-mock b{color:#fff;font-weight:700;margin-right:.8mm}
+.sb-l,.sb-r{display:flex;align-items:center;gap:1.6mm}
+.sb-sep{color:#6b7280}
+.sb-tag{background:#374151;color:#e5e7eb;border-radius:2px;padding:0 3px;font-size:6.6pt;font-weight:700;margin-left:.6mm}
+.sb-spin{width:9px;height:9px;border:1.5px solid #4b5563;border-top-color:#93c5fd;border-radius:50%;display:inline-block}
+
+/* ---------- page 7 ---------- */
+.evidence-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2mm;margin-bottom:1.2mm}
+.evidence-card{border:.7px solid #cbd5e1;border-radius:4px;padding:1.2mm 2.0mm}
+.ev-header{display:flex;justify-content:space-between;align-items:center;gap:1.6mm;margin-bottom:.8mm;font-size:7.8pt;color:#0f172a}
+.ev-text{font-size:7.0pt;line-height:1.30;color:#334155}
+.selection-flow-box{display:grid;grid-template-columns:repeat(4,1fr);gap:1.8mm;background:#f8fafc;border:.7px solid #cbd5e1;border-radius:4px;padding:2mm 2.6mm}
+.selection-item{font-size:7.2pt;line-height:1.36;color:#334155}
+.selection-item strong{font-size:7.5pt;color:#0f172a}
+
+/* ---------- page 9 ---------- */
+.cost-model-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm;margin-bottom:2.2mm}
+.cost-card{border:.7px solid #cbd5e1;border-radius:4px;padding:2mm 2.8mm;font-size:7.5pt;line-height:1.38;color:#334155}
+.benchmark-warning-box{background:#fffbeb;border:.7px solid #fde68a;border-left:3.5px solid #d97706;border-radius:3px;padding:2mm 2.8mm;font-size:7.5pt;line-height:1.38;color:#92400e;margin-bottom:2mm}
+.retracted-box{background:#f8fafc;border:.7px solid #cbd5e1;border-radius:3px;padding:2mm 2.8mm;font-size:7.5pt;line-height:1.38;color:#334155}
+
+/* ---------- page 10 ---------- */
+.scenario-card{display:grid;grid-template-columns:88px 1fr;gap:2.6mm;align-items:center;border:.7px solid #cbd5e1;border-radius:4px;padding:2mm 2.8mm;margin-bottom:2mm}
+.sc-badge-col{display:flex;flex-direction:column;align-items:flex-start;gap:1.2mm}
+.sc-step{font-size:8.2pt;font-weight:800}
+.sc-content-col strong{display:block;font-size:8.4pt;margin-bottom:.6mm}
+.sc-content-col p{font-size:7.4pt;line-height:1.38;color:#334155}
+.sc-content-col p strong{display:inline;margin-bottom:0}
+.benefit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2.2mm;margin-bottom:1.6mm}
+.benefit-card{background:#f8fafc;border:.7px solid #cbd5e1;border-radius:4px;padding:2mm 2.6mm}
+.bf-icon{font-size:10.4pt;font-weight:900;color:#94a3b8;line-height:1;margin-bottom:1mm}
+.bf-title{font-size:8.2pt;font-weight:800;margin-bottom:.9mm}
+.bf-desc{font-size:7.1pt;line-height:1.36;color:#475569}
+.track-label{display:inline-block;background:#0f172a;color:#fff;font-size:7.4pt;font-weight:800;padding:.4mm 1.6mm;border-radius:2.5px;margin-right:1.8mm;line-height:1.3}
+.booth-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1.4mm;margin-bottom:2.4mm}
+.booth-seg{border:.7px solid #cbd5e1;border-radius:4px;padding:1.8mm 2.2mm;font-size:7.1pt;line-height:1.36;color:#334155}
+.seg-head{display:flex;justify-content:space-between;align-items:center;gap:1mm;margin-bottom:.9mm}
+.seg-head strong{font-size:8.2pt;color:#0f172a}
+
+/* ---------- page 11 ---------- */
+.issue-item{display:grid;grid-template-columns:22px 1fr;align-items:baseline;gap:1.8mm;background:#f8fafc;border:.6px solid #e2e8f0;border-radius:3px;padding:1.4mm 2.4mm;font-size:7.3pt;line-height:1.36;color:#334155;margin-bottom:1.4mm}
+.issue-num{font-size:8.2pt;font-weight:800;color:#94a3b8;text-align:center}
+.conclusion-box{border:1.4px solid #0f172a;border-radius:4px;padding:2.8mm 3.2mm;margin-bottom:2.2mm}
+.conclusion-box p{font-size:8pt;line-height:1.48;color:#1e293b;margin-bottom:1.6mm}
+.conclusion-box p:last-child{margin-bottom:0}
+.signature-card{display:flex;justify-content:space-between;align-items:center;background:#f1f5f9;border:.7px solid #cbd5e1;border-radius:4px;padding:2.2mm 3.2mm}
+.sig-left{font-size:7.7pt;line-height:1.44;color:#334155}
+.sig-right{text-align:right}
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 01 ============ -->
+<div class="page">
+  <div class="cover-badge-row">
+    <span class="cover-org">국립목포해양대학교 컴퓨터공학과</span>
+    <span class="cover-badge">2026학년도 공학작품경진대회 출품작</span>
+  </div>
+
+  <div class="cover-eyebrow">공식 출품: 로컬 통합 AI 코딩 하네스 : VAYEX · 작품 개발 보고서 · 개정판</div>
+  <h1 class="cover-title">바엑스 <span style="font-size:0.62em;font-weight:700;letter-spacing:-.02em;color:#475569">(VAYEX)</span></h1>
+  <div class="cover-slogan">"코딩의 항로를 스스로 열다"</div>
+  <div class="cover-subtitle">부제: 로컬 통합 AI 코딩 하네스 (Locally Integrated AI Coding Harness — Node Host + Agent Child)</div>
+
+  <div class="cover-summary-card">
+    <div class="summary-label">한 줄 요약</div>
+    <p class="summary-text">
+      구형 데스크톱 에이전트 의존성과 별도 서버 게이트웨이 분리안을 모두 제거하고,
+      <code>omp</code> 18.16.0 에이전트 런타임을 <strong>Node 호스트</strong>(UI + bridge + 인프로세스 게이트웨이 라이브러리)가
+      <strong>자식 프로세스</strong>로 기동하는 무설정 플랫폼 <strong>VAYEX</strong>다.
+      호스트는 Node.js 기반 로컬 실행 환경으로서 자체 루프백 리스너에서 OpenAI 호환 추론 엔드포인트를 서비스하고,
+      자식은 그 <code>/v1</code>을 HTTP로 호출하며, 밖으로 나가는 업스트림 요청은 호스트가 수행한다.
+      로컬 임베딩 기반 FTS5+벡터 하이브리드 메모리(<code>app/memory</code>), Git 없는 스냅샷·diff 확인·되돌리기 및 자동 검증 DX 계층(<code>app/dx</code>)을 완비했다.
+      UI는 <strong>7종 테마 스튜디오</strong>, 텍스트 수직 래핑 버그를 제거한 <strong>3모드 인스펙터</strong>,
+      <strong>완료 한 줄 작업 일지</strong>와 diff 분리, 4종 <strong>세션 산출물 문서 생성기</strong>(HTML + 헤드리스 PDF), 전송 전 <strong>개인정보 보호 가드</strong>,
+      <strong>디자인 모드</strong> 웹 미리보기, 하단 <strong>상태 표시줄</strong>을 제공한다.
+      백그라운드 작업(제목 생성·진행 요약·다이제스트)은 외부 LLM 호출 없이 결정론적 규칙 계층(Zero LLM)과 45초 타임아웃의 관측 가능 워치독으로 완결된다.
+    </p>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-item"><span class="meta-key">대회명</span><span class="meta-val">2026학년도 컴퓨터공학과 공학작품경진대회 (국립목포해양대학교)</span></div>
+    <div class="meta-item"><span class="meta-key">대회 일시</span><span class="meta-val">2026년 11월 18일(수) 09:00 ~ 18:00 · 부스 전시</span></div>
+    <div class="meta-item"><span class="meta-key">작품명</span><span class="meta-val">로컬 통합 AI 코딩 하네스 : <strong>VAYEX</strong></span></div>
+    <div class="meta-item"><span class="meta-key">소속 / 팀명</span><span class="meta-val">국립목포해양대학교 컴퓨터공학과 / 비용절감위원회</span></div>
+    <div class="meta-item"><span class="meta-key">참가자 / 지도교수</span><span class="meta-val">김성중, 턴소트훌 (2인) / 지도교수 김기원</span></div>
+    <div class="meta-item"><span class="meta-key">기반 소프트웨어</span><span class="meta-val">로컬 하네스: <code>oh-my-pi</code> 18.16.0 (MIT, Bun) / 게이트웨이: Node 호스트 인프로세스 라이브러리</span></div>
+    <div class="meta-item"><span class="meta-key">기본 추론 경로</span><span class="meta-val">로컬 루프백 데모 스텁(<code>demo-chat</code>) 및 설정 가능한 OpenAI 호환 외부 업스트림</span></div>
+    <div class="meta-item"><span class="meta-key">시연 형태</span><span class="meta-val">24인치 모니터 상시 재생 통합 영상 + 노트북 관람객별 2~3분 현장 실작업 세션 (기본: 오프라인 스텁)</span></div>
+  </div>
+
+  <div class="cover-rule-box">
+    <div class="rule-box-header"><strong>문서 상태 및 표기 규칙 — 심사위원 안내</strong></div>
+    <p class="rule-intro">
+      이 문서는 <strong>실행으로 확인된 사실</strong>, <strong>구현되었으나 실행 기록이 없는 것</strong>, <strong>문서로만 존재하는 설계</strong>,
+      <strong>폐기된 계획</strong>을 구분해 서술한다. 현재 비교는 두 환경(Claude Opus 5.5, VAYEX 하네스)의 4개 과제 × 반복 N=3, 총 24슬롯 실측 결과이며,
+      앞선 4환경 측정 기록은 제외 이전 자료로만 남아 있다. 비용은 제공사 공시 단가와 측정 토큰으로 계산하며, 비교용 엔드포인트는 상시 가용하지 않다.
+    </p>
+    <div class="rule-badge-item"><span class="badge badge-verified">구현·실행 검증</span><span class="rule-desc">저장소에 코드가 있고, 실제 실행해 정상 종료와 출력을 확인했다.</span></div>
+    <div class="rule-badge-item"><span class="badge badge-partial">구현·미검증</span><span class="rule-desc">코드는 있으나 실제 원격 엔드포인트·앱 통합 런타임에서 엔드투엔드 실행 기록이 없다.</span></div>
+    <div class="rule-badge-item"><span class="badge badge-design">설계 전용</span><span class="rule-desc">설계 문서의 규약이며 통합·검증 증거가 없는 단계다.</span></div>
+    <div class="rule-badge-item"><span class="badge badge-abandoned">폐기/중단 (Abandoned)</span><span class="rule-desc">검토되었으나 현재 제품 요청 경로에서 완전히 배제된 계획이다.</span></div>
+    <div class="rule-badge-item"><span class="badge badge-param">파라미터 / 모의 추정</span><span class="rule-desc">코드 상수 또는 시뮬레이션 가정값이며, 측정 결과로 읽지 않는다.</span></div>
+  </div>
+
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>01 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 02 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">1. 작품 개요</div>
+    <div class="title-row"><h1>1.1 개발 배경과 1.2 개발 목적 · Zero-Config 철학</h1><span class="doc-id">개요 및 배경</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      AI 코딩 에이전트는 학부 과제와 바이브 코딩의 핵심 도구가 되었으나, 개발자가 체감하는 진입 장벽은 모델의 이론적 파라미터 크기가 아니라
+      <strong>비용·환경·신뢰</strong>다. 본 프로젝트는 사용자 PC에서 설정 없이 즉시 구동되는 로컬 통합 하네스를 목표로 한다.
+    </div>
+
+    <div class="sub-title">1.1 개발 배경 — 개발자와 바이브 코더의 현실적 페인 포인트</div>
+    <div class="pain-points-grid">
+      <div class="pain-card">
+        <div class="pain-header"><span class="pain-num">01</span><h4>높은 AI 도구 이용 비용</h4></div>
+        <p class="pain-desc">월 20달러(약 3만 원) 구독료는 개인 사용자에게 부담스러운 고정 지출이다. 코드베이스를 탐색할 때마다 누적되는 클라우드 토큰 요금은 반복 디버깅 중 AI 활용을 위축시킨다.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-header"><span class="pain-num">02</span><h4>AI 도구의 복잡한 환경 설정</h4></div>
+        <p class="pain-desc">거대한 데스크톱 Electron 앱이나 복잡한 프레임워크를 번들링하는 대신, 경량 Node 호스트가 UI와 추론 엔드포인트를 직접 서비스하고 에이전트 런타임만 자식 프로세스로 기동하여, 별도로 기동해야 하는 서버가 없는 환경을 구성한다.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-header"><span class="pain-num">03</span><h4>AI가 수정한 코드를 확인하기 어렵다</h4></div>
+        <p class="pain-desc">바이브 코딩에서는 자연어 요청 한 번에 여러 파일이 변경된다. 코드를 깊이 읽기 어려운 사용자일수록 무엇이 변경되었는지, 되돌릴지, 시험이 통과하는지를 한 화면에서 확인할 수 있어야 한다. 본 작품의 UI(바엑스)는 텍스트 수직 래핑 글자깨짐을 제거한 3모드 인스펙터, AI 작업 일지, 파일 변경 diff 보기와 되돌리기를 제공한다.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-header"><span class="pain-num">04</span><h4>동의 없는 소스코드 전송 우려</h4></div>
+        <p class="pain-desc">작업 중인 코드가 사용자 모르게 외부 클라우드로 전송되는 것은 보안상 부담이다. 클라우드 경로는 대화마다 새로 받은 명시 동의가 있어야 열리고, 동의 상태는 대화 단위로 초기화된다.</p>
+      </div>
+    </div>
+
+    <div class="sub-title" style="margin-top:2.4mm">1.2 개발 목적과 Zero-Config 철학</div>
+    <div class="zero-config-box">
+      <div class="zero-config-item"><div class="zc-title">설정 제로 (Zero-Config)</div><div class="zc-body"><code>launch.cmd</code> 더블클릭으로 저장소 <code>.omp-runtime\</code>에 이미 있는 Bun/omp를 실행한다. 설치·내려받기 단계가 없고, 런타임이 없으면 <code>launch_failed</code>로 멈춘다.</div></div>
+      <div class="zero-config-item"><div class="zc-title">로컬 하네스 = 호스트 + 자식</div><div class="zc-body">Node.js 기반 로컬 실행 환경(<code>app/server.mjs</code>)과 자식 에이전트(<code>omp</code> 18.16.0, stdio JSON). 별도 게이트웨이 서버 프로세스는 없다.</div></div>
+      <div class="zero-config-item"><div class="zc-title">클라우드 동의와 전송 가드</div><div class="zc-body">클라우드 경로는 대화별 명시 동의가 있어야 허용되며, 위조·미동의 헤더는 <code>403 consent_required</code>로 차단된다. 전송 가드는 서버에서 동작한다.</div></div>
+      <div class="zero-config-item"><div class="zc-title">대회 부스 시연 안정성</div><div class="zc-body">상시 재생 통합 영상과 관람객별 2~3분 현장 실작업 세션으로 나눠 운영한다. 기본 실행은 번들 스텁(<code>demo-chat</code>) 오프라인 경로라 현장 네트워크가 실패 요인이 되지 않는다.</div></div>
+    </div>
+
+    <div class="takeaway" style="margin-top:3mm">
+      <strong>목표:</strong> "코딩의 항로를 스스로 열다"라는 슬로건 아래, 사용자 PC에서 로컬 하네스(호스트 + Bun 자식)가 즉시 구동되어,
+      별도 서버 기동이나 런타임 설치 없이 자연어 요청 → 작업 일지 확인 → 변경 내역 확인과 되돌리기로 이어지는 코딩 흐름에 전념할 수 있는 단일 플랫폼 '바엑스(VAYEX)'를 제공하는 것.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>02 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 03 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">1. 작품 개요</div>
+    <div class="title-row"><h1>1.3 기반 소프트웨어 · 라이선스 의무 | 1.4 구현 범위와 차별점</h1><span class="doc-id">기반 SW · 구현 범위</span></div>
+  </div>
+  <div class="page-content">
+    <div class="sub-title">1.3 기반 소프트웨어와 라이선스 의무 준수</div>
+    <table class="data-table">
+      <thead><tr><th style="width:19%">구성 요소</th><th style="width:31%">기반 소프트웨어 및 출처</th><th style="width:13%">라이선스</th><th style="width:37%">본 프로젝트의 활용 및 준수 형태</th></tr></thead>
+      <tbody>
+        <tr><td><strong>로컬 코딩 하네스</strong></td><td><code>oh-my-pi</code> (<code>omp</code>) 18.16.0<br>(<code>@oh-my-pi/pi-coding-agent</code>)</td><td>MIT License</td><td>로컬 런타임 코어로 재사용. Node 브리지가 <code>bun cli.js --mode rpc</code> stdio NDJSON으로 코어를 감싸고 브라우저와 WebSocket 통신. <strong>Python 정책 계층(<code>engine/</code>)과 코어를 잇는 배선은 아직 없다</strong></td></tr>
+        <tr><td><strong>UI 참조 설계</strong></td><td><code>nornzach.github.io/oh-my-pi-gui</code><br>(참조: <code>github.com/{unkeyn,nornzach}/oh-my-pi-gui</code>)</td><td>MIT License</td><td>독립 세션 탭, 대화 도크, RPC 연동 개념을 벤치마크·참조 설계로 채택 (라이선스 코드 무단 복제 및 재설계 완료 주장 배제)</td></tr>
+        <tr><td><strong>자체 개발 계층</strong></td><td>게이트웨이 정책 필터, 규칙 기반 모델 선택, <code>TurnPlan</code> 결정 계층(설계 전용), AST 메모리</td><td>자체 구현<br>(제출 시 확정)</td><td>상류 프로젝트와 분리된 독립 모듈로 구현. <code>TurnPlan</code>은 설계 단계이며 런타임 미연결</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-callout-grid">
+      <div class="callout-card"><strong>기본 추론 경로와 실추론:</strong> 기본 업스트림은 번들 루프백 스텁(<code>demo-chat</code>)이며 응답은 <code>stub reply to: …</code> 형식의 스텁 문장이라 실제 코드를 생성하지 않는다. 실추론은 사용자가 설정한 OpenAI 호환 업스트림(<code>openrouter-zdr</code>, <code>a6api</code>)을 호스트가 직접 호출하며, 외부 공급자 호출은 <strong>미검증</strong>이다.</div>
+      <div class="callout-card"><strong>런타임 의존의 실제 범위:</strong> 이전 세대 데스크톱 에이전트 의존은 제거되었다. 로컬 실행은 <code>omp</code> 18.16.0에 의존하며, Bun과 <code>@oh-my-pi/pi-coding-agent</code> 코어는 저장소 <code>.omp-runtime\</code>에 이미 있어 실행 시 내려받지 않는다. DSH는 <code>launch.cmd -Runtime dsh</code>로만 도달하는 선택 경로(핀 <code>0.2.1-rc.5</code>)다.</div>
+    </div>
+
+    <div class="sub-title" style="margin-top:2.6mm">1.4 구현 범위와 차별점</div>
+    <table class="data-table" style="font-size:7.3pt">
+      <thead><tr><th style="width:19%">구현 영역</th><th style="width:31%">핵심 내용</th><th style="width:19%">상태 판정</th><th style="width:31%">검증 증거 및 비고</th></tr></thead>
+      <tbody>
+        <tr><td><strong>턴별 결정 모델<br>(<code>TurnPlan</code>)</strong></td><td>매 턴 단위로 서브에이전트 사용 여부, 실행 모델, 추론 등급, 스킬을 동적으로 추천하고 결정론적 검증기가 인가</td><td><span class="badge badge-design">설계 전용</span><br><span style="font-size:7pt;color:#64748b">통합 증거 이전 단계</span></td><td>검증기(<code>validate_turn_plan</code>)의 거부·클램프 계약은 단위 시험·직접 프로브로 확인. 계획 생성 호출부는 하네스 런타임에 미배선</td></tr>
+        <tr><td><strong>인프로세스<br>게이트웨이</strong></td><td>Node.js 경량 게이트웨이 라이브러리(<code>gateway/lib/*</code>), 인프로세스 임포트 및 스탠드얼론 어댑터</td><td><span class="badge badge-verified">라이브러리 통합 완료</span><br><span style="font-size:7pt;color:#64748b">게이트웨이 시험 148/148</span></td><td><code>node --test gateway/test/*.test.mjs</code> <strong>148/148 통과 (실패 0)</strong>. <code>app/lib/inference.mjs</code>가 호스트 안에서 인프로세스로 임포트. 3단계 프리픽스 계층화 및 세션 핀 지원. 별도 서버 프로세스 없음</td></tr>
+        <tr><td><strong>로컬 하네스<br>연동</strong></td><td><code>omp</code> 18.16.0 자식을 stdio RPC로 연동하고 호스트 루프백 <code>/v1</code>로 추론 요청을 받는 두 실행 단위 구조</td><td><span class="badge badge-verified">구현·실행 검증</span><br><span style="font-size:7pt;color:#64748b">앱 계층 154/154</span></td><td>앱 계층 <strong>154/154</strong>(실패 0), 장기 기억 <strong>42/42</strong>, 브라우저 회귀 <strong>51/51</strong>. <code>PI_CODING_AGENT_DIR</code> 주입, 권한이 제한된 <code>models.yml</code>, fail-closed 기동 차단 확인</td></tr>
+        <tr><td><strong>장기 기억 계층<br>(Memory)</strong></td><td>로컬 임베딩(Xenova e5-small q8) + SQLite FTS5 벡터 하이브리드(RRF k=60), 6개 메모리 타입, 시크릿 마스킹, OMP 확장 도구</td><td><span class="badge badge-partial">모듈 구현·평가 완료</span><br><span style="font-size:7pt;color:#64748b">단위 시험 42개 전원 통과</span></td><td>자체 20문항 질의셋 평가: Recall@1 0.800, Recall@3 0.950, Recall@5 1.000, MRR 0.877 (같은 질의셋의 키워드 단독 기준 0.600/0.700/0.800/0.675; 자체 질의셋 측정값으로 우위를 주장하지 않는다). <code>/api/memory/*</code> 마운트, OMP 확장(<code>extension.mjs</code>) 기본 coreArgs 등록, 호스트·자식 SQLite 경로 단일화</td></tr>
+        <tr><td><strong>개발자 경험 계층<br>(DX)</strong></td><td>프로젝트 자동 감지, Git 없는 스냅샷·diff·되돌리기·롤백, 자동 검증, 한국어 오류 해설, 작업 재개, 비용 분석</td><td><span class="badge badge-verified">구현·통합 완료</span><br><span style="font-size:7pt;color:#64748b">앱 계층 시험에 포함</span></td><td>DX 모듈 시험은 앱 계층 시험(<code>node --test app/test/</code>)에 포함되어 <strong>154/154</strong> 통과에 함께 집계된다(별도 DX 스위트 <code>node --test app/dx/test/</code> <strong>23개</strong>도 전원 통과). <code>/api/dx/*</code> 호스트 마운트 완료. 부스 예제 프로젝트 대상 자동 검증 통과 및 롤백 API 확인</td></tr>
+        <tr><td><strong>비용 최적화<br>엔진</strong></td><td>RTK 스타일 도구 출력 압축(20 KB 디스크 스필 및 무손실 복구), 세션 모델 고정(<code>x-app-session</code>), 3단계 프리픽스, 로컬 전용 백그라운드 작업 및 워치독</td><td><span class="badge badge-verified">모듈별 구현 완료</span><br><span style="font-size:7pt;color:#64748b">실추론 미검증</span></td><td>20 KB 스필 저장소 무손실 복구(118,892 B 바이트 단위 일치 복구 실측 확인), 세션 고정 맵 및 정적 참조 단가표 연동. 오프라인 스텁 벤치마크는 캐시 미적중(cacheRead 0)으로 절감 크기 미측정</td></tr>
+        <tr><td><strong>사용자 인터페이스<br>(UI · 바엑스)</strong></td><td>테마 스튜디오 7종 프리셋, 3모드 인스펙터, AI 작업 일지(완료 한 줄), 4종 세션 산출물(HTML+헤드리스 PDF), 디자인 모드, 개인정보 보호 한 줄, 하단 상태 표시줄</td><td><span class="badge badge-verified">UI 검증 완료</span><br><span style="font-size:7pt;color:#64748b">브라우저 회귀 51/51</span></td><td>브라우저 회귀 <strong>51/51</strong> 통과. 테마 스튜디오 7종, 3모드 인스펙터, 완료 한 줄 작업 일지와 diff 분리, 4종 산출물 문서, 디자인 모드(<code>postMessage</code>), 개인정보 보호 한 줄 완비</td></tr>
+      </tbody>
+    </table>
+
+    <div class="takeaway">
+      <strong>투명성 원칙:</strong> 오픈소스 코어를 재사용하되 자체 개발 계층을 분리하고,
+      구현 완료 모듈과 런타임 미배선 모듈을 구분해 제시한다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>03 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 04 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">2. 시스템 아키텍처 및 런타임 환경</div>
+    <div class="title-row"><h1>2.1 아키텍처 — 두 실행 단위 | 2.2 6역할 라우팅</h1><span class="doc-id">아키텍처 · 역할 라우팅</span></div>
+  </div>
+  <div class="page-content">
+    <div class="arch-notice-box" style="margin-bottom:1.6mm">
+      <strong>[아키텍처 고지]</strong> 아래 구조는 실제 구현·검증된 <strong>두 실행 단위</strong>다. 하나는 <strong>Node 호스트</strong>(UI + bridge + <code>app/lib/inference.mjs</code>가 임포트하는 게이트웨이 라이브러리)이고,
+      다른 하나는 호스트가 <code>spawn</code>으로 기동하는 <strong>에이전트 자식 프로세스</strong>(<code>omp</code> 18.16.0)다.
+      자식은 호스트 밖에 있고 stdio(JSON)로 bridge와 대화하며, 호스트의 루프백 <code>/v1</code>을 HTTP로 호출한다.
+      업스트림으로 나가는 요청은 자식이 아니라 <strong>호스트</strong>가 수행한다. 브라우저는 두 실행 단위 밖의 클라이언트다.
+      폐기된 것은 <strong>별도 게이트웨이 서버 프로세스</strong>이며, 시스템 전체가 하나의 OS 프로세스라는 뜻이 아니다.
+    </div>
+
+    <div class="svg-diagram-container" style="padding:0.8mm;margin-bottom:0.6mm">
+      <svg viewBox="0 0 760 300" width="100%" height="208" style="display:block;height:208px">
+        <defs>
+          <marker id="a1" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#0f172a"/></marker>
+          <marker id="a2" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#64748b"/></marker>
+        </defs>
+
+        <rect x="215" y="3" width="330" height="26" rx="3" fill="#f8fafc" stroke="#0f172a" stroke-width="1.3"/>
+        <text x="380" y="20" font-size="10" font-weight="700" fill="#0f172a" text-anchor="middle">브라우저 (클라이언트 · 두 실행 단위 밖)</text>
+        <path d="M380 29 L380 47" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a1)"/>
+        <text x="388" y="41" font-size="7.8" fill="#475569">HTTP / WebSocket</text>
+
+        <rect x="16" y="49" width="728" height="142" rx="4" fill="#fff" stroke="#0f172a" stroke-width="1.6"/>
+        <rect x="16" y="49" width="728" height="20" rx="4" fill="#0f172a"/>
+        <text x="28" y="63" font-size="9.5" font-weight="700" fill="#fff">[실행 단위 1] Node 호스트 app/server.mjs — UI + bridge + 게이트웨이 라이브러리(인프로세스)</text>
+        <text x="636" y="63" font-size="7.8" fill="#cbd5e1">node &gt;= 26</text>
+
+        <rect x="28" y="75" width="214" height="40" rx="2.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="36" y="88" font-size="8.6" font-weight="700" fill="#0f172a">UI (app/public)</text>
+        <text x="36" y="100" font-size="7.6" fill="#475569">· 단일 작업공간 화면</text>
+        <text x="36" y="110" font-size="7.6" fill="#475569">· 대화별 동의 카드 / 라벨: 자동 → 모델 id</text>
+
+        <rect x="250" y="75" width="250" height="40" rx="2.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="258" y="88" font-size="8.6" font-weight="700" fill="#0f172a">bridge (HTTP + WebSocket)</text>
+        <text x="258" y="100" font-size="7.6" fill="#475569">· spawn(bin, args) → 실행 단위 2</text>
+        <text x="258" y="110" font-size="7.6" fill="#475569">· 자식과 stdio(JSON) 스트림 대화</text>
+
+        <rect x="508" y="75" width="224" height="40" rx="2.5" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="516" y="88" font-size="8.6" font-weight="700" fill="#0f172a">루프백 리스너</text>
+        <text x="516" y="100" font-size="7.6" fill="#475569">· 기동 로그가 알려준 로컬 주소</text>
+        <text x="516" y="110" font-size="7.6" fill="#475569">· node &gt;= 26 (측정된 런타임 값 아님)</text>
+
+        <rect x="28" y="120" width="704" height="26" rx="2.5" fill="#fff" stroke="#94a3b8"/>
+        <text x="36" y="131" font-size="8.2" font-weight="700" fill="#0f172a">인프로세스 추론 엔드포인트 — app/lib/inference.mjs → createGatewayHandler</text>
+        <text x="36" y="141" font-size="7.4" fill="#475569">POST /v1/chat/completions (경로 정책·쿼터 예약/정산·SSE) · GET /v1/models · GET /v1/selection (결정 16건, no-store) · GET /healthz</text>
+
+        <rect x="28" y="150" width="704" height="34" rx="2.5" fill="#f8fafc" stroke="#94a3b8"/>
+        <text x="36" y="162" font-size="8.2" font-weight="700" fill="#0f172a">게이트웨이 라이브러리 (gateway/lib/* 인프로세스 임포트 — 별도 서버 프로세스가 아니다)</text>
+        <text x="36" y="174" font-size="7.3" fill="#334155">Allowlist · 라우트 검증 · 자격증명 리덕터(로그·응답·오류만) · 일일 쿼터 원장(초과 시 429) · 6역할 로컬 분류 + 역할별 combo/* 위임(§2.2)</text>
+
+        <path d="M120 191 L120 252" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a1)"/>
+        <text x="64" y="222" font-size="7.4" fill="#0f172a">루프백 HTTP (자식 → 호스트)</text>
+        <text x="64" y="233" font-size="6.9" fill="#64748b">POST /v1/chat/completions · GET /v1/selection</text>
+
+        <path d="M214 191 L214 252" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a1)"/>
+        <text x="220" y="222" font-size="7.4" fill="#0f172a">spawn · stdio JSON (NDJSON)</text>
+
+        <path d="M600 191 L600 252" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a1)"/>
+        <text x="606" y="222" font-size="7.4" fill="#0f172a">아웃바운드 (호스트 → 업스트림)</text>
+
+        <rect x="16" y="254" width="330" height="38" rx="3" fill="#f8fafc" stroke="#0f172a" stroke-width="1.3"/>
+        <text x="26" y="268" font-size="8.6" font-weight="700" fill="#0f172a">[실행 단위 2] omp 18.16.0 (Bun) — 호스트가 spawn한 자식</text>
+        <text x="26" y="280" font-size="7.3" fill="#475569">· PI_CODING_AGENT_DIR 주입, models.yml baseUrl은 같은 로컬 주소의 /v1</text>
+        <text x="26" y="289" font-size="7.3" fill="#475569">· bridge와 stdio 대화 — 아웃바운드 요청은 호스트가 수행</text>
+
+        <rect x="360" y="254" width="384" height="38" rx="3" fill="#f8fafc" stroke="#0f172a" stroke-width="1.3"/>
+        <text x="370" y="268" font-size="8.6" font-weight="700" fill="#0f172a">설정된 업스트림 (호스트가 직접 호출)</text>
+        <text x="370" y="280" font-size="7.3" fill="#475569">· 기본: 번들 오프라인 데모 스텁 — demo-chat, ctx 32768, think 8192</text>
+        <text x="370" y="289" font-size="7.3" fill="#475569">· 실추론: OpenAI 호환 TLS 프록시 opencodex-nace 경유 combo/* (미검증)</text>
+      </svg>
+    </div>
+
+    <div class="sub-title">2.2 6역할 라우팅 — 로컬 분류 · 원격 결정 모델 · 선언적 폴백</div>
+    <div class="section-lead">
+      하네스는 매 턴을 <strong>6개 역할</strong> 중 하나로 <strong>로컬에서</strong> 분류하고(외부 호출 0회),
+      모델 선택만 <strong>원격 결정 모델</strong>에 위임한다. 위임이 성립하지 않으면 침묵하지 않고
+      <strong>선언된 로컬 체인</strong>으로 서빙하며, 그 사실을 응답 본문·헤더·<code>/v1/selection</code>·컴포저 칩 네 지점에 남긴다.
+    </div>
+    <div class="selection-flow-box" style="margin-bottom:1.0mm;padding:1.2mm 2.0mm">
+      <div class="selection-item"><strong>1. 역할 분류 (로컬)</strong><br>명시 역할 → 프롬프트 태그 → 의도 신호(키워드) 순으로 <code>classifyAgentRole</code>이 결정론적으로 분류한다(외부 호출 0회). 지정이 없으면 기본값 <code>main</code>으로 분류되어 <code>combo/lead</code>에 도달한다.</div>
+      <div class="selection-item"><strong>2. 역할별 combo 요청</strong><br>역할 여섯 개가 업스트림이 실제로 서빙하는 id로 매핑된다 — <code>main</code> → <code>combo/lead</code>, <code>planner</code>·<code>research</code> → <code>combo/advisor</code>, <code>frontend</code> → <code>combo/front-worker</code>, <code>backend</code> → <code>combo/worker</code>, <code>verifier</code> → <code>combo/reviewer</code>. TLS 프록시 <code>opencodex-nace</code>를 통해 호출된다.</div>
+      <div class="selection-item"><strong>3. 원격 결정 모델</strong><br>요청을 받은 게이트웨이 결정 엔진(Nace provider, <code>drex-max-v1.1</code>, max effort)이 실제 worker 모델을 동적으로 고른다. 로컬은 최종 모델을 알 수 없어 단가·지연·성공률을 붙이지 않는다(<code>realMetrics:false</code>).</div>
+      <div class="selection-item"><strong>4. 4개 지점 보고</strong><br>응답 본문(<code>role</code>·<code>decision_source</code>·<code>fallback_chain</code>) · 헤더 <code>x-gateway-decision-*</code> · <code>GET /v1/selection</code> · UI 컴포저 칩(<code>원격 결정 모델</code> / <code>로컬 대체 경로</code>)에 남긴다.</div>
+    </div>
+    <table class="data-table compact-table" style="margin-top:0.8mm;margin-bottom:0.8mm;font-size:6.7pt">
+      <thead><tr><th style="width:13%">역할</th><th style="width:22%">담당 범위</th><th style="width:17%">주 요청 id</th><th style="width:34%">결정 후보 연쇄 (순서대로)</th><th style="width:14%">선언된 폴백</th></tr></thead>
+      <tbody>
+        <tr><td><code>main</code> (조율)</td><td>작업 조율·위임·결과 통합</td><td><code>combo/lead</code></td><td>lead → worker → front-worker → reviewer</td><td><code>demo-chat</code></td></tr>
+        <tr><td><code>planner</code> (계획)</td><td>아키텍처 설계·계획 수립</td><td><code>combo/advisor</code></td><td>advisor → lead → heavy-worker → worker</td><td><code>demo-chat</code></td></tr>
+        <tr><td><code>frontend</code></td><td>UI·UX·반응형 구현</td><td><code>combo/front-worker</code></td><td>front-worker → lead</td><td><code>demo-chat</code></td></tr>
+        <tr><td><code>backend</code></td><td>서버·API·데이터 처리</td><td><code>combo/worker</code></td><td>worker → heavy-worker → lead</td><td><code>demo-chat</code></td></tr>
+        <tr><td><code>research</code></td><td>조사·문서 분석·원인 규명</td><td><code>combo/advisor</code></td><td>advisor → lead</td><td><code>demo-chat</code></td></tr>
+        <tr><td><code>verifier</code></td><td>테스트·리뷰·정합성 검증</td><td><code>combo/reviewer</code></td><td>reviewer → security → lead → worker</td><td><code>demo-chat</code></td></tr>
+      </tbody>
+    </table>
+    <div class="cost-model-grid" style="margin-top:0.8mm;margin-bottom:0.8mm">
+      <div class="cost-card" style="font-size:6.9pt;line-height:1.26;padding:1.2mm 2.0mm"><strong>폴백은 선언·보고된다 (조용한 대체 없음)</strong><br>결정 평면에 도달하지 못하거나 턴이 로컬 전용으로 고정되면 선언된 로컬 체인(<code>demo-chat</code>)이 서빙하고, 4개 보고 지점이 <code>local_fallback</code>으로 알린다. <strong>인증 실패</strong>(<code>decision_plane_auth_failed</code>)와 <strong>네트워크 미도달</strong>(<code>decision_plane_unreachable</code>)은 사유 문자열로 명확히 분리한다.</div>
+      <div class="cost-card" style="font-size:6.9pt;line-height:1.26;padding:1.2mm 2.0mm"><strong>도달성 탐지 방식과 배경 작업</strong><br>도달성은 <code>GET {base}/models</code> 프로브(4초 타임아웃, 30초 TTL 캐시)로 비차단 확인한다. 배경 작업(임베딩·인덱싱·검색·제목·타임라인·진행 집계)은 외부 LLM을 전혀 호출하지 않고 로컬 ONNX 임베딩 및 규칙 계층으로 완료된다.</div>
+    </div>
+    <div class="benchmark-warning-box" style="margin-bottom:0.8mm;padding:1.0mm 1.8mm;font-size:6.8pt;line-height:1.24">
+      <strong>2개 환경 라이브 실측 벤치마크 완료 고지:</strong> 실제 엔드포인트에서 4개 과제(N=3, 총 24슬롯)를 라이브 측정했다.
+      결과 전량은 <code>output/benchmark-live-2env-official-report.md</code>와 그 원자료 <code>output/benchmark-live-2env-official-result.json</code>에 수록했고, §5.2에 요약한다.
+      <table class="data-table compact-table" style="margin-top:0.8mm;margin-bottom:0;font-size:6.6pt">
+        <thead><tr><th style="width:22%">비교 환경</th><th style="width:26%">대상 모델 및 실행 방식</th><th style="width:22%">추론 등급 / 설정</th><th style="width:30%">실측 결과 요약</th></tr></thead>
+        <tbody>
+          <tr><td><strong>(a) Claude Opus 5.5</strong> (게이트웨이 단일 모델 호출)</td><td><code>anthropic/claude-opus-5-5</code></td><td>게이트웨이 단일 모델 호출 (CLI 미설치)</td><td>통과 12/12 (100.0%) · 과제 1회 수행 소요 시간 중앙값 24,361 ms</td></tr>
+          <tr><td><strong>(b) VAYEX 하네스</strong> (역할 라우팅)</td><td><code>combo/main</code> 위임</td><td>실행별 라우팅 (DeepSeek 10회 · Gemini 2회)</td><td>통과 12/12 (100.0%) · 과제 1회 수행 소요 시간 중앙값 46,205 ms</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="takeaway" style="padding:1.2mm 2.0mm;font-size:7.2pt;line-height:1.28">
+      <strong>의의:</strong> 별도 게이트웨이 서버를 제거하고 <strong>[호스트 + 에이전트 자식]</strong> 두 실행 단위로 로컬 완결성을 유지한다.
+      역할 분류는 100% 로컬에서 끝나며 모델 선택만 원격 결정 모델에 위임하고, 장애 시 선언된 로컬 체인으로 전환된다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>04 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 05 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">2. 시스템 아키텍처 및 런타임 환경</div>
+    <div class="title-row"><h1>2.3 선택 기록과 자동 결정 | 2.4 작업공간 UI</h1><span class="doc-id">선택 기록 · UI</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      역할 분류와 위임이 끝나면 그 결과가 기록으로 남는다. 기록은 세션을 넘어 추론 품질을 주장하는 근거가 아니라,
+      <strong>무엇을 왜 골랐는지</strong>를 사용자와 심사위원이 즉시 대조할 수 있게 하는 계약이다.
+    </div>
+    <div class="sub-title">2.3 자동 모델·추론 선택과 선택 기록 (출시된 기능)</div>
+    <div class="selection-flow-box">
+      <div class="selection-item"><strong>1. 자동 결정</strong><br>모델 미지정 시 게이트웨이가 경로·동의·상주 상태를 근거로 실행 모델과 추론 등급을 정한다. 작업 유형·난이도는 판단 근거가 아니다.</div>
+      <div class="selection-item"><strong>2. GET /v1/selection</strong><br>identity+route 단위 마지막 결정을 반환한다. 기록은 게이트웨이 프로세스 메모리에만 있고(용량 16) 재시작 시 초기화된다.</div>
+      <div class="selection-item"><strong>3. 브리지 비차단 조회</strong><br><code>app/server.mjs</code>가 루프백으로 읽는다. 타임아웃 1.5초, 재시도 없음이며 조회 실패는 프롬프트 라운드트립을 막지 않는다.</div>
+      <div class="selection-item"><strong>4. UI 표시와 한계</strong><br>결정 전 <code>자동</code>, 결정 후 실제 모델 id와 <code>추론 &lt;등급&gt; · 생각 토큰 &lt;budget&gt;</code> 표시. 단위는 메시지가 아닌 identity+route다.</div>
+    </div>
+
+    <div class="cost-model-grid" style="margin-top:2.2mm">
+      <div class="cost-card">
+        <strong>선택 기록의 응답 계약</strong><br>
+        응답에는 프롬프트 텍스트·키·헤더가 실리지 않고 <code>cache-control: no-store</code>를 붙인다.
+        identity가 없으면 <code>401</code>, 등록되지 않은 route는 <code>400</code>, 아직 결정이 없으면 <code>{"selection":null}</code>을 반환한다.
+      </div>
+      <div class="cost-card">
+        <strong>한계의 명시</strong><br>
+        업스트림이 스텁이므로 이 표시는 <strong>선택 결과의 반영</strong>이며 실제 추론 실행 기록이 아니다.
+        같은 identity와 route를 공유하는 세션은 같은 모델을 표시할 수 있다.
+      </div>
+    </div>
+
+    <table class="data-table compact-table" style="margin-top:1.4mm;margin-bottom:1.4mm">
+      <thead><tr><th style="width:32%">응답 필드</th><th style="width:68%">의미</th></tr></thead>
+      <tbody>
+        <tr><td><code>role</code> · <code>role_reason</code></td><td>이번 턴의 역할과 분류 근거 — <code>role:explicit_…</code> · <code>role:tag_…</code> · <code>role:intent_…</code> · <code>role:default_main</code></td></tr>
+        <tr><td><code>decision_source</code> · <code>decision_reason</code></td><td><code>remote_decision</code> / <code>local_fallback</code> / <code>local</code> 중 어느 쪽이 골랐는지와 그 사유 문자열</td></tr>
+        <tr><td><code>decision_upstream</code> · <code>decision_detail</code></td><td>결정을 낸 업스트림 id와 상세 문자열(도달성은 응답 헤더 <code>x-gateway-decision-plane</code>이 <code>true</code>/<code>false</code>/<code>unknown</code>으로 병기)</td></tr>
+        <tr><td><code>primary</code> · <code>fallback_chain</code></td><td>역할의 주 후보와 선언된 대체 연쇄 — 순서를 그대로 노출하며 점수로 정렬하지 않는다</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-title" style="margin-top:1.6mm">2.4 바엑스(VAYEX) 작업공간 UI 확정 사양</div>
+    <div class="statusbar-mock" aria-label="하단 상태 표시줄 배치 예시" style="margin-bottom:1.1mm">
+      <span class="sb-l"><span><b>0</b>토큰</span><span class="sb-sep">·</span><span><b>0</b>tok/s</span><span class="sb-sep">·</span><span>캐시 히트 <b>0.0%</b></span></span>
+      <span class="sb-r"><span>⑂ 오케스트레이터</span><span class="sb-sep">|</span><span><b>VAYEX</b><span class="sb-tag">Auto</span> ∨</span><span>원격 결정 모델</span><span class="sb-spin"></span></span>
+    </div>
+    <table class="data-table ui-table">
+      <thead><tr><th style="width:18%">기능</th><th style="width:28%">구현 위치</th><th style="width:54%">동작 및 사양</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Theme Studio<br>(7종 프리셋)</strong></td><td><code>app/public/app.js</code> <code>THEME_PRESETS</code></td><td>옵시디언 다크(기본)·소프트 데이라이트·오로라 글로우·라벤더 미스트·코랄 선셋·마리타임 보야지·하이 콘트라스트. 배경 강도(0~100%) 및 표면 투명도(75~100%) 슬라이더, CSS 변수 즉시 반영, <code>localStorage</code> 영구 저장.</td></tr>
+        <tr><td><strong>3모드 인스펙터<br>(글자깨짐 제거)</strong></td><td><code>app/public/app.js</code> <code>setInspectorMode</code></td><td>접기(collapsed)·확장(expanded)·전체화면(fullscreen) 3단계 제어. 영문/숫자/기호 수직 래핑(vertical wrapping) 버그를 원천 제거하고 <code>keep-all</code> 및 flex/grid 레이아웃 적용.</td></tr>
+        <tr><td><strong>하단 상태 표시줄</strong></td><td><code>app/public/index.html</code> <code>#status-bar</code></td><td>위 목업과 동일 배치: 누적 토큰 · tok/s · 캐시 히트 % | ⑂ 오케스트레이터 | 모델 라벨 <code>VAYEX Auto</code> | 결정 출처 표기 | 스피너 링. 누적 토큰은 화면에서 한 수치로만 표시하고, 상단 상태는 헤더 한 행으로만 남긴다.</td></tr>
+        <tr><td><strong>개인정보 보호 한 줄</strong></td><td><code>app/public/app.js</code> <code>privacy-line</code></td><td>전송마다 <code>개인정보 보호 · 유형 · 조치 · 전송 여부</code>를 한 줄로 표시. 조치 값(<code>masked</code> / <code>blocked</code> / <code>review</code>)에 따라 테두리 색이 갈리고, 원문 값은 화면에 싣지 않는다.</td></tr>
+        <tr><td><strong>AI 작업 일지<br>(Work Journal)</strong></td><td><code>app/insight/summarize.mjs</code></td><td>원시 도구 로그 대신 완료된 작업의 추가/수정/삭제 한 줄 요약만 남기고, 파일별 변경은 <code>변경 검토</code>(diff) 탭으로 분리한다. 요약은 규칙 계층이 기본이며 외부 LLM을 호출하지 않는다.</td></tr>
+        <tr><td><strong>4종 세션 산출물<br>문서 생성기</strong></td><td><code>/api/visualize/html</code><br><code>/api/visualize/pdf</code></td><td>4개 문서 타입(<code>report</code> 결과 보고서, <code>study</code> 학습 해설, <code>spec</code> 설계 명세, <code>summary</code> 핵심 요약). 독립 HTML 및 헤드리스 PDF 렌더링을 지원한다. 문서 정체성은 세션·유형·내용 해시이므로 같은 요청은 재사용되고, 내용이 달라져야 새 버전이 생긴다.</td></tr>
+        <tr><td><strong>디자인 모드<br>웹 미리보기</strong></td><td><code>app/public/preview-inspector.js</code></td><td>iframe <code>postMessage</code> 통신으로 DOM 요소를 호버 강조·선택 검사하고 <code>[요소 수정 요청]</code> 프롬프트를 자동 완성.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="takeaway">
+      <strong>선택·표시의 정직성:</strong> 기록의 단위는 identity+route이며 메시지 단위가 아니다. 업스트림이 스텁이면 UI의 모델 표시는
+      <strong>선택 결과의 반영</strong>일 뿐 실제 추론 실행 기록이 아니므로, 화면은 <code>자동</code> → 모델 id로만 말하고 품질·비용을 주장하지 않는다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>05 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 06 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">3. 핵심 차별점 설계</div>
+    <div class="title-row"><h1>3. 턴별 결정 모델(TurnPlan) 계층과 검증기</h1><span class="doc-id">설계 · 검증기</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      기존 코딩 에이전트는 세션 시작 시 지정된 단일 모델이 모든 턴을 처리하거나 정적 휴리스틱으로 플래그십 모델을 일괄 투입해
+      단순 조회에도 고비용 모델을 호출한다. 본 프로젝트의 차별화 <strong>설계</strong>는 매 턴 경량 결정 모델이 실행 계획(<code>TurnPlan</code>)을 수립하고
+      결정론적 검증기가 인가하는 구조다. 현재 동작하는 선택은 §2.2의 <strong>6역할 로컬 분류 + 역할별 <code>combo/*</code> 위임</strong>이며,
+      규칙 기반 <code>AUTO_RULES</code>는 결정 평면이 없을 때의 선언된 폴백 경로다. 난이도 점수로 모델을 고르는 층은 아직 없다.
+    </div>
+
+    <div class="sub-title">3.1 동작 규약 — 생성(권고)과 검증(승인)의 분리</div>
+    <div class="svg-diagram-container">
+      <svg viewBox="0 0 760 132" width="100%" height="132" style="display:block">
+        <defs><marker id="a3" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#0f172a"/></marker></defs>
+        <rect x="6" y="22" width="132" height="88" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>
+        <text x="72" y="40" font-size="9.4" font-weight="700" fill="#0f172a" text-anchor="middle">사용자 입력</text>
+        <text x="72" y="56" font-size="7.6" fill="#475569" text-anchor="middle">컨텍스트 수집</text>
+        <text x="72" y="69" font-size="7.6" fill="#475569" text-anchor="middle">프로젝트 상태</text>
+        <text x="72" y="82" font-size="7.6" fill="#475569" text-anchor="middle">심볼 요약</text>
+        <text x="72" y="95" font-size="7.6" fill="#475569" text-anchor="middle">대화 경로 · 동의 상태</text>
+
+        <path d="M138 66 L160 66" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a3)"/>
+        <rect x="162" y="22" width="176" height="88" rx="3" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.3"/>
+        <text x="250" y="39" font-size="9.2" font-weight="700" fill="#1e40af" text-anchor="middle">TurnPlan 생성 (설계)</text>
+        <text x="172" y="54" font-size="7.6" fill="#1e3a8a">경량 결정 모델이 구조화된 추천</text>
+        <text x="172" y="67" font-size="7.4" fill="#1e40af">· 서브에이전트 수 (worker, reviewer)</text>
+        <text x="172" y="79" font-size="7.4" fill="#1e40af">· 실행 모델 ID (카탈로그 등록 모델)</text>
+        <text x="172" y="91" font-size="7.4" fill="#1e40af">· 추론 등급 off|low|medium|high|xhigh</text>
+        <text x="172" y="103" font-size="7.4" fill="#1e40af">· 활성화할 스킬 셋</text>
+
+        <path d="M338 66 L360 66" stroke="#0f172a" stroke-width="1.3" marker-end="url(#a3)"/>
+        <rect x="362" y="14" width="238" height="104" rx="3" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.8"/>
+        <rect x="362" y="14" width="238" height="20" rx="3" fill="#0f172a"/>
+        <text x="481" y="28" font-size="9.2" font-weight="700" fill="#fff" text-anchor="middle">결정론적 정책 검증 (게이트)</text>
+        <text x="372" y="49" font-size="7.8" fill="#0f172a"><tspan font-weight="700">validate_turn_plan</tspan> — 단위 시험 통과</text>
+        <text x="372" y="62" font-size="7.4" fill="#334155">· V-02 동의 없는 클라우드 전송 거부</text>
+        <text x="372" y="74" font-size="7.4" fill="#334155">· V-03 카탈로그 미등록 모델 거부</text>
+        <text x="372" y="86" font-size="7.4" fill="#334155">· V-06 음수 count · V-07 비용 예산 초과 거부</text>
+        <text x="372" y="98" font-size="7.4" fill="#334155">· V-05 컨텍스트 상한 · V-09 스킬 부분집합</text>
+        <text x="372" y="110" font-size="7.4" fill="#334155">· 등급 클램프 grade:clamped_xhigh_to_medium</text>
+
+        <path d="M600 66 L622 66" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1.3" marker-end="url(#a3)"/>
+        <rect x="624" y="22" width="130" height="88" rx="3" fill="#fffbeb" stroke="#fde68a" stroke-width="1.3"/>
+        <text x="689" y="40" font-size="9" font-weight="700" fill="#92400e" text-anchor="middle">하네스 RPC</text>
+        <text x="689" y="57" font-size="8.2" font-weight="700" fill="#b45309" text-anchor="middle">런타임 미연결</text>
+        <text x="689" y="74" font-size="7.4" fill="#78350f" text-anchor="middle">검증기는 어떤 턴</text>
+        <text x="689" y="86" font-size="7.4" fill="#78350f" text-anchor="middle">이벤트에도 구독되지</text>
+        <text x="689" y="98" font-size="7.4" fill="#78350f" text-anchor="middle">않았다</text>
+      </svg>
+    </div>
+
+    <div class="sub-title" style="margin-top:1.8mm">3.2 권고-승인 분리와 독립 플래너 감사 결과</div>
+    <div class="two-col-grid">
+      <div class="col-card">
+        <h4>권고(Recommendation)와 승인(Enforcement)</h4>
+        <p>결정 모델이 생성한 <code>TurnPlan</code>은 권고안일 뿐이다. 실행은 결정론적 검증기(Policy Gate)가 승인한 값만 전달되어야 한다.
+        모델이 과도한 리소스나 미등록 도구를 요청하더라도 검증기가 하향 클램프하거나 거부한다.</p>
+        <div class="mini-note"><strong>동작:</strong> 역할은 로컬 의도 분류로 정하고(<code>classifyAgentRole</code>), 모델은 역할별 <code>combo/*</code> 위임으로 정한다(§2.2). 결정 평면 미도달 시에만 <code>AUTO_RULES</code> 기반 선언 폴백이 서빙한다. 난이도별 동적 분기는 동작하지 않는다.</div>
+      </div>
+      <div class="col-card">
+        <h4>독립 플래너 감사 결과</h4>
+        <p>초기 프로토타입에서 경로/동의 누락, 음수 서브에이전트 상한 우회, 예산·스킬·승인 미강제, 기형 플랜 예외 처리 부재가 취약점으로 식별되었다.
+        이 항목은 <code>validate_turn_plan</code>의 V-02(경로·동의)·V-06(음수 서브에이전트)·V-07(비용 예산)·V-08(도구 승인)·V-09(스킬 부분집합)와 스키마 예외 처리로 보완되었고 단위 시험이 통과한다.</p>
+        <div class="mini-warn"><strong>남은 미비점:</strong> V-10 핀 검사 부재와 비용의 승인 분기 미구현. 실제 외부 전송 여부 조사와 런타임 집행 검증은 하지 않았다.</div>
+      </div>
+    </div>
+
+    <div class="audit-trail-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2mm">
+        <strong style="font-size:8.6pt">감사 추적(설계)과 런타임 미연결(Not Wired)의 구분</strong>
+        <span class="badge badge-param">원장 개념 혼동 금지</span>
+      </div>
+      <p style="font-size:7.7pt;line-height:1.42;color:#475569">
+        매 턴 수립된 <code>TurnPlan</code>과 검증 결과를 세션 원장에 남기는 규약은 <strong>설계 단계</strong>다.
+        현재 구현된 것은 게이트웨이의 <strong>일일 쿼터 원장(quota ledger)</strong>이며 턴 원장(turn ledger)과 동일하지 않다.
+        검증기는 <code>TurnPlan</code> 레코드에 대해 동작하지만, <code>omp</code> 하네스 이벤트를 구독해 매 턴 계획을 검증하는 배선은 아직 없다.
+      </p>
+    </div>
+
+    <div class="takeaway">
+      <strong>기술 평가:</strong> <code>TurnPlan</code>은 "구현된 결정론적 검증기 + 런타임 미연결"로 기술하며,
+      "검증이 완료되어 안전한 동적 조정"이나 "완성된 런타임"으로 주장하지 않는다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>06 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 06 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">4. 구현 현황 및 증거</div>
+    <div class="title-row"><h1>4.1 검증 상태 매트릭스 | 4.2 실행 기록</h1><span class="doc-id">검증 매트릭스 · 실행 기록</span></div>
+  </div>
+  <div class="page-content">
+    <div class="sub-title">4.1 검증 상태 매트릭스 — 영역별 구현·검증 구분</div>
+    <table class="data-table">
+      <thead><tr><th style="width:17%">영역</th><th style="width:26%">구성 요소</th><th style="width:18%">상태 판정</th><th style="width:39%">검증 증거 및 비고</th></tr></thead>
+      <tbody>
+        <tr><td><strong>정책 계층 ·<br>턴 플래너</strong></td><td>경로 필터, AST 슬라이서, <code>validate_turn_plan</code>(Python <code>engine/decision_planner.py</code> V-01~V-09 / JS <code>gateway/lib/turn-plan.mjs</code> V-01~V-08), DAG 오케스트레이터</td><td><span class="badge badge-partial">단위 시험 통과</span><br><span style="font-size:6.9pt;color:#64748b">discovery 319건 과거 기준선</span></td><td>전체 discovery 319건은 이번 변경 전 기준선이라 재실행하지 않았다. 검증기는 V-02 동의 없는 전송 거부, V-03 미등록 거부, V-05·V-07 예산 클램프, V-06 음수 거부, V-09 스킬 부분집합을 프로브로 확인했고 V-10 핀과 비용 승인 분기는 남은 미비점이다. <code>omp</code> 턴 이벤트 미배선</td></tr>
+        <tr><td><strong>게이트웨이<br>라이브러리</strong></td><td>인프로세스 임포트(<code>app/lib/inference.mjs</code>), Allowlist·경로 정책, 쿼터 원장, 3단계 프리픽스, 세션 핀</td><td><span class="badge badge-verified">스텁 기능 시험 통과</span><br><span style="font-size:6.9pt;color:#64748b">148/148 통과 / 실패 0</span></td><td><code>node --test gateway/test/*.test.mjs</code> <strong>148/148 통과, 실패 0</strong>. 앱에 인프로세스 임포트. 별도 서버 게이트웨이 분리안은 폐기</td></tr>
+        <tr><td><strong>자동 모델·<br>추론 선택 기록</strong></td><td>실행 모델·추론 등급 자동 결정, <code>GET /v1/selection</code>, UI 구체 라벨 표시</td><td><span class="badge badge-verified">기능 시험 통과</span><br><span class="badge badge-verified">라이브 검증 PASS</span></td><td>단위 시험에서 고정(identity 없음 401, 미등록 400, 결정 전 <code>{"selection":null}</code>, <code>no-store</code>). 라이브에서 UI가 <code>자동</code> → <code>demo-chat</code> <code>추론 높음 · 생각 토큰 8192</code> → <code>자동</code> 전환 확인</td></tr>
+        <tr><td><strong>로컬 하네스<br>· 인프로세스<br>엔드포인트</strong></td><td><code>omp</code> 18.16.0 stdio RPC 연동 및 인프로세스 추론 서피스</td><td><span class="badge badge-verified">구현·실행 검증</span><br><span style="font-size:6.9pt;color:#64748b">앱 계층 154/154</span></td><td><code>node --test app/test/</code> <strong>154/154 통과, 실패 0</strong>. 모델 응답은 로컬 HTTP 스텁 대상이며 실제 외부 추론은 미검증</td></tr>
+        <tr><td><strong>장기 기억 계층<br>(Memory)</strong></td><td>로컬 임베딩(Xenova e5-small q8) + SQLite FTS5 벡터 하이브리드(RRF k=60), 6개 타입, 격리/출처 보존</td><td><span class="badge badge-verified">구현·기본 등록</span><br><span style="font-size:6.9pt;color:#64748b">42/42 통과 / coreArgs 등록</span></td><td><code>node --test app/memory/test/*.test.mjs</code> <strong>42/42 통과, 실패 0</strong>. <code>/api/memory/*</code> 마운트, OMP 확장(<code>extension.mjs</code>) coreArgs 등록, 호스트·자식 SQLite DB 경로 단일화</td></tr>
+        <tr><td><strong>개발자 경험 계층<br>(DX)</strong></td><td>프로젝트 자동 감지, Git 없는 스냅샷 diff·되돌리기, 자동 검증, 한국어 오류 해설</td><td><span class="badge badge-verified">구현·실행 검증</span><br><span style="font-size:6.9pt;color:#64748b">앱 계층 시험에 포함</span></td><td>DX 모듈 시험은 앱 계층 시험(<strong>154/154</strong>)에 포함되어 함께 집계된다(별도 DX 스위트 <code>node --test app/dx/test/</code> <strong>23개</strong>도 전원 통과). <code>/api/dx/*</code> 호스트 마운트. 부스 샘플 프로젝트 대상 자동 검증 성공 확인</td></tr>
+        <tr><td><strong>UI 구현체<br>(바엑스)</strong></td><td>테마 스튜디오(7종), 3모드 인스펙터, AI 작업 일지, 4종 산출물 문서(헤드리스 PDF), 디자인 모드, 개인정보 보호 한 줄, 상태 표시줄</td><td><span class="badge badge-verified">브라우저 회귀 통과</span><br><span style="font-size:6.9pt;color:#64748b">51/51 통과</span></td><td>브라우저 회귀 스위트(<code>app/public/frontend-regression.test.html</code>) <strong>51/51</strong> 통과(테마 토큰, 3모드 인스펙터, 인라인 SVG, 독립 HTML/PDF 리포트 엔드포인트, 디자인 인스펙터, 상태 표시줄)</td></tr>
+        <tr><td><strong>모델 카탈로그</strong></td><td><code>packaging/customization/catalog.json</code> (생성물)</td><td><span class="badge badge-verified">검증 통과</span><br><span style="font-size:6.9pt;color:#64748b">드리프트 해소 · 29모델 / 17역할</span></td><td>재생성 후 커밋 카탈로그 <strong>29개 항목</strong>, <code>verify_customization.ps1</code>이 exit 0(<code>VERIFICATION PASSED</code>, <code>catalog_models=29</code>)으로 레지스트리와 29/17 일치</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-title" style="margin-top:2mm">4.2 실행 기록 — 작성 시점과 버전에 귀속된 시점 증거(time-bound evidence)</div>
+    <div class="evidence-grid">
+      <div class="evidence-card">
+        <div class="ev-header"><strong>정책 계층 단위 테스트</strong><span class="badge badge-param">과거 기준선 319건</span></div>
+        <p class="ev-text"><code>python -m unittest discover -s engine -p "test_*.py"</code> discovery는 <strong>319건</strong>이며 이번 변경 전 기준선이라 재실행하지 않았다. 순서 의존 <code>test_semantic_memory</code> 1건 오류는 단독 실행에서 재현되지 않았다. 프로브로 <code>grade:clamped_xhigh_to_medium</code> 하향과 <code>skills:dropped_unknown_*</code> 제거를 확인했다.</p>
+      </div>
+      <div class="evidence-card">
+        <div class="ev-header"><strong>카탈로그 일관성 검증</strong><span class="badge badge-verified">exit 0</span></div>
+        <p class="ev-text"><code>powershell -NoProfile -File scripts\verify_customization.ps1</code> → <code>VERIFICATION PASSED</code>, exit 0. 프로브 <code>[pass]</code>, <code>catalog_models=29</code>로 레지스트리와 카탈로그가 29개 모델 / 17개 역할에서 일치한다. 이전의 <code>catalog.json is stale (differs in: valid_roles, models)</code> 드리프트는 <code>python packaging/customization/generate_catalog.py</code>로 카탈로그를 레지스트리에서 재생성해 해소했다(추가만 있고 삭제는 없음).</p>
+      </div>
+      <div class="evidence-card">
+        <div class="ev-header"><strong>게이트웨이 시험</strong><span class="badge badge-verified">148/148</span></div>
+        <p class="ev-text"><code>node --test gateway/test/*.test.mjs</code> 실행 결과 <strong>148개 통과 / 0 실패</strong>. Allowlist 정책, 경로 검증, 3단계 프리픽스(정적·준정적·동적), 세션 모델 핀, 쿼터 원장, 자격증명 리덕터, 자동 선택 및 건강 진단 프로브가 모두 검증되었다(외부 실제 공급자 미호출).</p>
+      </div>
+      <div class="evidence-card">
+        <div class="ev-header"><strong>장기 기억 및 DX 모듈 시험</strong><span class="badge badge-verified">42/42 · 앱 계층에 포함</span></div>
+        <p class="ev-text"><code>node --test app/memory/test/*.test.mjs</code> <strong>42개 통과 / 0 실패</strong>. DX 모듈 시험은 앱 계층 시험(<strong>154/154</strong>)에 포함되어 함께 집계된다. FTS5+벡터 하이브리드 검색, 소프트 삭제, 시크릿 마스킹, 출처 필드, 프로젝트 감지, 스냅샷 diff·되돌리기, 오류 해설, 작업 재개, 비용 집계 단위 시험이 입증되었다.</p>
+      </div>
+      <div class="evidence-card">
+        <div class="ev-header"><strong>브라우저 회귀 및 수정한 원인</strong><span class="badge badge-verified">51/51</span></div>
+        <p class="ev-text">브라우저 회귀 스위트(<code>app/public/frontend-regression.test.html</code>)는 <strong>51/51</strong> 통과로 테마 토큰, 3모드 인스펙터, 인라인 SVG, HTML/PDF 리포트 엔드포인트, 디자인 인스펙터, 상태 표시줄을 검증한다. 이전에 실패하던 통합 시험 3건은 원인에서 수정했다: 전역 OMP 상태 디렉터리가 CLI 오버레이 시험으로 누출되던 문제(시험마다 격리된 디렉터리 사용), <code>compactToolOutput</code>이 반복 페이로드를 과도하게 축약한 문제(시험·빌드 로그 패턴으로 한정), 병렬 Bun 스폰 사이에서 <code>HOME</code>이 격리되지 않은 문제.</p>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <strong>시점 한정 원칙:</strong> 모든 시험 기록은 시점 한정이며, 스텁 통과를 외부 보안 수용이나 실추론 완료로 해석하지 않는다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>07 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 08 (4.3 프라이버시 가드) ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">4. 구현 현황 및 증거 · 프라이버시</div>
+    <div class="title-row"><h1>4.3 전송 전 프라이버시 가드</h1><span class="doc-id">단일 게이트 · 가명 처리</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      외부로 나가는 모든 전송은 하나의 검사 지점을 지난다. 이 계층이 없던 시기에는 본문용 정규식 일부와 별도의 자격증명 목록이 서로 분리되어 있어,
+      실제 키가 게이트를 통과하는 동안 서버 주소는 반대로 마스킹되는 사례가 발생했다. 지금은 탐지 카탈로그·가명 저장소·전송 게이트가 한 곳에 있고,
+      대화 본문과 도구 결과, 첨부, 이미지·영상 프롬프트, 메모리 주입과 저장, 문서 내보내기, 진단 로그가 모두 같은 규칙을 쓴다.
+    </div>
+
+    <div class="sub-title">4.3.1 무엇을 검사하고 무엇을 남기는가</div>
+    <div class="two-col-grid">
+      <div class="col-card">
+        <h4>검사 범위와 판정</h4>
+        <p>정규식 탐지에 체크섬 검증, 엔트로피 판정, 토큰 효율 판정을 더해 판단한다. 확인된 자격증명이 남아 있으면
+        <strong>업스트림 호출 전에 HTTP <code>422</code>로 거절</strong>하고, 가명 처리된 본문은 와이어로 나가기 전에 다시 검증한다.
+        모든 클라우드 라우트에 같은 규칙이 적용되며, 동의 여부와 가명 처리 여부는 하나의 값으로 합치지 않고 따로 기록한다.</p>
+        <div class="mini-note"><strong>원문 노출 금지:</strong> 원문 값은 로그, 이벤트, 문서, 화면 어디에도 남지 않는다. 화면에는 유형·조치·전송 여부만 한 줄로 남는다.</div>
+      </div>
+      <div class="col-card">
+        <h4>구문에 맞춘 두 가지 가명 형태</h4>
+        <p>본문에는 <code>[PERSON_1]</code> 형태를, 코드 식별자가 들어가는 자리에는 <code>__PII_PERSON_1__</code> 형태를 쓴다.
+        후자는 식별자로 유효한 문자만 남기므로 <strong>가명 처리된 코드도 그대로 컴파일된다.</strong> 가명은 요청 범위 안에서만 유효하고,
+        복원 매핑은 전송 본문에 실리지 않는다.</p>
+        <div class="mini-warn"><strong>경계:</strong> 가드는 전송 전에 동작한다. 사용자가 대화에 직접 입력한 값을 복원하는 기능이 아니라, 외부로 전송되는 시점에 차단하고 가명 처리하는 기능이다.</div>
+      </div>
+    </div>
+
+    <div class="sub-title" style="margin-top:2mm">4.3.2 측정된 동작</div>
+    <table class="data-table compact-table" style="margin-bottom:1.4mm">
+      <thead><tr><th style="width:32%">측정 항목</th><th style="width:26%">결과</th><th style="width:42%">측정 조건</th></tr></thead>
+      <tbody>
+        <tr><td>탐지 재현율</td><td><strong>100% (48/48), 놓친 항목 0건</strong></td><td>변형을 중복 제거한 코퍼스 48건</td></tr>
+        <tr><td>정밀도(오탐)</td><td><strong>100%, 오탐 0건</strong></td><td>약 34,000줄 규모·151개 파일(앱·게이트웨이 원본)</td></tr>
+        <tr><td>프라이버시 게이트 스캔 지연</td><td><strong>p50 0.02~0.03 ms / p95 0.33~0.58 ms</strong><br><span style="font-size:6.8pt;color:#475569">(배치 7 × 60건, 워밍업 2패스 폐기, 판정값 = 배치별 p95의 중앙값, 4회 실행 관측 범위, 예산 p95 ≤ 5 ms)</span></td><td>비중복 코퍼스 48개 변형 + 프로덕션 소스 파일 12개(각 4 KB 슬라이스)</td></tr>
+        <tr><td>코딩 안전성</td><td><strong>운영 소스 파일 94개 전부 통과, 차단 0건</strong></td><td>가명 처리 후 컴파일 가능성 확인</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:6.8pt;line-height:1.28;color:#475569;margin-bottom:1.4mm">
+      측정 범위: 비중복 코퍼스 48개 변형 + 프로덕션 소스 파일 12개(각 4 KB 슬라이스), 1배치 60건, 총 7배치. 20 KB 이상 대형 도구 결과는 이 예산의 측정 범위 밖이며 아직 미측정이다.
+    </div>
+
+    <div class="sub-title" style="margin-top:1.6mm">4.3.3 선택 단계와 필수 단계의 경계</div>
+    <div class="audit-trail-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2mm">
+        <strong style="font-size:8.6pt">도우미 모델은 선택, 규칙 계층은 필수</strong>
+        <span class="badge badge-param">후보 미설치 · 미측정</span>
+      </div>
+      <p style="font-size:7.7pt;line-height:1.42;color:#475569">
+        가드 위에는 문맥을 읽어 판단을 돕는 선택 단계가 있고, 그 단계의 실행 시간에는 상한이 있다. 후보 모델의 가중치는 측정 환경에 설치되어 있지 않아
+        <strong>그 단계의 효과는 미측정</strong>이다. 설치되어 있지 않더라도 정규식·체크섬 계층은 반드시 실행되고,
+        위험도가 높은데 스스로 검증할 수 없는 전송은 차단된다. 즉 안전의 하한은 선택 단계가 아니라 필수 계층이 보장한다.
+      </p>
+    </div>
+
+    <div class="takeaway">
+      <strong>기술 평가:</strong> 이 계층이 보장하는 것은 나가는 전송이 정해진 규칙을 통과하고, 확인된 자격증명은 나가지 않으며, 원문이 기록에 남지 않는다는 점이다.
+      모델 의미 이해에 근거한 판단 정확도는 후보가 설치되기 전까지 미측정으로 둔다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>08 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 07 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">5. 비용 최적화 계층</div>
+    <div class="title-row"><h1>5.1 비용 최적화 기법별 결정표</h1><span class="doc-id">비용 최적화 결정표</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      에이전트 반복 호출에 따른 토큰 누적과 API 비용 급증을 방어하기 위해 프롬프트·도구 최적화 기법을 조사하고,
+      소스 코드 및 아키텍처 수준에서 채택 여부를 결정했다.
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th style="width:19%">최적화 기법</th><th style="width:17%">결정 상태</th><th style="width:25%">구현 위치 및 코드 근거</th><th style="width:39%">결정 사유 및 동작 세부사항</th></tr></thead>
+      <tbody>
+        <tr><td><strong>RTK 스타일 무손실<br>도구 출력 압축</strong></td><td><span class="badge badge-verified">통합 (모듈 구현 완료)</span><br><span style="font-size:6.9pt;color:#64748b">20 KB 스필 저장소</span></td><td><code>app/omp/bounded-tool-result.js</code><br><code>app/omp/tool-spill.mjs</code></td><td>ANSI 제거, 중복 줄 축약, 50줄 초과 로그 축약(오류 트레이스 보존). 20 KB 초과 출력은 로컬 디스크로 스필(<code>spill://</code>)하여 무손실 복구 지원(<strong>118,892 B 바이트 단위 일치 복구 실측 확인</strong>). <code>app/config.json</code> coreArgs에 <code>--extension</code>으로 등록</td></tr>
+        <tr><td><strong>프롬프트 접두사 안정화<br>· 세션 고정</strong></td><td><span class="badge badge-verified">통합 (게이트웨이 구현 완료)</span></td><td><code>gateway/lib/selection.mjs</code><br><code>gateway/lib/prompt-cache.mjs</code></td><td><code>x-app-session</code> 헤더를 키로 세션 핀 저장소(<code>SESSION_PINS</code>, <code>gateway/lib/session-pin.mjs</code>)에 모델을 고정해 KV Prefix Cache 적중률을 방어한다. 핀 저장소는 용량 상한 1024와 TTL(기본 5분)로 축출된다. 3단계 프리픽스 계층화(Level 1 정적 / Level 2 준정적 컨텍스트 / Level 3 동적)를 적용해 <code>x-gateway-prefix-stable</code> 헤더를 반환한다</td></tr>
+        <tr><td><strong>규칙 기반<br>2-트랙 실행 플래너</strong></td><td><span class="badge badge-verified">수정 (규칙 기반 휴리스틱)</span><br><span style="font-size:6.9pt;color:#64748b">LLM 결정 모델 아님</span></td><td><code>gateway/lib/decision-planner.mjs</code> (<code>planTurnExecution</code>)<br><code>gateway/lib/selection.mjs</code></td><td>정규식 파일 확장자(2개 이상), 단계형 지시어, 복잡도 키워드, 프롬프트 길이(250자)로 <code>direct_execute</code>와 <code>survey_and_plan</code>을 결정론적으로 분기. 결과는 <code>selectModel</code>을 거쳐 헤더 <code>x-gateway-plan-mode</code>로 전달</td></tr>
+        <tr><td><strong>장기 기억 계층<br>(Memory Retrieval)</strong></td><td><span class="badge badge-verified">평가 완료 (자체 질의셋)</span><br><span style="font-size:6.9pt;color:#64748b">OMP 확장 기본 등록</span></td><td><code>app/memory/store.mjs</code><br><code>app/memory/eval/run-eval.mjs</code></td><td>로컬 CPU 임베딩(<code>Xenova/multilingual-e5-small</code> q8, 384차원, lazy worker)과 SQLite FTS5를 결합한 RRF(k=60) 하이브리드 검색. 자체 20문항 질의셋 평가: Recall@1 0.800, Recall@3 0.950, Recall@5 1.000, MRR 0.877 (키워드 단독 0.600/0.700/0.800/0.675). OMP 확장(<code>extension.mjs</code>) coreArgs 등록</td></tr>
+        <tr><td><strong>로컬 백그라운드 작업<br>· 규칙 계층 및 워치독</strong></td><td><span class="badge badge-verified">규칙 계층 구현 (Zero LLM)</span><br><span style="font-size:6.9pt;color:#64748b">외부 LLM 호출 0회</span></td><td><code>gateway/lib/local-background.mjs</code><br><code>app/insight/watchdog.mjs</code></td><td>세션 제목·진행 요약·다이제스트는 외부 LLM 호출 없이 규칙 계층으로 처리한다. 임베딩과 토크나이즈는 번들된 다국어 임베딩 모델과 토크나이저가 인프로세스로 수행하며, 저우선순위 큐 실행기는 20개 작업 단위를 2.17 ms에 처리하고 RSS 증가는 +1.38 MB였다. 턴 지연 및 무응답 멈춤을 방어하기 위해 관측 가능 워치독(침묵 감지)을 결합했다. 백그라운드 소형 모델 후보는 가중치가 설치되지 않아 미측정이다.</td></tr>
+        <tr><td><strong>AST 아웃라인 추출<br>· 코드 압축</strong></td><td><span class="badge badge-partial">보류</span><br><span style="font-size:6.9pt;color:#64748b">하네스 미배선</span></td><td>Python 엔진 계층 (<code>engine/</code>)</td><td>Python 엔진 계층에 AST 심볼 추출 및 코드 슬라이싱 설계가 구비되어 있으나 Bun 기반 OMP 자식과의 라이브 IPC 배선이 완성되지 않아 제품 런타임 적용은 보류</td></tr>
+        <tr><td><strong>DAG 오케스트레이터<br>· 에스컬레이션</strong></td><td><span class="badge badge-partial">모듈 구현 완료</span><br><span style="font-size:6.9pt;color:#64748b">런타임 미연결</span></td><td><code>app/orchestrator/orchestrator.mjs</code><br><code>engine/dag_orchestrator.py</code></td><td>파일 락, 의존성 DAG, 병렬 게인 임계치, 모델 에스컬레이션 및 부분 재계획 모듈을 구비했으나 주 런타임 요청 경로에는 결합하지 않았다</td></tr>
+      </tbody>
+    </table>
+
+    <div class="cost-model-grid">
+      <div class="cost-card">
+        <strong>참조 단가표 — <code>gateway/lib/cost-rates.mjs</code></strong><br>
+        Anthropic(Claude 3.5 Sonnet: 입력 3.0달러/M, 캐시 읽기 0.3달러/M, 출력 15.0달러/M), DeepSeek(V3/V4.1: 입력 0.14달러/M, 캐시 읽기 0.014달러/M),
+        OpenAI(GPT-4o), Qwen의 공식 기준 요율을 하드코딩한 참조 카드로 <code>calculateUsageCost</code>가 비용과 노-캐시 기준선 대비 절감액을 계산한다.
+        이 표는 <strong>정적 참조값</strong>이며 실시간 요금 변동과 연동되지 않는다.
+      </div>
+      <div class="cost-card">
+        <strong>업스트림 등록 — <code>app/config.json</code></strong><br>
+        기본 <code>demo-stub</code>(오프라인 데모) 외에 <code>openrouter-zdr</code>(<code>OPENROUTER_API_KEY</code>)와 <code>a6api</code>(<code>A6API_KEY</code>)가 선언되어 있다.
+        ZDR 플래그는 자체 설정 선언이며 외부 공급자를 통한 실제 API 호출 추론은 <strong>미검증</strong>이다.
+        허용 목록에 <code>prompt_cache_key</code>가 등록되어 있으나 <code>chat.mjs</code>는 이를 <code>400 unsupported_parameter</code>로 차단한다.
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <strong>설계 원칙:</strong> 코드 무결성을 훼손하는 무리한 프롬프트 축약(Caveman 등)을 배제하고,
+      무손실 도구 압축과 세션 모델 고정 같은 구조적 캐싱으로 토큰을 안전하게 줄이는 접근을 채택했다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>09 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 09 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">5. 비용 최적화 계층 및 실측 비교</div>
+    <div class="title-row"><h1>5.2 Live 2-환경 실측 벤치마크 (공식 단가 기준)</h1><span class="doc-id">실측 벤치마크</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead" style="margin-bottom:1.2mm">
+      실제 엔드포인트에서 2개 환경 × 4개 과제 × 반복 N=3 (총 24슬롯)을 실측했다.
+      과제 명세를 정정한 세트를 기준으로 삼았고, 원자료는 <code>output/benchmark-live-2env-official-result.json</code>에 있다.
+    </div>
+
+    <div class="sub-title" style="margin-top:1.0mm;margin-bottom:0.8mm">실측 1. 환경별 결과</div>
+    <table class="data-table compact-table" style="font-size:6.6pt;margin-bottom:1.0mm">
+      <thead>
+        <tr>
+          <th style="width:23%">환경 (Environment)</th>
+          <th style="width:13%">상태</th>
+          <th style="width:16%">통과</th>
+          <th style="width:14%">3회 전부 통과</th>
+          <th style="width:16%">과제 1회 수행 소요 시간(중앙값)</th>
+          <th style="width:18%">TTFT 중앙</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>(a) Claude Opus 5.5</strong> (게이트웨이 단일 모델 호출)</td>
+          <td><span class="badge badge-verified">실측 완료</span></td>
+          <td><strong>12/12 (100.0%)</strong></td>
+          <td>4/4</td>
+          <td>24,361 ms</td>
+          <td>3,414 ms</td>
+        </tr>
+        <tr>
+          <td><strong>(b) VAYEX 하네스</strong> (역할 라우팅)</td>
+          <td><span class="badge badge-verified">실측 완료</span></td>
+          <td><strong>12/12 (100.0%)</strong></td>
+          <td>4/4</td>
+          <td>46,205 ms</td>
+          <td>3,953.5 ms</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:6.7pt;line-height:1.26;color:#475569;margin-bottom:1.4mm">
+      과제 4종을 환경별로 3회씩 반복 실측. 비용은 측정 토큰 × 공시 단가로 산출한 추정치(과제당 3회 합산), 소요 시간은 과제 1회 수행 기준 중앙값. Claude는 게이트웨이 단일 모델 호출.
+      Codex CLI는 원격 제공자 용량 초과(HTTP 503)로, DeepSeek 단일 모델 호출은 비교 기준에서 제외했다.
+    </div>
+
+    <div class="sub-title" style="margin-top:1.0mm;margin-bottom:0.8mm">실측 2. 공식 단가 기준 비용 (USD / 1M tokens)</div>
+    <table class="data-table compact-table" style="font-size:6.6pt;margin-bottom:1.0mm">
+      <thead>
+        <tr>
+          <th style="width:21%">환경</th>
+          <th style="width:22%">측정 토큰 (in / out / cache hit)</th>
+          <th style="width:22%">적용 단가 (USD / 1M)</th>
+          <th style="width:14%">총 비용</th>
+          <th style="width:21%">성공 과제당 비용(추정)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>(a) Claude Opus 5.5</strong></td>
+          <td>9,240 / 59,469 / 8,064</td>
+          <td>in $4 / out $20 / cacheRead $0.2 / cacheWrite $5</td>
+          <td>$1.1956968</td>
+          <td><strong>$0.2989</strong><br><span style="font-size:6.4pt">총 $1.1956968 ÷ 4과제 · 통과 4/4</span></td>
+        </tr>
+        <tr>
+          <td><strong>(b) VAYEX 하네스</strong></td>
+          <td>9,240 / 63,856 / 8,064</td>
+          <td>실행별 라우팅 대상 공시 단가</td>
+          <td>$0.0662071</td>
+          <td><strong>$0.0166</strong><br><span style="font-size:6.4pt">총 $0.0662071 ÷ 4과제 · 통과 4/4</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:6.7pt;line-height:1.26;color:#475569;margin-bottom:1.4mm">
+      비용 산식: (캐시 미적중 input × input 단가 + 캐시 적중 × 캐시 적중 단가 + output × output 단가) ÷ 1,000,000. input은 캐시 읽기를 포함한 prompt 토큰이므로 미적중분에만 input 단가를 적용했다. 캐시 쓰기 토큰은 전송 계층이 보고하지 않아 비용에 넣지 않았다.
+      VAYEX 실행은 DeepSeek 라우팅 10회(<code>deepseek-v4.1-flash-1017</code> off-peak, in $0.15 / hit $0.003 / out $0.60)와 Gemini 라우팅 2회(<code>gemini-3.8-flash</code>, in $0.75 / out $3.75 / cacheRead $0.075)로 갈렸다. 라우팅 대상은 실행별 응답 헤더 <code>x-opencodex-request-id</code>로 게이트웨이 관리 API를 조회해 회수했다.
+      게이트웨이는 호출별 USD를 보고하지 않으므로 비용은 공시 단가와 측정 토큰으로 계산한 값이며, 실제 청구서와 같다고 주장하지 않는다.
+    </div>
+
+    <div class="sub-title" style="margin-top:1.0mm;margin-bottom:0.8mm">5.3 철회된 최적화 실험 및 합성 시뮬레이션 한계</div>
+    <div class="retracted-box" style="padding:1.2mm 2.0mm;font-size:6.8pt;line-height:1.28;margin-bottom:1.2mm">
+      <strong>합성 시뮬레이션(모의 추정)의 한계와 폐기:</strong> 과거 <code>scripts/benchmark-comparison.mjs</code>에서 추정했던 11.2% 토큰 절감과 38.1% 비용 절감은 글자수 기반(char/4) 토큰 추정과 임의의 캐시 적중률(0~35% vs 82~90%)에 기댄 <strong>합성 시뮬레이션(모의 추정)</strong>에 불과하며, 실측 라이브 벤치마크가 완결됨에 따라 제품 성능 지표로서의 인용을 공식 철회한다.
+      또한 프롬프트 캐시(<code>prompt_cache_key</code>)와 도구 결과 상한 확장(<code>--extension</code>)은 게이트웨이 400 거절 및 바이트 증가만 유발하여 제품 경로에서 전면 철회되었다.
+    </div>
+
+    <div class="takeaway" style="padding:1.2mm 2.0mm;font-size:7.2pt;line-height:1.28">
+      <strong>실측 벤치마크의 결론:</strong> 24슬롯 실측에서 두 환경 모두 <strong>통과 12/12</strong>로 4개 과제를 3회씩 전부 통과했다. 성공 과제당 비용(추정)은 VAYEX $0.0166, Claude Opus 5.5 단일 호출 $0.2989이며, 과제 1회 수행 소요 시간(중앙값)은 Claude 24,361 ms · VAYEX 46,205 ms였다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>10 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 09 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">6. 시연 계획 및 기대 효과</div>
+    <div class="title-row"><h1>6.1 부스 시연 — 바엑스(VAYEX) 통합 영상(A) + 실작업 세션(B) | 6.2 기대 효과</h1><span class="doc-id">시연 · 기대 효과</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      경진대회는 구두 발표 없이 <strong>부스 전시</strong>(2026-11-18 09:00~18:00)로 운영된다. 관람객은 한 자리에 오래 머물지 않으므로
+      시연을 <strong>(A) 24인치 모니터 상시 재생 통합 영상</strong>과 <strong>(B) 노트북에서 관람객별 2~3분 현장 실작업 세션</strong>으로 나눈다.
+      두 부분 모두 기본은 번들 루프백 스텁(<code>demo-chat</code>)을 쓰는 <strong>오프라인 경로</strong>이며, 외부 네트워크·서버 연결을 전제하지 않는다.
+    </div>
+
+    <div class="sub-title"><span class="track-label">A</span>상시 재생 통합 영상 — 시연 · 테스트 · 검증 · 비교</div>
+    <div class="scenario-card" style="margin-bottom:2.2mm">
+      <div class="sc-badge-col"><span class="sc-step">통합 영상</span><span class="badge badge-verified">실행 기록</span></div>
+      <div class="sc-content-col">
+        <strong>60초 순환 영상 · 10개 장면 (로컬 파일 재생, 관람객 대기 없이 항상 동작)</strong>
+        <p><strong>시연:</strong> <code>launch.cmd</code> 더블클릭 → <code>launch.ps1</code>이 <code>.omp-runtime\</code>의 Bun/omp를 확인하고 브리지를 기동하며 설치·내려받기 화면 없이 즉시 구동된다. 테마 스튜디오 7종 프리셋 전환, 3모드 인스펙터, 완료 한 줄 작업 일지와 diff 분리, 개인정보 보호 한 줄, 4종 세션 산출물(HTML+헤드리스 PDF) 생성 및 관측 가능 워치독 작동을 시연한다.
+        <strong>테스트:</strong> 시험 계층이 모두 실패 0으로 통과한다는 사실을 화면에 함께 표시한다 — 앱 계층 <strong>154/154</strong>, 게이트웨이 <strong>148/148</strong>, 장기 기억 <strong>42/42</strong>, 브라우저 회귀 <strong>51/51</strong>.
+        <strong>검증:</strong> 검증기(<code>validate_turn_plan</code>)에 계획 레코드를 넣어 V-02 동의 없는 클라우드 거부, V-03 미등록 모델 거부, V-06 음수 거부, V-07 예산 초과 거부, 등급 클램프가 결정론적으로 거부되는 장면과, 일일 쿼터 초과 시 <code>429 quota_exceeded</code>로 거절되는 장면. <strong>비교:</strong> §5.2의 2환경 실측 벤치마크(24슬롯, 두 환경 모두 통과 12/12)를 화면에 제시하고, 철회된 실험(§5.3)의 합성 시뮬레이션 수치에는 <span class="badge badge-param">모의 추정</span> 표기를 유지한다.
+        <strong>배제:</strong> 런타임 미배선인 턴별 동적 조정 장면과 실제 모델 추론 성공률은 영상에 넣지 않는다.</p>
+      </div>
+    </div>
+
+    <div class="sub-title"><span class="track-label">B</span>현장 실작업 세션 — 관람객별 2~3분 (검증 완료된 라이브 흐름)</div>
+    <div class="booth-grid">
+      <div class="booth-seg"><div class="seg-head"><strong>① 프로젝트 감지</strong><span class="badge badge-verified">검증 완료</span></div><code>app/dx</code>가 부스 예제(<code>booth/sample-project</code>)의 Node/npm 환경과 <code>npm test</code> 명령을 자동 감지한다(정상 감지 0.05초).</div>
+      <div class="booth-seg"><div class="seg-head"><strong>② 변경 diff 확인</strong><span class="badge badge-verified">검증 완료</span></div>관람객 요청에 따른 파일 변경분(<code>app.js</code>, <code>index.html</code> 등)의 diff를 UI 스냅샷 뷰어에서 실시간으로 대조한다.</div>
+      <div class="booth-seg"><div class="seg-head"><strong>③ 변경 내역 확인 / 되돌리기</strong><span class="badge badge-verified">검증 완료</span></div><code>/api/dx/snapshot/revert</code>(파일 단위)·<code>rollback</code>(작업 단위) API로 변경 내역을 확인한 뒤 되돌리기를 직접 실행한다.</div>
+      <div class="booth-seg"><div class="seg-head"><strong>④ 자동 검증</strong><span class="badge badge-verified">검증 완료</span></div><code>npm test</code>를 백그라운드 자동 구동하여 테스트 통과(실측 ~0.55~0.74초 소요)와 HTML UI 반영 상태를 화면에서 확인한다.</div>
+      <div class="booth-seg"><div class="seg-head"><strong>⑤ 원터치 리셋</strong><span class="badge badge-verified">검증 완료</span></div>세션 종료 시 <code>booth/reset.cmd</code>로 깨끗한 원본(<code>pristine/</code>)에서 바이트 단위 일치 복구를 실행한다(약 1.1초, 5개 파일 SHA256 일치).</div>
+    </div>
+
+    <div class="two-col-grid">
+      <div class="col-card" style="padding:1.9mm 2.4mm">
+        <h4 style="font-size:8.2pt;margin-bottom:1mm">부스 운영 프롭(Props)과 복구 보장</h4>
+        <p style="font-size:7.2pt;line-height:1.36">부스 디렉터리(<code>booth/</code>)에 독립 예제 프로젝트(<code>sample-project</code>), 무결성 검증 스크립트(<code>verify-reset.ps1</code>), 자동 검증 러너(<code>test-runner.mjs</code>), 1장 운영자 카드(<code>booth/README.md</code>)를 완비했다. robocopy 미러링과 SHA256 해시 검증으로 바이트 단위 복구를 <strong>약 1.1초</strong>(1회차 1.096초, 변경 없는 재실행 1.022초)에 완료한다.</p>
+      </div>
+      <div class="col-card" style="padding:1.9mm 2.4mm">
+        <h4 style="font-size:8.2pt;margin-bottom:1mm">세션 실패 시 대체 (Fallback)</h4>
+        <p style="font-size:7.2pt;line-height:1.36"><code>launch_failed</code>, 스텁 무응답, 되돌리기 실패, 브라우저 새로고침으로 세션이 끊기면 즉시 (A) 통합 영상으로 전환하고 "이번 세션은 실패했습니다. 영상으로 같은 장면을 보여 드립니다"를 안내한다. 실패를 성공으로 간주하지 않고 실패 지점과 오류 코드를 화면에 남긴다.</p>
+      </div>
+    </div>
+
+    <div class="sub-title" style="margin-top:2.2mm">6.2 기대 효과</div>
+    <div class="benefit-grid">
+      <div class="benefit-card"><div class="bf-icon">01</div><div class="bf-title">사용자 진입 비용 감소</div><div class="bf-desc">기본 경로는 이미 있는 런타임을 쓰고 아무것도 내려받지 않는다. 상시 영상과 2~3분 세션으로 짧은 체류에서도 구조와 한계를 전달한다. 절감률 같은 정량 주장은 하지 않는다.</div></div>
+      <div class="benefit-card"><div class="bf-icon">02</div><div class="bf-title">코드 자산 보안과 프라이버시</div><div class="bf-desc">외부 클라우드로 소스코드를 보내지 않는 것이 기본값이다. 클라우드 경로는 화면의 동의 토글로 명시 동의를 받기 전에는 만들어지지 않고, 전송 전 개인정보 가드가 자격증명을 차단하며, 원문 값은 화면에 남지 않는다.</div></div>
+      <div class="benefit-card"><div class="bf-icon">03</div><div class="bf-title">운용 신뢰성 (부분)</div><div class="bf-desc">무리한 실행을 막는 결정론적 정책 게이트와 원장 기록기가 구현되고 검증기 계약은 프로브로 확인했으나, <strong>아직 하네스 런타임에 배선되지 않았다.</strong> "런타임에서 환각을 자동 차단한다"고 시연하지 않는다.</div></div>
+    </div>
+
+    <div class="takeaway">
+      <strong>시연 원칙:</strong> 영상(A)은 시연·테스트·검증·비교를 모두 보여 주고, 세션(B)은 관람객이 직접 요청부터 검증까지 한 차례 수행하게 하되
+      구현·미배선·미검증을 화면에서 구분해 표시한다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>11 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 10 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">7. 한계 및 미결 사항 · 8. 결론</div>
+    <div class="title-row"><h1>7. 한계 및 미결 사항(Open Issues) | 8. 결론</h1><span class="doc-id">한계 · 결론</span></div>
+  </div>
+  <div class="page-content">
+    <div class="sub-title">7. 한계 및 미결 사항 — 5개 항목</div>
+    <div class="issue-item"><span class="issue-num">1</span><div><strong>원격 워커 모델 미관측:</strong> 벤치마크 실측을 완료했으나(§5.2) VAYEX의 실행별 실제 라우팅 대상은 응답 본문이 아니라 게이트웨이 관리 API로 사후 회수해야 했다. 게이트웨이가 호출별 USD를 보고하지 않으므로 비용은 회수한 라우팅 대상의 공시 단가 × 측정 토큰으로 계산한 값이며 실제 청구서와 같은 값이 아니다. 과금이 관측되지 않는 턴은 <code>0</code>으로 채우지 않고 <code>비용 미집계(원격 워커 과금 미노출)</code>로 표시한다. 과거 시뮬레이션의 11.2%·38.1%는 가상 시뮬레이션 가정치이며 실측 벤치마크 완결로 공식 폐기되었다.</div></div>
+    <div class="issue-item"><span class="issue-num">2</span><div><strong>백그라운드 요약의 규칙 계층 의존:</strong> 세션 제목·진행 요약·다이제스트는 외부 LLM을 호출하지 않고 정규식 및 규칙 계층으로 구동된다. 더 나은 요약을 위한 소형 모델 후보가 레지스트리에 선언되어 있으나 측정 환경에는 가중치가 설치되어 있지 않아 <strong>후보의 성능·품질은 미측정</strong>이다. 워치독으로 턴 멈춤을 감시하나 복잡한 자연어 요약의 정밀도 평가는 후속 과제다.</div></div>
+    <div class="issue-item"><span class="issue-num">3</span><div><strong>독립 데스크톱 패키징 미완:</strong> 단일 웹 작업공간 UI(<code>app/public/</code>)와 브라우저 회귀 51/51 통과는 확인했으나, 별도의 단독 설치형 실행 파일(Executable Bundling) 구성은 후속 작업이다.</div></div>
+    <div class="issue-item"><span class="issue-num">4</span><div><strong>게이트웨이 보안 재검토·실공급자 검증 미완:</strong> 게이트웨이 라이브러리 시험 148/148 통과는 스텁 대상이며, 외부 상용 공급자 연동 시의 실제 API 호출과 외부 보안 수용은 미검증이다. 프라이버시 가드의 도우미 모델 단계도 가중치가 설치되지 않아 미측정이며, 안전의 하한은 정규식·체크섬 계층이 보장한다.</div></div>
+    <div class="issue-item"><span class="issue-num">5</span><div><strong>경계면 미봉합:</strong> 턴별 플래너는 검증되었으나 하네스 턴 이벤트에 배선되지 않았다. 규칙 수는 구현체에 따라 다르다 — Python <code>engine/decision_planner.py</code>의 <code>validate_turn_plan</code>이 V-01~V-09(V-09 스킬 부분집합), JS <code>gateway/lib/turn-plan.mjs</code>의 <code>validateTurnPlan</code>이 V-01~V-08이다. 20 KB 디스크 스필 모듈(무손실 복구 확인)은 coreArgs에 등록되었으나 실추론 대상 절감 크기는 미측정이다. <code>prompt_cache_key</code>와 <code>--extension</code>은 독립 검토 후 철회되어 제품 경로에 없다.</div></div>
+
+    <div class="sub-title" style="margin-top:2.6mm">8. 결론</div>
+    <div class="conclusion-box">
+      <p>본 작품은 <strong><code>omp</code> 18.16.0 에이전트 런타임을 Node 호스트가 자식 프로세스로 기동하고, 게이트웨이는 그 호스트가 라이브러리로 인프로세스 임포트하는 로컬 하네스 기반의 사용자용 무설정 AI 코딩 플랫폼 '바엑스(VAYEX)'</strong>이다.
+      "코딩의 항로를 스스로 열다"라는 슬로건 아래, 텍스트 수직 래핑 버그를 제거한 3모드 인스펙터, 7종 테마 스튜디오, 완료 한 줄 작업 일지와 diff 분리, 전송 전 프라이버시 가드, 4종 세션 산출물 문서 생성기(HTML+헤드리스 PDF)를 결합했다. 별도 게이트웨이 서버 프로세스는 폐기된 구성이며 현재 요청 경로에 없다.</p>
+      <p>과장된 벤치마크 수치나 조작된 결과를 배제하고, 전 계층 시험 기록(앱 계층 <strong>154/154</strong>, 게이트웨이 <strong>148/148</strong>, 장기 기억 <strong>42/42</strong>, 브라우저 회귀 <strong>51/51</strong> — 실패 0)과
+      실제 동작하는 계측 경로, 그리고 아직 구현되지 않은 항목(동적 조정 런타임 미배선, 실공급자 추론 미검증)을 분리해 제시한다.
+      이 작품이 현재 주장하는 것은 <strong>두 실행 단위(호스트와 그 자식인 에이전트 런타임)로 이루어진 로컬 하네스의 구조와 규약, 그리고 그 규약의 어디까지가 실행으로 확인되었는가</strong>이며,
+      완성된 안전성이나 엔드투엔드 통합이 아니다.</p>
+    </div>
+
+    <div class="signature-card">
+      <div class="sig-left">
+        <div><strong>작품명:</strong> 로컬 통합 AI 코딩 하네스 : <strong>VAYEX</strong></div>
+        <div><strong>출품팀:</strong> 국립목포해양대학교 컴퓨터공학과 비용절감위원회</div>
+        <div><strong>개발자:</strong> 김성중, 턴소트훌 · <strong>지도교수:</strong> 김기원</div>
+      </div>
+      <div class="sig-right"><div style="font-size:7.4pt;color:#64748b">문서 개정</div><div style="font-size:10pt;font-weight:800">개정판</div></div>
+    </div>
+
+    <div class="takeaway" style="margin-top:2mm">
+      <strong>공학적 결언:</strong> 불확실한 수치 대신 실행 가능한 코드와 시험 증거로 평가받는 결과물을 제출한다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>12 / 13</span></div>
+</div>
+
+<!-- ============ PAGE 11 ============ -->
+<div class="page">
+  <div class="page-header">
+    <div class="category">부록 · 검증 인덱스</div>
+    <div class="title-row"><h1>부록 A. 사실 · 증거 · 상태 대조 인덱스</h1><span class="doc-id">인덱스</span></div>
+  </div>
+  <div class="page-content">
+    <div class="section-lead">
+      본문에 인용된 모든 수치·경로·상태를 한 지면에 모아 심사위원이 즉시 대조할 수 있도록 정리한다.
+      모든 값은 저장소 기록 또는 코드 상수에서 온 것이며, 실측 성능 지표는 포함하지 않는다.
+    </div>
+
+    <div class="sub-title">A.1 실행·시험 기록 대조표</div>
+    <table class="data-table compact-table" style="margin-bottom:1.2mm;font-size:6.6pt">
+      <thead><tr><th style="width:22%">항목</th><th style="width:34%">명령 / 산출물</th><th style="width:17%">기록값</th><th style="width:27%">귀속 시점 · 한정</th></tr></thead>
+      <tbody>
+        <tr><td>게이트웨이 기능 시험</td><td><code>node --test gateway/test/*.test.mjs</code></td><td><strong>148 통과 / 0 실패</strong></td><td>3단계 프리픽스·세션 핀 포함 · 스텁 업스트림 대상</td></tr>
+        <tr><td>앱 계층 시험</td><td><code>node --test app/test/</code></td><td><strong>154 통과 / 0 실패</strong></td><td>브리지·통합·UI·DX 모듈 시험 포함. 이전 실패 3건은 원인 수정으로 해소</td></tr>
+        <tr><td>장기 기억 단위 시험</td><td><code>node --test app/memory/test/*.test.mjs</code></td><td><strong>42 통과 / 0 실패</strong></td><td>FTS5/벡터/RRF k=60</td></tr>
+        <tr><td>프라이버시 가드 측정</td><td><code>app/privacy/**</code> 측정</td><td><strong>재현율 48/48 · 오탐 0건</strong></td><td>코퍼스 48건 및 약 34,000줄 규모·151개 파일. 지연은 p50 0.02~0.03 ms / p95 0.33~0.58 ms(배치 7 × 60건, 워밍업 2패스 폐기, 판정값 = 배치별 p95의 중앙값, 4회 실행 관측 범위, 예산 p95 ≤ 5 ms)</td></tr>
+        <tr><td>부스 예제 자동 검증</td><td><code>node booth/test-runner.mjs</code></td><td><strong>자동 감지 시험 통과</strong></td><td>감지 후 백그라운드 실행 성공</td></tr>
+        <tr><td>부스 예제 원상 복구</td><td><code>powershell booth/verify-reset.ps1</code></td><td><strong>약 1.1초 (1회차 1.096초)</strong></td><td>5개 파일 SHA256 바이트 일치, 멱등 재실행 1.022초</td></tr>
+        <tr><td>도구 압축 스필 복구</td><td><code>app/omp/tool-spill.mjs</code> probe</td><td><strong>무손실 복구 확인</strong></td><td>바이트 단위 일치</td></tr>
+        <tr><td>브라우저 회귀</td><td><code>app/public/frontend-regression.test.html</code></td><td><strong>51 통과 / 0 실패</strong></td><td>테마 토큰·3모드 인스펙터·인라인 SVG·HTML/PDF 리포트 엔드포인트·디자인 인스펙터·상태 표시줄</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-title" style="margin-top:1.2mm">A.2 상태 판정 요약</div>
+    <table class="data-table compact-table" style="margin-bottom:1.2mm;font-size:7.0pt">
+      <thead><tr><th style="width:20%">구분</th><th style="width:44%">대상</th><th style="width:36%">판정 근거</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-verified">구현 완료</span></td><td>게이트웨이(148/148), 장기 기억(42/42, 확장 coreArgs 등록·DB 경로 단일화), 앱 계층(154/154), 브라우저 회귀(51/51), 전송 전 프라이버시 가드(전 경로 단일 게이트), 테마 스튜디오 7종, 3모드 인스펙터, 완료 한 줄 작업 일지, 4종 산출물 문서, 디자인 모드, OMP 확장 기본 등록, SQLite 경로 단일화, 부스 리셋(약 1.1초), 워치독</td><td>실행 기록이 남아 있고 명령·산출물이 대조 가능</td></tr>
+        <tr><td><span class="badge badge-partial">부분 구현<br>(런타임 미연결)</span></td><td><code>TurnPlan</code> 검증기(Python V-01~V-09 · JS V-01~V-08), DAG 오케스트레이터</td><td>독립 모듈 및 단위 시험은 구비되었으나 런타임 미배선</td></tr>
+        <tr><td><span class="badge badge-design">설계 전용</span></td><td><code>TurnPlan</code> 세션 턴 원장(turn ledger), DAG 병렬 스케줄링</td><td>설계 문서 상의 규약이며 하네스 런타임 이벤트 미배선</td></tr>
+        <tr><td><span class="badge badge-unverified">미검증</span></td><td>원격 워커 과금(클라이언트 미관측), 백그라운드 SLM 후보와 프라이버시 가드 도우미 단계(가중치 미설치), 실제 외부 공급자 추론, 모의 추정 절감률(11.2% / 38.1%), Codex CLI(원격 503으로 시도 전량 차단되어 비교 대상에서 제외)</td><td>엔드투엔드 외부 API 실행 기록이 없거나 가정이 포함됨</td></tr>
+        <tr><td><span class="badge badge-abandoned">폐기/중단</span></td><td>별도 서버 게이트웨이 프로세스, <code>prompt_cache_key</code>, 도구 출력 확장의 절감 수치 주장</td><td>제품 요청 경로·보고 수치에서 배제되었음</td></tr>
+      </tbody>
+    </table>
+
+    <div class="sub-title" style="margin-top:1.6mm">A.3 주요 상수·경로</div>
+    <div class="cost-model-grid">
+      <div class="cost-card">
+        <strong>실행 · 산출물</strong><br>
+        호스트 루프백 리스너(포트는 기동 시 정해지고 로그에 표시) · 번들 오프라인 데모 스텁 ·
+        <code>demo-chat</code> ctx 32768 / think 8192 · 선택 기록 용량 16 · 브리지 조회 타임아웃 1.5초 ·
+        권한이 제한된 <code>models.yml</code> · <code>omp</code> 18.16.0 · <code>node &gt;= 26</code>(측정값 아님)
+      </div>
+      <div class="cost-card">
+        <strong>정본 문서 경로</strong><br>
+        <code>공학작품경진대회_작품개발보고서.html</code> · <code>공학작품경진대회_작품개발보고서.pdf</code> · <code>공학작품경진대회_작품개발보고서_표지.png</code>.
+        이름이 중복되는 예전 파일은 보관용이며 배포 세트에 넣지 않는다. 실측 원자료는 <code>output/benchmark-live-2env-official-report.md</code>와 <code>output/benchmark-live-2env-official-result.json</code>, 시연 각본은 <code>시연_영상_시나리오.md</code>.
+      </div>
+      <div class="cost-card">
+        <strong>핵심 모듈 경로</strong><br>
+        <code>app/server.mjs</code> · <code>app/lib/inference.mjs</code> · <code>gateway/lib/selection.mjs</code> ·
+        <code>gateway/lib/decision-planner.mjs</code> · <code>gateway/lib/cost-rates.mjs</code> ·
+        <code>app/privacy/gate.mjs</code> · <code>app/insight/document.mjs</code> · <code>app/omp/bounded-tool-result.js</code> ·
+        <code>app/public/session-report.js</code> · <code>app/insight/summarize.mjs</code>
+      </div>
+    </div>
+
+    <div class="takeaway">
+      <strong>문서 종료:</strong> 이상의 수치는 실행 시점에 귀속된 기록이며, 제품 전체의 안정성이나 성능을 뜻하지 않는다.
+      실측되지 않은 항목은 <span class="badge badge-unverified">미측정</span> 또는 <span class="badge badge-param">모의 추정</span>으로 표기했다.
+    </div>
+  </div>
+  <div class="page-footer"><span>2026 공학작품경진대회 작품개발보고서 · 국립목포해양대학교 컴퓨터공학과 비용절감위원회</span><span>13 / 13</span></div>
+</div>
+
+</body>
+</html>

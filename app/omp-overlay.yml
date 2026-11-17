@@ -1,0 +1,15 @@
+compaction:
+  enabled: true
+  thresholdPercent: 85
+  keepRecentTokens: 20000
+  midTurnEnabled: true
+  dropUseless: true
+  supersedeReads: true
+
+tools:
+  artifactSpillThreshold: 20
+  artifactHeadBytes: 8
+  artifactTailBytes: 8
+  artifactTailLines: 200
+  outputMaxColumns: 768
+
